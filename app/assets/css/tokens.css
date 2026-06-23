@@ -1,0 +1,45 @@
+:root {
+  --docs-font-sans: "Inter", "Segoe UI", sans-serif;
+  --docs-font-mono: "JetBrains Mono", "Cascadia Code", monospace;
+
+  --docs-color-bg: #fcfcfd;
+  --docs-color-bg-soft: #f4f6f8;
+  --docs-color-panel: rgba(255, 255, 255, 0.82);
+  --docs-color-card: #ffffff;
+  --docs-color-text: #111827;
+  --docs-color-text-soft: #5b6472;
+  --docs-color-border: rgba(15, 23, 42, 0.08);
+  --docs-color-border-strong: rgba(15, 23, 42, 0.12);
+  --docs-color-primary: #2563eb;
+  --docs-color-primary-soft: rgba(37, 99, 235, 0.1);
+  --docs-color-info: #2563eb;
+  --docs-color-success: #059669;
+  --docs-color-warning: #d97706;
+  --docs-color-danger: #dc2626;
+
+  --docs-radius-lg: 16px;
+  --docs-radius-xl: 22px;
+
+  --docs-shadow-panel: 0 18px 50px rgba(15, 23, 42, 0.06);
+  --docs-shadow-card: 0 16px 40px rgba(15, 23, 42, 0.08);
+
+  --docs-space-2: 0.5rem;
+  --docs-space-3: 0.75rem;
+  --docs-space-4: 1rem;
+  --docs-space-5: 1.25rem;
+  --docs-space-6: 1.5rem;
+  --docs-space-8: 2rem;
+
+  --docs-header-height: 3.5rem;
+  --docs-sidebar-width: 15rem;
+  --docs-page-width: 48rem;
+}
+
+body {
+  margin: 0;
+  font-family: var(--docs-font-sans);
+  color: var(--docs-color-text);
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), transparent 28%),
+    linear-gradient(180deg, #ffffff 0%, var(--docs-color-bg) 100%);
+}
