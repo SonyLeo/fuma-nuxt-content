@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import type { ContentNavigationItem } from '@nuxt/content'
+import type { DocsNode } from '~/types/docs'
 
 defineProps<{
   headline?: string
-  items: ContentNavigationItem[]
+  items: DocsNode[]
   currentPath: string
 }>()
 
-function hasChildren(item: ContentNavigationItem) {
-  return Array.isArray(item.children) && item.children.length > 0
+function hasChildren(item: DocsNode) {
+  return item.children.length > 0
 }
 </script>
 
@@ -19,26 +19,42 @@ function hasChildren(item: ContentNavigationItem) {
 
       <nav class="docs-sidebar-tree" aria-label="Documentation navigation">
         <ul class="docs-sidebar-list">
-          <li v-for="item in items" :key="item.path || item.title" class="docs-sidebar-item">
+          <li
+            v-for="item in items"
+            :key="item.path || item.title"
+            class="docs-sidebar-item"
+          >
             <NuxtLink
               v-if="item.path"
               :to="item.path"
               class="docs-sidebar-link"
               :class="{ 'is-active': item.path === currentPath }"
             >
-              {{ item.title }}
+              <span class="docs-sidebar-link-label">{{ item.title }}</span>
+              <span v-if="item.badge" class="docs-sidebar-badge">
+                {{ item.badge }}
+              </span>
             </NuxtLink>
             <p v-else class="docs-sidebar-group">{{ item.title }}</p>
 
             <ul v-if="hasChildren(item)" class="docs-sidebar-children">
-              <li v-for="child in item.children" :key="child.path || child.title" class="docs-sidebar-child">
+              <li
+                v-for="child in item.children"
+                :key="child.path || child.title"
+                class="docs-sidebar-child"
+              >
                 <NuxtLink
                   v-if="child.path"
                   :to="child.path"
                   class="docs-sidebar-link"
                   :class="{ 'is-active': child.path === currentPath }"
                 >
-                  {{ child.title }}
+                  <span class="docs-sidebar-link-label">
+                    {{ child.title }}
+                  </span>
+                  <span v-if="child.badge" class="docs-sidebar-badge">
+                    {{ child.badge }}
+                  </span>
                 </NuxtLink>
               </li>
             </ul>

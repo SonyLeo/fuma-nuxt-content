@@ -1,14 +1,12 @@
 <script setup lang="ts">
+import type { DocsNode, DocsTocItem } from '~/types/docs'
+
 defineProps<{
   title?: string
   headline?: string
-  navigation?: any[]
+  navigation?: DocsNode[]
   currentPath?: string
-  toc?: Array<{
-    id: string
-    text: string
-    depth: number
-  }>
+  toc?: DocsTocItem[]
 }>()
 </script>
 

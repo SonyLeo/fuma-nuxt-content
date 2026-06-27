@@ -1,13 +1,17 @@
-import type { ContentNavigationItem } from '@nuxt/content'
+import type { DocsNode } from '~/types/docs'
+import { flattenDocsNodes } from '~/utils/docs-navigation'
 
-function flattenItems(items: ContentNavigationItem[]): ContentNavigationItem[] {
-  return items.flatMap((item) => {
-    const children = Array.isArray(item.children) ? flattenItems(item.children) : []
-    return item.path ? [item, ...children] : children
-  })
+type DocsPageLike = {
+  title?: string
+  description?: string
+  sectionLabel?: string
 }
 
-export function useDocsPage(page: Ref<any>, siblings: Ref<ContentNavigationItem[]>, currentPath: Ref<string>) {
+export function useDocsPage(
+  page: Ref<DocsPageLike | null | undefined>,
+  siblings: Ref<DocsNode[]>,
+  currentPath: Ref<string>,
+) {
   const title = computed(() => {
     return page.value?.title ?? 'Untitled'
   })
@@ -16,12 +20,18 @@ export function useDocsPage(page: Ref<any>, siblings: Ref<ContentNavigationItem[
     return page.value?.description ?? ''
   })
 
+  const sectionLabel = computed(() => {
+    return page.value?.sectionLabel ?? 'Guide'
+  })
+
   const siblingItems = computed(() => {
-    return flattenItems(siblings.value ?? [])
+    return flattenDocsNodes(siblings.value ?? [])
   })
 
   const currentIndex = computed(() => {
-    return siblingItems.value.findIndex(item => item.path === currentPath.value)
+    return siblingItems.value.findIndex(
+      (item) => item.path === currentPath.value,
+    )
   })
 
   const previous = computed(() => {
@@ -43,6 +53,7 @@ export function useDocsPage(page: Ref<any>, siblings: Ref<ContentNavigationItem[
   return {
     title,
     description,
+    sectionLabel,
     previous,
     next,
   }

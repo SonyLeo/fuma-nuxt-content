@@ -18,15 +18,16 @@ const count = shallowRef(0)
   flex-direction: column;
   gap: 0.75rem;
   padding: 1rem;
-  border: 1px solid #dbe2ea;
-  border-radius: 16px;
-  background: #ffffff;
+  border: 1px solid var(--docs-color-border-strong);
+  border-radius: var(--docs-radius-lg);
+  background: var(--docs-color-card);
+  color: var(--docs-color-card-foreground);
 }
 
 .preview-counter-label {
   margin: 0;
   font-size: 0.875rem;
-  color: #5b6472;
+  color: var(--docs-color-muted-foreground);
 }
 
 .preview-counter-value {
@@ -34,7 +35,7 @@ const count = shallowRef(0)
   font-size: 1.75rem;
   font-weight: 700;
   line-height: 1;
-  color: #111827;
+  color: var(--docs-color-card-foreground);
 }
 
 .preview-counter-button {
@@ -42,10 +43,15 @@ const count = shallowRef(0)
   min-height: 2.5rem;
   padding: 0 0.9rem;
   border: 0;
-  border-radius: 999px;
-  background: #2563eb;
-  color: #ffffff;
+  border-radius: var(--docs-radius-pill);
+  background: var(--docs-color-primary);
+  color: var(--docs-color-primary-foreground);
   font: inherit;
   font-weight: 600;
+}
+
+.preview-counter-button:focus-visible {
+  outline: 2px solid var(--docs-color-ring);
+  outline-offset: 2px;
 }
 </style>

@@ -1,0 +1,83 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: var(--docs-font-sans);
+  --font-mono: var(--docs-font-mono);
+
+  --color-docs-background: var(--docs-color-background);
+  --color-docs-foreground: var(--docs-color-foreground);
+  --color-docs-muted: var(--docs-color-muted);
+  --color-docs-muted-foreground: var(--docs-color-muted-foreground);
+  --color-docs-popover: var(--docs-color-popover);
+  --color-docs-popover-foreground: var(--docs-color-popover-foreground);
+  --color-docs-card: var(--docs-color-card);
+  --color-docs-card-foreground: var(--docs-color-card-foreground);
+  --color-docs-border: var(--docs-color-border);
+  --color-docs-border-strong: var(--docs-color-border-strong);
+  --color-docs-primary: var(--docs-color-primary);
+  --color-docs-primary-foreground: var(--docs-color-primary-foreground);
+  --color-docs-secondary: var(--docs-color-secondary);
+  --color-docs-secondary-foreground: var(--docs-color-secondary-foreground);
+  --color-docs-accent: var(--docs-color-accent);
+  --color-docs-accent-foreground: var(--docs-color-accent-foreground);
+  --color-docs-ring: var(--docs-color-ring);
+  --color-docs-overlay: var(--docs-color-overlay);
+  --color-docs-info: var(--docs-color-info);
+  --color-docs-success: var(--docs-color-success);
+  --color-docs-warning: var(--docs-color-warning);
+  --color-docs-error: var(--docs-color-error);
+  --color-docs-idea: var(--docs-color-idea);
+  --color-docs-diff-remove: var(--docs-color-diff-remove);
+  --color-docs-diff-remove-symbol: var(--docs-color-diff-remove-symbol);
+  --color-docs-diff-add: var(--docs-color-diff-add);
+  --color-docs-diff-add-symbol: var(--docs-color-diff-add-symbol);
+  --color-docs-code-bg: var(--docs-color-code-bg);
+  --color-docs-code-foreground: var(--docs-color-code-foreground);
+  --color-docs-code-border: var(--docs-color-code-border);
+
+  --color-fd-background: var(--docs-color-background);
+  --color-fd-foreground: var(--docs-color-foreground);
+  --color-fd-muted: var(--docs-color-muted);
+  --color-fd-muted-foreground: var(--docs-color-muted-foreground);
+  --color-fd-popover: var(--docs-color-popover);
+  --color-fd-popover-foreground: var(--docs-color-popover-foreground);
+  --color-fd-card: var(--docs-color-card);
+  --color-fd-card-foreground: var(--docs-color-card-foreground);
+  --color-fd-border: var(--docs-color-border);
+  --color-fd-primary: var(--docs-color-primary);
+  --color-fd-primary-foreground: var(--docs-color-primary-foreground);
+  --color-fd-secondary: var(--docs-color-secondary);
+  --color-fd-secondary-foreground: var(--docs-color-secondary-foreground);
+  --color-fd-accent: var(--docs-color-accent);
+  --color-fd-accent-foreground: var(--docs-color-accent-foreground);
+  --color-fd-ring: var(--docs-color-ring);
+  --color-fd-overlay: var(--docs-color-overlay);
+  --color-fd-info: var(--docs-color-info);
+  --color-fd-warning: var(--docs-color-warning);
+  --color-fd-error: var(--docs-color-error);
+  --color-fd-success: var(--docs-color-success);
+  --color-fd-idea: var(--docs-color-idea);
+  --color-fd-diff-remove: var(--docs-color-diff-remove);
+  --color-fd-diff-remove-symbol: var(--docs-color-diff-remove-symbol);
+  --color-fd-diff-add: var(--docs-color-diff-add);
+  --color-fd-diff-add-symbol: var(--docs-color-diff-add-symbol);
+
+  --radius-docs-sm: var(--docs-radius-sm);
+  --radius-docs-md: var(--docs-radius-md);
+  --radius-docs-lg: var(--docs-radius-lg);
+  --radius-docs-xl: var(--docs-radius-xl);
+  --radius-docs-card: var(--docs-card-radius);
+  --radius-docs-callout: var(--docs-callout-radius);
+  --radius-docs-code: var(--docs-code-radius);
+  --radius-docs-tabs: var(--docs-tabs-radius);
+
+  --shadow-docs-sm: var(--docs-shadow-sm);
+  --shadow-docs-panel: var(--docs-shadow-panel);
+  --shadow-docs-card: var(--docs-shadow-card);
+
+  --spacing-docs-header: var(--docs-header-height);
+  --spacing-docs-sidebar: var(--docs-sidebar-width);
+  --spacing-docs-toc: var(--docs-toc-width);
+  --spacing-docs-page: var(--docs-page-width);
+  --spacing-docs-shell: var(--docs-shell-max-width);
+}

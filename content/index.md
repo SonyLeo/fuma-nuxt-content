@@ -1,3 +1,10 @@
+---
+title: Fuma Nuxt Content
+description: Nuxt Content docs foundation sandbox.
+hidden: true
+order: 0
+---
+
 # Fuma Nuxt Content
 
 这个沙盒只验证三件事：

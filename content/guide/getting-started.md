@@ -1,6 +1,8 @@
 ---
 title: Getting Started
 description: 验证最小链路、docs shell 和交互组件是否已经贯通。
+sectionLabel: Guide
+order: 1
 ---
 
 这个页面只用来验证最小链路：
@@ -9,7 +11,7 @@ description: 验证最小链路、docs shell 和交互组件是否已经贯通�
 - `[...slug].vue` 可以按路径查询页面
 - Markdown 中的 `Vue` 组件可以正常渲染
 
-::doc-callout{title="Status" tone="tip"}
+::doc-callout{title="Status" tone="success"}
 当前页面已经挂到了自定义 docs shell 里。
 ::
 

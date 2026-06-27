@@ -791,11 +791,13 @@ app/assets/css
 
 推荐 token：
 
-- `--docs-color-bg`
-- `--docs-color-panel`
+- `--docs-color-background`
+- `--docs-color-popover`
 - `--docs-color-card`
 - `--docs-color-border`
 - `--docs-color-primary`
+- `--docs-color-foreground`
+- `--docs-color-muted-foreground`
 - `--docs-header-height`
 - `--docs-sidebar-width`
 - `--docs-toc-width`

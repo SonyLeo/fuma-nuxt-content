@@ -32,32 +32,3 @@ function handleClick() {
     <slot />
   </div>
 </template>
-
-<style scoped>
-.fd-doc-tab-trigger {
-  border: 0;
-  border-radius: 0.75rem;
-  padding: 0.55rem 0.9rem;
-  background: transparent;
-  color: var(--docs-color-text-soft);
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
-}
-
-.fd-doc-tab-trigger:hover {
-  background: var(--docs-color-primary-soft);
-  color: var(--docs-color-text);
-}
-
-.fd-doc-tab-trigger.is-active {
-  background: #ffffff;
-  color: var(--docs-color-text);
-  box-shadow: inset 0 0 0 1px var(--docs-color-border);
-}
-
-.fd-doc-tab-panel {
-  padding: 1rem 1rem 1.1rem;
-}
-</style>

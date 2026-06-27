@@ -1,15 +1,19 @@
 <script setup lang="ts">
-import type { ContentNavigationItem } from '@nuxt/content'
+import type { DocsNode } from '~/types/docs'
 
 defineProps<{
-  previous?: ContentNavigationItem | null
-  next?: ContentNavigationItem | null
+  previous?: DocsNode | null
+  next?: DocsNode | null
 }>()
 </script>
 
 <template>
   <nav v-if="previous || next" class="docs-pager" aria-label="Page navigation">
-    <NuxtLink v-if="previous?.path" :to="previous.path" class="docs-pager-link is-previous">
+    <NuxtLink
+      v-if="previous?.path"
+      :to="previous.path"
+      class="docs-pager-link is-previous"
+    >
       <span class="docs-pager-caption">Previous</span>
       <span class="docs-pager-title">{{ previous.title }}</span>
     </NuxtLink>

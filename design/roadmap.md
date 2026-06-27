@@ -18,12 +18,17 @@ sectionLabel: Plan
 
 ## 文档架构
 
-后续 `design/` 目录建议固定为这 5 份文档：
+后续 `design/` 目录建议固定为这 6 份文档：
 
 - `design/roadmap.md`
   - 总路线图
   - 说明基础层 / 产品层边界
   - 说明阶段优先级
+
+- `design/foundation-prep-plan.md`
+  - 正式开发前准备阶段
+  - 说明 agent 规约、依赖基线、设计语言、token 体系和风格对齐口径
+  - 作为进入基础层 Phase 1 前的 gate
 
 - `design/foundation-roadmap.md`
   - 基础层详细演进顺序
@@ -46,6 +51,8 @@ sectionLabel: Plan
   - 只记录最新结论
   - 只记录当前状态
   - 只记录已验证经验
+
+`design/nuxt-content-mvp-plan.md` 是早期 MVP 记录，后续只作为历史参考，不作为当前主动规划入口。
 
 ## 边界定义
 
@@ -171,6 +178,15 @@ sectionLabel: Plan
 
 推荐顺序固定为：
 
+### Stage 0：基础建设和设计语言收口
+
+- 项目级 `AGENTS.md`
+- 依赖和脚本基线
+- token 层级
+- CSS 分层基线，包含 `content.css`
+- 风格对齐口径
+- 正式开发前检查清单
+
 ### Stage 1：基础层协议收口
 
 - `docs` collection
@@ -191,7 +207,7 @@ sectionLabel: Plan
 ### Stage 3：基础层视觉稳定
 
 - token 扩展
-- `content.css`
+- `content.css` 状态矩阵和细节收口
 - mobile nav
 - toc 高亮
 - pager / footer 收口
@@ -231,6 +247,6 @@ sectionLabel: Plan
 
 当前只做一件事：
 
-- 先按 `foundation-roadmap.md` 推进基础层
+- 先按 `foundation-prep-plan.md` 完成 Stage 0
 
 产品层 roadmap 现在先规划，不先实现。

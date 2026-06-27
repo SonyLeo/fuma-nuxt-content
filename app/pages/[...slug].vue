@@ -1,20 +1,33 @@
 <script setup lang="ts">
+import { docsNavigationFields } from '~/utils/docs-navigation'
+
 const route = useRoute()
 
 const { data: page } = await useAsyncData('page-' + route.path, () => {
-  return queryCollection('content').path(route.path).first()
+  return queryCollection('docs').path(route.path).first()
 })
 
 const { data: navigation } = await useAsyncData('docs-navigation', () => {
-  return queryCollectionNavigation('content')
+  return queryCollectionNavigation('docs', [...docsNavigationFields])
 })
 
 if (!page.value) {
-  throw createError({ statusCode: 404, statusMessage: 'Page not found', fatal: true })
+  throw createError({
+    statusCode: 404,
+    statusMessage: 'Page not found',
+    fatal: true,
+  })
 }
 
-const { headline, sidebarItems, siblings } = useDocsNavigation(computed(() => navigation.value ?? null), computed(() => route.path))
-const { title, description, previous, next } = useDocsPage(computed(() => page.value), siblings, computed(() => route.path))
+const { headline, sidebarItems, siblings } = useDocsNavigation(
+  computed(() => navigation.value ?? null),
+  computed(() => route.path),
+)
+const { title, description, sectionLabel, previous, next } = useDocsPage(
+  computed(() => page.value),
+  siblings,
+  computed(() => route.path),
+)
 const { items: toc } = useDocsToc(computed(() => page.value))
 </script>
 
@@ -27,11 +40,12 @@ const { items: toc } = useDocsToc(computed(() => page.value))
     :current-path="route.path"
     :toc="toc"
   >
-    <DocsPage :title="title" :description="description">
-      <ContentRenderer
-        v-if="page"
-        :value="page"
-      />
+    <DocsPage
+      :title="title"
+      :description="description"
+      :section-label="sectionLabel"
+    >
+      <ContentRenderer v-if="page" :value="page" />
 
       <DocsPager :previous="previous" :next="next" />
     </DocsPage>
