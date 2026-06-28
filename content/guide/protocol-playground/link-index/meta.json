@@ -1,0 +1,6 @@
+{
+  "title": "Link Index",
+  "description": "验证 pagesIndex 指向 link string 的目录协议。",
+  "pagesIndex": "external:[Fumadocs Index](https://fumadocs.dev)",
+  "pages": ["child"]
+}

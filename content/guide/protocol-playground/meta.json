@@ -1,0 +1,16 @@
+{
+  "title": "Protocol Playground",
+  "description": "真实验证当前 docs tree 协议和目录控制语法。",
+  "defaultOpen": true,
+  "collapsible": true,
+  "pagesIndex": "overview",
+  "pages": [
+    "overview",
+    "---[PanelTop]Protocol Controls---",
+    "external:[Fumadocs](https://fumadocs.dev)",
+    "路径设计",
+    "link-index",
+    "!archive",
+    "z...a"
+  ]
+}

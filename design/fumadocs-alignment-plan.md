@@ -26,6 +26,39 @@ sectionLabel: Plan
 
 - `design/product-roadmap.md`
 
+## 当前状态
+
+这份文档现在作为“基础层协议依据”和历史实现依据保留，不再作为当前执行清单逐条推进。
+
+下文较早章节中的“当前项目状态”“当前问题”“直接改造映射”均按历史上下文阅读。
+
+当前主动规划入口以这些文件为准：
+
+- `design/roadmap.md`
+- `design/foundation-roadmap.md`
+- `design/product-roadmap.md`
+- `design/implementation-notes.md`
+
+当前基础层已经完成一轮闭环：
+
+- `docs` collection 已成立
+- `DocsNode[]` 已成为 sidebar / breadcrumb / pager / homepage cards 的共同输入
+- `meta.json` 目录控制层已接入
+- `DocsPage` 已承接 header / breadcrumb / toc / tocPopover / footer contract
+- route 页面已收口为 query + props 装配
+- 第一批内容组件和样式分层已具备 foundation 级可用性
+
+因此，后续不应继续把 Fumadocs 的完整 loader、page-tree transformer、plugin runtime 当作 foundation 阶段目标。
+
+下一阶段应转入：
+
+- `design/product-roadmap.md` 的 site config
+- page actions
+- GitHub source link
+- Copy Markdown
+
+Fumapress 作为产品层参考，VitePress 作为未来兼容边界；二者都不反向改写当前 foundation protocol。
+
 ## 一、基础层的目标
 
 基础层要解决的是：
@@ -42,14 +75,26 @@ sectionLabel: Plan
 
 ## 二、基础层边界
 
-基础层只包含这 6 层：
+基础层包含这些层：
 
 1. 内容协议层
 2. 内容标准化层
 3. docs tree 层
 4. layout protocol 层
-5. docs content components 层
-6. 样式系统层
+5. page protocol 层
+6. 基础 UI primitives 层
+7. docs content components 层
+8. 样式系统层
+
+基础 UI primitives 包含：
+
+- left sidebar
+- right TOC
+- mobile nav
+- breadcrumb / pager / footer
+- prose table / inline code / kbd / media
+- code highlight / code block / code tabs
+- component preview / code preview
 
 基础层明确不包含：
 
@@ -77,13 +122,13 @@ sectionLabel: Plan
 
 参考源码：
 
-- `../fumadocs-dev/packages/core/src/source/schema.ts`
-- `../fumadocs-dev/packages/core/src/source/source.ts`
-- `../fumadocs-dev/packages/core/src/source/page-tree/builder.ts`
-- `../fumadocs-dev/packages/core/src/page-tree/definitions.ts`
-- `../fumadocs-dev/packages/base-ui/src/layouts/docs/index.tsx`
-- `../fumadocs-dev/packages/base-ui/src/layouts/docs/client.tsx`
-- `../fumadocs-dev/packages/base-ui/src/layouts/docs/page/index.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\core\src\source\schema.ts`
+- `D:\Projects\Learning\gh\fumadocs\packages\core\src\source\source.ts`
+- `D:\Projects\Learning\gh\fumadocs\packages\core\src\source\page-tree\builder.ts`
+- `D:\Projects\Learning\gh\fumadocs\packages\core\src\page-tree\definitions.ts`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\docs\index.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\docs\client.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\docs\page\index.tsx`
 
 ### 2. `assistant-ui`
 
@@ -106,9 +151,27 @@ sectionLabel: Plan
 
 参考源码：
 
-- `../fumapress-dev/packages/core/src/config.ts`
-- `../fumapress-dev/packages/core/src/layouts/docs.tsx`
-- `../fumapress-dev/apps/docs/press.config.tsx`
+- `D:\Projects\Learning\gh\fumapress\packages\core\src\config.ts`
+- `D:\Projects\Learning\gh\fumapress\packages\core\src\layouts\docs.tsx`
+- `D:\Projects\Learning\gh\fumapress\apps\docs\press.config.tsx`
+
+### 4. `VitePress`
+
+旧 VitePress prototype 值得保留的是 theme wrapper、内容组件、page actions 和视觉经验。
+
+它不适合作为当前基础层架构来源。
+
+原因：
+
+- VitePress 已经内置 routing、sidebar、outline、local search
+- 旧 prototype 的 page tree 是从 VitePress sidebar 适配出来的
+- 当前项目的基础协议应继续以 `Nuxt Content -> DocsNode[] -> DocsLayout / DocsPage` 为主线
+
+参考源码：
+
+- `D:\Projects\Work\tiny-robot-docs-ui\docs\.vitepress\config.ts`
+- `D:\Projects\Work\tiny-robot-docs-ui\docs\.vitepress\theme\composables\useDocsPageTree.ts`
+- `D:\Projects\Work\tiny-robot-docs-ui\docs\.vitepress\theme\components\DocsPageActions.vue`
 
 ## 四、基础层总体结构
 
@@ -182,7 +245,7 @@ fuma-nuxt-content
 
 ### collection 语义
 
-当前项目状态：
+历史项目状态：
 
 - [content.config.ts](E:/LS_WorkSpace/learn/fuma-nuxt-content/content.config.ts)
   - 仍然使用 `collections.content`
@@ -257,8 +320,8 @@ links:
 
 参考源码：
 
-- `../fumadocs-dev/packages/core/src/source/schema.ts`
-- `../fumapress-dev/apps/docs/content/docs/meta.json`
+- `D:\Projects\Learning\gh\fumadocs\packages\core\src\source\schema.ts`
+- `D:\Projects\Learning\gh\fumapress\apps\docs\content\docs\meta.json`
 
 后续可扩展字段：
 
@@ -350,7 +413,7 @@ export type DocsNode = {
 
 - [useDocsNavigation.ts](E:/LS_WorkSpace/learn/fuma-nuxt-content/app/composables/useDocsNavigation.ts)
 
-当前问题：
+历史问题：
 
 - 里面已经有 `flattenNavigation / containsPath / findAncestors`
 - 但还停留在原始导航结构操作
@@ -438,8 +501,8 @@ export type DocsNode = {
 
 ### 参考源码
 
-- `../fumadocs-dev/packages/base-ui/src/layouts/docs/index.tsx`
-- `../fumadocs-dev/packages/base-ui/src/layouts/docs/client.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\docs\index.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\docs\client.tsx`
 - `../assistant-ui-main/apps/docs/components/docs/layout/docs-root-layout.tsx`
 
 ### 推荐结构
@@ -586,8 +649,8 @@ app/components/docs/layout
 
 ### 参考源码
 
-- `../fumadocs-dev/packages/base-ui/src/layouts/docs/page/index.tsx`
-- `../fumadocs-dev/packages/base-ui/src/layouts/docs/page/slots/footer.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\docs\page\index.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\docs\page\slots\footer.tsx`
 
 ### 推荐结构
 
@@ -751,7 +814,7 @@ app/components/docs/page
 
 参考源码：
 
-- `../fumadocs-dev/packages/base-ui/src/components/accordion.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\accordion.tsx`
 
 第一版至少要预留：
 

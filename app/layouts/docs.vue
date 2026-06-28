@@ -1,31 +1,34 @@
 <script setup lang="ts">
-import type { DocsNode, DocsTocItem } from '~/types/docs'
+import type { DocsLayoutProps } from '~/types/docs'
 
-defineProps<{
-  title?: string
-  headline?: string
-  navigation?: DocsNode[]
-  currentPath?: string
-  toc?: DocsTocItem[]
-}>()
+withDefaults(defineProps<DocsLayoutProps>(), {
+  navigation: () => [],
+  currentPath: '/',
+})
 </script>
 
 <template>
-  <div class="docs-shell">
-    <DocsHeader :title="title" />
-
-    <div class="docs-shell-body">
-      <DocsSidebar
-        :headline="headline"
-        :items="navigation || []"
-        :current-path="currentPath || '/'"
-      />
-
-      <main class="docs-shell-content">
-        <slot />
-      </main>
-
-      <DocsToc :items="toc || []" />
-    </div>
-  </div>
+  <DocsLayoutShell
+    :title="title"
+    :headline="headline"
+    :navigation="navigation"
+    :current-path="currentPath"
+    :github-url="githubUrl"
+    :links="links"
+    :nav="nav"
+  >
+    <template #banner>
+      <slot name="banner" />
+    </template>
+    <template #search-trigger>
+      <slot name="search-trigger" />
+    </template>
+    <template #theme-switch>
+      <slot name="theme-switch" />
+    </template>
+    <template #language-select>
+      <slot name="language-select" />
+    </template>
+    <slot />
+  </DocsLayoutShell>
 </template>

@@ -4,14 +4,280 @@ export type DocsTocItem = {
   depth: number
 }
 
+export type DocsLayoutTocOptions = {
+  items?: DocsTocItem[]
+  enabled?: boolean
+  popover?: boolean
+}
+
+export type DocsNodeType = 'page' | 'group' | 'separator' | 'link'
+
+export type DocsBreadcrumbRootOption =
+  | boolean
+  | {
+      path?: string
+      title?: string
+    }
+
+export type DocsBreadcrumbOptions = {
+  includeRoot?: DocsBreadcrumbRootOption
+  includePage?: boolean
+  includeSeparator?: boolean
+}
+
+export type DocsMetaPageEntry =
+  | string
+  | {
+      type: 'separator'
+      title: string
+      icon?: string
+    }
+  | {
+      type: 'link'
+      title: string
+      href: string
+      external?: boolean
+      badge?: string
+      icon?: string
+    }
+  | {
+      type: 'page' | 'group'
+      name: string
+      title?: string
+      badge?: string
+      icon?: string
+      status?: string
+      hidden?: boolean
+      defaultOpen?: boolean
+      collapsible?: boolean
+    }
+
+export type DocsDirectoryMeta = {
+  stem: string
+  title?: string
+  description?: string
+  order?: number
+  pages?: DocsMetaPageEntry[]
+  pagesIndex?: string
+  root?: boolean
+  hidden?: boolean
+  defaultOpen?: boolean
+  collapsible?: boolean
+  badge?: string
+  icon?: string
+}
+
+export type DocsPageMeta = {
+  title?: string
+  description?: string
+  sectionLabel?: string
+  slug?: string
+  order?: number
+  hidden?: boolean
+  badge?: string
+  icon?: string
+  status?: string
+  defaultOpen?: boolean
+  collapsible?: boolean
+  full?: boolean
+  toc?: boolean
+  tocPopover?: boolean
+  pager?: boolean
+  breadcrumb?: boolean
+  breadcrumbRoot?: DocsBreadcrumbRootOption
+  breadcrumbPage?: boolean
+  breadcrumbSeparator?: boolean
+}
+
+export type DocsPageLike = DocsPageMeta & {
+  path?: string
+}
+
+export type DocsTocTreeItem = {
+  id: string
+  text: string
+  depth: number
+  children?: DocsTocTreeItem[]
+}
+
+export type DocsContentPage = DocsPageLike & {
+  body?: {
+    toc?: {
+      links?: DocsTocTreeItem[]
+    }
+  }
+}
+
+export type DocsPageRecord = DocsPageMeta & {
+  path: string
+}
+
 export type DocsNode = {
+  id: string
+  type: DocsNodeType
   title: string
   path?: string
+  sourcePath?: string
+  href?: string
+  external?: boolean
   stem?: string
+  dirname?: string
+  parentPath?: string
+  rootPath?: string
+  level: number
   description?: string
   sectionLabel?: string
   order?: number
   hidden?: boolean
   badge?: string
+  icon?: string
+  status?: string
+  root?: boolean
+  defaultOpen?: boolean
+  collapsible?: boolean
+  full?: boolean
+  toc?: boolean
+  tocPopover?: boolean
+  pager?: boolean
+  breadcrumb?: boolean
+  breadcrumbRoot?: DocsBreadcrumbRootOption
+  breadcrumbPage?: boolean
+  breadcrumbSeparator?: boolean
+  index?: DocsNode
   children: DocsNode[]
+}
+
+export type DocsBreadcrumbItem = {
+  id: string
+  type: Extract<DocsNodeType, 'page' | 'group' | 'separator'>
+  title: string
+  path?: string
+}
+
+export type DocsNavLinkActiveMode = 'url' | 'nested-url' | 'none'
+
+export type DocsNavLinkPlacement = 'nav' | 'menu' | 'all'
+
+export type DocsNavLinkType = 'main' | 'icon' | 'button' | 'menu' | 'custom'
+
+export type DocsNavLink = {
+  type?: DocsNavLinkType
+  title: string
+  href?: string
+  description?: string
+  icon?: string
+  external?: boolean
+  active?: DocsNavLinkActiveMode
+  on?: DocsNavLinkPlacement
+  ariaLabel?: string
+  items?: DocsNavLink[]
+}
+
+export type DocsNavOptions = {
+  title?: string
+  enabled?: boolean
+}
+
+export type DocsLayoutProps = {
+  title?: string
+  headline?: string
+  navigation?: DocsNode[]
+  currentPath?: string
+  githubUrl?: string
+  links?: DocsNavLink[]
+  nav?: DocsNavOptions
+}
+
+export type DocsTocProps = {
+  items?: DocsTocItem[]
+  activeId?: string
+  activeItem?: DocsTocItem
+  progress?: number
+  label?: string
+}
+
+export type DocsTocPopoverProps = {
+  items?: DocsTocItem[]
+  activeId?: string
+  activeItem?: DocsTocItem
+  progress?: number
+  activeLabel?: string
+}
+
+export type DocsPageHeaderProps = {
+  title: string
+  description?: string
+  sectionLabel?: string
+  breadcrumbs?: DocsBreadcrumbItem[]
+}
+
+export type DocsPageHeaderOptions = DocsPageHeaderProps & {
+  enabled?: boolean
+}
+
+export type DocsPageTocOptions = {
+  items?: DocsTocItem[]
+  enabled?: boolean
+  popover?: boolean
+  label?: string
+  activeLabel?: string
+}
+
+export type DocsResolvedPageTocOptions = {
+  items: DocsTocItem[]
+  enabled: boolean
+  popover: boolean
+  label: string
+  activeLabel: string
+}
+
+export type DocsPageBreadcrumbProps = DocsBreadcrumbOptions & {
+  items?: DocsBreadcrumbItem[]
+  enabled?: boolean
+}
+
+export type DocsResolvedPageBreadcrumbProps = {
+  items: DocsBreadcrumbItem[]
+  enabled: boolean
+  includeRoot: DocsBreadcrumbRootOption
+  includePage: boolean
+  includeSeparator: boolean
+}
+
+export type DocsPagerItem = Pick<
+  DocsNode,
+  'id' | 'title' | 'path' | 'description'
+>
+
+export type DocsPagerLabels = {
+  previous?: string
+  next?: string
+  previousDescription?: string
+  nextDescription?: string
+}
+
+export type DocsPageFooterProps = {
+  enabled?: boolean
+  previous?: DocsPagerItem | null
+  next?: DocsPagerItem | null
+  pagerLabels?: DocsPagerLabels
+}
+
+export type DocsResolvedPageFooterProps = {
+  enabled: boolean
+}
+
+export type DocsPageProps = {
+  full?: boolean
+  header?: DocsPageHeaderOptions
+  toc?: DocsPageTocOptions
+  breadcrumb?: DocsPageBreadcrumbProps
+  footer?: DocsPageFooterProps
+}
+
+export type DocsResolvedPageOptions = {
+  full: boolean
+  toc: DocsResolvedPageTocOptions
+  breadcrumb: DocsResolvedPageBreadcrumbProps
+  footer: DocsResolvedPageFooterProps
 }

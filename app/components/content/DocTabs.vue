@@ -1,24 +1,31 @@
 <script setup lang="ts">
-import { computed, provide, shallowRef } from 'vue'
+import { computed, provide, shallowRef, useId } from 'vue'
+import {
+  docTabsIdKey,
+  docTabsSetterKey,
+  docTabsValueKey,
+} from '~/utils/doc-tabs'
 
 const props = defineProps<{
   defaultValue: string
 }>()
 
 const activeValue = shallowRef(props.defaultValue)
+const tabsId = `fd-doc-tabs-${useId()}`
 
 provide(
-  'fd-doc-tabs-value',
+  docTabsValueKey,
   computed(() => activeValue.value),
 )
-provide('fd-doc-tabs-setter', (value: string) => {
+provide(docTabsSetterKey, (value: string) => {
   activeValue.value = value
 })
+provide(docTabsIdKey, tabsId)
 </script>
 
 <template>
   <div class="fd-doc-tabs">
-    <div class="fd-doc-tabs-list">
+    <div class="fd-doc-tabs-list" role="tablist">
       <slot name="triggers" />
     </div>
     <div class="fd-doc-tabs-panels">

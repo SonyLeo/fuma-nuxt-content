@@ -1,0 +1,15 @@
+{
+  "title": "Guide",
+  "description": "Foundation docs for the Nuxt Content-aligned shell and protocol work.",
+  "order": 1,
+  "root": true,
+  "defaultOpen": true,
+  "collapsible": true,
+  "pages": [
+    "getting-started",
+    "---Components---",
+    "components",
+    "---Protocol---",
+    "protocol-playground"
+  ]
+}

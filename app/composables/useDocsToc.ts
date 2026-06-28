@@ -1,25 +1,11 @@
-import type { DocsTocItem } from '~/types/docs'
-
-type TocItem = {
-  id: string
-  text: string
-  depth: number
-}
-
-type RawTocItem = TocItem & {
-  children?: RawTocItem[]
-}
-
-type DocsTocPageLike = {
-  body?: {
-    toc?: {
-      links?: RawTocItem[]
-    }
-  }
-}
+import type {
+  DocsContentPage,
+  DocsTocItem,
+  DocsTocTreeItem,
+} from '~/types/docs'
 
 function flattenItems(
-  items: RawTocItem[] | undefined,
+  items: DocsTocTreeItem[] | undefined,
   depth = 2,
 ): DocsTocItem[] {
   if (!Array.isArray(items)) {
@@ -34,7 +20,7 @@ function flattenItems(
   })
 }
 
-export function useDocsToc(page: Ref<DocsTocPageLike | null | undefined>) {
+export function useDocsToc(page: Ref<DocsContentPage | null | undefined>) {
   const items = computed<DocsTocItem[]>(() => {
     return flattenItems(page.value?.body?.toc?.links).filter(
       (item) => item.depth <= 3,

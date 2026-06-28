@@ -1,17 +1,19 @@
-import type { DocsNode } from '~/types/docs'
-import { flattenDocsNodes } from '~/utils/docs-navigation'
+import type {
+  DocsBreadcrumbItem,
+  DocsPageBreadcrumbProps,
+  DocsPageHeaderOptions,
+  DocsPageLike,
+  DocsResolvedPageOptions,
+} from '~/types/docs'
 
-type DocsPageLike = {
-  title?: string
-  description?: string
-  sectionLabel?: string
+const DEFAULT_BREADCRUMB_OPTIONS: DocsPageBreadcrumbProps = {
+  enabled: true,
+  includeRoot: false,
+  includePage: false,
+  includeSeparator: false,
 }
 
-export function useDocsPage(
-  page: Ref<DocsPageLike | null | undefined>,
-  siblings: Ref<DocsNode[]>,
-  currentPath: Ref<string>,
-) {
+export function useDocsPage(page: Ref<DocsPageLike | null | undefined>) {
   const title = computed(() => {
     return page.value?.title ?? 'Untitled'
   })
@@ -24,37 +26,80 @@ export function useDocsPage(
     return page.value?.sectionLabel ?? 'Guide'
   })
 
-  const siblingItems = computed(() => {
-    return flattenDocsNodes(siblings.value ?? [])
+  const full = computed(() => {
+    return page.value?.full ?? false
   })
 
-  const currentIndex = computed(() => {
-    return siblingItems.value.findIndex(
-      (item) => item.path === currentPath.value,
-    )
-  })
+  const toc = computed(() => {
+    const enabled = page.value?.toc ?? !full.value
+    const popover = page.value?.tocPopover ?? enabled
 
-  const previous = computed(() => {
-    if (currentIndex.value <= 0) {
-      return null
+    return {
+      items: [],
+      enabled,
+      popover,
+      label: 'On this page',
+      activeLabel: 'On this page',
     }
-
-    return siblingItems.value[currentIndex.value - 1] ?? null
   })
 
-  const next = computed(() => {
-    if (currentIndex.value < 0) {
-      return null
+  const breadcrumb = computed(() => {
+    return {
+      items: [],
+      enabled:
+        page.value?.breadcrumb ?? DEFAULT_BREADCRUMB_OPTIONS.enabled ?? true,
+      includeRoot:
+        page.value?.breadcrumbRoot ??
+        DEFAULT_BREADCRUMB_OPTIONS.includeRoot ??
+        false,
+      includePage:
+        page.value?.breadcrumbPage ??
+        DEFAULT_BREADCRUMB_OPTIONS.includePage ??
+        false,
+      includeSeparator:
+        page.value?.breadcrumbSeparator ??
+        DEFAULT_BREADCRUMB_OPTIONS.includeSeparator ??
+        false,
     }
+  })
 
-    return siblingItems.value[currentIndex.value + 1] ?? null
+  const footer = computed(() => {
+    return {
+      enabled: page.value?.pager ?? true,
+    }
+  })
+
+  function createHeader(
+    breadcrumbs: DocsBreadcrumbItem[],
+    enabled = true,
+  ): DocsPageHeaderOptions {
+    return {
+      enabled,
+      title: title.value,
+      description: description.value || undefined,
+      sectionLabel: sectionLabel.value,
+      breadcrumbs,
+    }
+  }
+
+  const options = computed<DocsResolvedPageOptions>(() => {
+    return {
+      full: full.value,
+      toc: toc.value,
+      breadcrumb: breadcrumb.value,
+      footer: footer.value,
+    }
   })
 
   return {
     title,
     description,
     sectionLabel,
-    previous,
-    next,
+    full,
+    toc,
+    breadcrumb,
+    footer,
+    createHeader,
+    options,
   }
 }

@@ -1,28 +1,53 @@
 <script setup lang="ts">
-import type { DocsNode } from '~/types/docs'
+import type { DocsPagerItem, DocsPagerLabels } from '~/types/docs'
 
-defineProps<{
-  previous?: DocsNode | null
-  next?: DocsNode | null
-}>()
+withDefaults(
+  defineProps<{
+    previous?: DocsPagerItem | null
+    next?: DocsPagerItem | null
+    labels?: DocsPagerLabels
+  }>(),
+  {
+    previous: null,
+    next: null,
+    labels: () => ({
+      previous: 'Previous',
+      next: 'Next',
+      previousDescription: 'Previous page',
+      nextDescription: 'Next page',
+    }),
+  },
+)
 </script>
 
 <template>
   <nav v-if="previous || next" class="docs-pager" aria-label="Page navigation">
-    <NuxtLink
+    <DocsLink
       v-if="previous?.path"
-      :to="previous.path"
+      :href="previous.path"
       class="docs-pager-link is-previous"
     >
-      <span class="docs-pager-caption">Previous</span>
+      <span class="docs-pager-caption">{{ labels.previous }}</span>
       <span class="docs-pager-title">{{ previous.title }}</span>
-    </NuxtLink>
+      <span class="docs-pager-description">
+        {{ previous.description || labels.previousDescription }}
+      </span>
+    </DocsLink>
 
     <div v-else class="docs-pager-spacer" />
 
-    <NuxtLink v-if="next?.path" :to="next.path" class="docs-pager-link is-next">
-      <span class="docs-pager-caption">Next</span>
+    <DocsLink
+      v-if="next?.path"
+      :href="next.path"
+      class="docs-pager-link is-next"
+    >
+      <span class="docs-pager-caption">{{ labels.next }}</span>
       <span class="docs-pager-title">{{ next.title }}</span>
-    </NuxtLink>
+      <span class="docs-pager-description">
+        {{ next.description || labels.nextDescription }}
+      </span>
+    </DocsLink>
+
+    <div v-else class="docs-pager-spacer" />
   </nav>
 </template>

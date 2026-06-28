@@ -1,5 +1,7 @@
 <script setup lang="ts">
-withDefaults(
+import { computed } from 'vue'
+
+const props = withDefaults(
   defineProps<{
     title: string
     href?: string
@@ -12,13 +14,22 @@ withDefaults(
     badge: '',
   },
 )
+
+const componentTag = computed(() => {
+  if (!props.href) {
+    return 'div'
+  }
+
+  return props.href.startsWith('/') ? 'NuxtLink' : 'a'
+})
 </script>
 
 <template>
   <component
-    :is="href ? 'a' : 'div'"
+    :is="componentTag"
     class="fd-doc-card"
-    :href="href || undefined"
+    :to="componentTag === 'NuxtLink' ? href || undefined : undefined"
+    :href="componentTag === 'a' ? href || undefined : undefined"
   >
     <div class="fd-doc-card-header">
       <h3>{{ title }}</h3>
