@@ -96,6 +96,16 @@ Foundation work does not include:
 - Keep long text wrapping, truncation, and overflow behavior explicit.
 - Icon buttons need accessible names and visible focus states.
 
+## Fumadocs Parity Rules
+
+- For Fumadocs UI parity tasks, use the `fumadocs-parity` skill when available.
+- Do not start from screenshot-only CSS guessing. Inspect source, DOM, state,
+  computed styles, and layout metrics before visual fine-tuning.
+- Run the relevant parity profile when one exists; if none exists, record the
+  missing profile as part of the task review.
+- Treat `design/parity-reconstruction-workflow.md` as a historical case archive,
+  not the daily execution entry point.
+
 ## CSS Rules
 
 - `app/assets/css/tokens.css` owns design tokens only.

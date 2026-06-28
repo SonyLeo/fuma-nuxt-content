@@ -6,6 +6,11 @@ sectionLabel: Design
 
 # Fumadocs Parity Reconstruction Workflow
 
+> Status: this file is now the historical case archive for parity work. The
+> short daily execution entry point lives in the `fumadocs-parity` Codex skill.
+> Project rules only keep the gate; detailed process belongs in the skill and
+> its references.
+
 This document records the working method for aligning this project with
 Fumadocs. It is intentionally iterative: every parity MVP should update this
 file with what worked, what failed, and which checks should be reused.
@@ -790,3 +795,100 @@ Every parity surface should graduate from ad hoc snippets to a named probe
 profile once it has more than two interactive states. A profile is not a visual
 truth oracle; it is the guardrail that keeps us from fixing screenshots while
 the underlying protocol is still wrong.
+
+## MVP 1.6: Skill Extraction And Gate
+
+The daily parity workflow has been extracted into the local Codex skill:
+
+`C:\Users\song\.codex\skills\fumadocs-parity`
+
+Project-level `AGENTS.md` now keeps only a short gate:
+
+- use the `fumadocs-parity` skill when available;
+- inspect source, DOM, state, computed styles, and layout metrics before
+  screenshot-based fine tuning;
+- run an existing parity profile when one exists;
+- keep this document as the historical case archive.
+
+### Validation Result
+
+The skill folder passed structural validation:
+
+```bash
+python C:\Users\song\.codex\skills\.system\skill-creator\scripts\quick_validate.py C:\Users\song\.codex\skills\fumadocs-parity
+```
+
+Result:
+
+```text
+Skill is valid!
+```
+
+The new flow was tested by using the skill's "prefer existing profile" path
+against the current local dev server at `http://127.0.0.1:3000`.
+
+```bash
+node scripts/parity-probe.mjs --profile=sidebar --url=http://127.0.0.1:3000/guide/component-detail --viewports=2048x1152,994x935 --chromePort=9234
+node scripts/parity-probe.mjs --profile=toc --url=http://127.0.0.1:3000/guide/component-detail --viewports=2048x1152,994x935 --chromePort=9234
+```
+
+Results:
+
+```text
+sidebar: PASS, 24/24 checks passed
+toc: PASS, 10/10 checks passed
+```
+
+### Efficiency Result
+
+The active execution entry point is now about 60 lines, while this historical
+archive is more than 600 lines. Future parity work should load the short skill
+first and open this archive only for prior cases, profile history, or lessons.
+
+## MVP 1.7: Dev Server Control
+
+Stage 7.7 exposed a repeated server-health failure that was not a component
+bug:
+
+- multiple Nuxt dev processes were listening or still alive for the same
+  workspace;
+- old `pnpm dev`, `cmd /c pnpm dev`, direct Nuxt, and temporary shell launches
+  left inconsistent process trees;
+- Nuxt Content SQLite intermittently failed with missing `_content_docs` and
+  `_content_docsMeta` tables;
+- parity profiles correctly failed in HTTP preflight, but repeated manual
+  restarts made the loop noisy.
+
+The project now has a single dev server control entry point:
+
+```bash
+pnpm dev:restart -- --path=/guide/code-block --timeout=60000
+pnpm dev:health -- --path=/guide/code-block --timeout=20000
+pnpm dev:status
+pnpm dev:stop
+```
+
+Implementation:
+
+- `scripts/dev-server.mjs`
+- state file: `.nuxt/dev-control/server.json`
+- logs: `.nuxt/dev-control/server.log`
+- error logs: `.nuxt/dev-control/server.err.log`
+
+Validation result:
+
+```text
+pnpm dev:restart -- --path=/guide/code-block --timeout=60000
+Health: ok status=200 bytes=83957 url=http://127.0.0.1:8888/guide/code-block
+
+node scripts/parity-probe.mjs --profile=code-block --url=http://127.0.0.1:8888/guide/code-block --viewports=1440x1000,994x935 --chromePort=9245
+Status: PASS
+Checks: 20/20 passed
+```
+
+Reusable rule:
+
+For parity work, do not start ad hoc dev servers. Use `pnpm dev:restart` before
+runtime profiles and `pnpm dev:stop` after the work if the server is no longer
+needed. If `dev:health` fails, classify the issue as `server-health` before
+debugging UI code.

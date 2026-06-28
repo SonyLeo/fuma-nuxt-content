@@ -775,6 +775,10 @@
   gap: 0.05rem;
 }
 
+.docs-sidebar-item {
+  position: relative;
+}
+
 .docs-sidebar-children {
   display: grid;
   position: relative;
@@ -814,6 +818,20 @@
   align-items: center;
   justify-content: flex-start;
   gap: var(--docs-space-2);
+}
+
+.docs-sidebar-link[data-visual-level='1'] {
+  padding-left: 1.25rem;
+}
+
+.docs-sidebar-item.is-visual-nested::before {
+  position: absolute;
+  top: -0.05rem;
+  bottom: -0.05rem;
+  left: 0.6rem;
+  width: 1px;
+  background: var(--docs-color-border);
+  content: '';
 }
 
 .docs-sidebar-link-meta,
@@ -904,19 +922,15 @@
   background: var(--docs-link-active-bg);
 }
 
-.docs-sidebar-link.is-active::before {
+.docs-sidebar-link.is-active[data-visual-level='1']::before {
   position: absolute;
   top: 0.625rem;
   bottom: 0.625rem;
-  left: 0.625rem;
+  left: 0.6rem;
   width: 1px;
   border-radius: var(--docs-radius-pill);
   background: var(--docs-color-primary);
   content: '';
-}
-
-.docs-sidebar-link.is-active .docs-sidebar-link-label {
-  padding-left: 0.75rem;
 }
 
 .docs-sidebar-link:focus-visible {
@@ -2154,6 +2168,11 @@
     z-index: 10;
     display: block;
     height: 2.5rem;
+    background: transparent;
+    overflow: visible;
+  }
+
+  .docs-toc-popover-surface {
     border-bottom: 1px solid var(--docs-color-border);
     background: color-mix(
       in srgb,
@@ -2161,6 +2180,18 @@
       transparent
     );
     backdrop-filter: blur(10px);
+    transition:
+      background-color var(--docs-motion-fast),
+      box-shadow var(--docs-motion-fast);
+  }
+
+  .docs-toc-popover-surface.is-open {
+    background: color-mix(
+      in srgb,
+      var(--docs-color-background) 88%,
+      transparent
+    );
+    box-shadow: var(--docs-shadow-panel);
   }
 
   .docs-toc-popover-trigger {
@@ -2188,16 +2219,11 @@
   }
 
   .docs-toc-popover-progress {
-    position: relative;
     flex: 0 0 auto;
     width: 1.125rem;
     height: 1.125rem;
-    border-radius: var(--docs-radius-pill);
-    background: conic-gradient(
-      currentColor var(--docs-toc-progress, 0%),
-      color-mix(in srgb, currentColor 25%, transparent) 0
-    );
-    transition: background var(--docs-motion-base), color var(--docs-motion-fast);
+    color: currentColor;
+    transition: color var(--docs-motion-fast);
   }
 
   .docs-toc-popover-trigger.is-open .docs-toc-popover-progress {
@@ -2205,11 +2231,17 @@
   }
 
   .docs-toc-popover-progress::after {
-    position: absolute;
-    inset: 3px;
-    border-radius: inherit;
-    background: var(--docs-color-background);
-    content: '';
+    content: none;
+  }
+
+  .docs-toc-popover-progress-track {
+    stroke: currentColor;
+    opacity: 0.25;
+  }
+
+  .docs-toc-popover-progress-value {
+    stroke: currentColor;
+    transition: stroke-dashoffset var(--docs-motion-base);
   }
 
   .docs-toc-popover-copy {
@@ -2261,6 +2293,24 @@
     transform: rotate(180deg);
   }
 
+  .docs-toc-popover-panel {
+    position: static;
+    width: 100%;
+    max-height: none;
+    margin: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .docs-toc-popover-scroll {
+    max-height: 50vh;
+    overflow: hidden;
+    padding: 0 1.5rem;
+  }
+
   .docs-toc-popover-panel-title {
     margin: 0;
     color: var(--docs-color-muted-foreground);
@@ -2270,7 +2320,13 @@
   }
 
   .docs-toc-popover-panel .docs-toc-list {
-    padding: 0.75rem 1rem 1rem;
+    padding: 0 0 1rem;
+  }
+
+  .docs-toc-popover-panel .docs-toc-list-shell {
+    max-height: inherit;
+    padding: 0.75rem 0 0;
+    overflow: auto;
   }
 }
 

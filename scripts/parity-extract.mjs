@@ -35,7 +35,7 @@ function parseArgs(argv) {
 function usage() {
   return [
     'Usage:',
-    '  node scripts/parity-extract.mjs --reference=https://example.com --local=http://127.0.0.1:3000/page --selector=#nd-toc',
+    '  node scripts/parity-extract.mjs --reference=https://example.com --local=http://127.0.0.1:8888/page --selector=#nd-toc',
     '',
     'Options:',
     '  --viewports=1440x1000,994x1000',

@@ -39,7 +39,7 @@ export function useDocsPage(page: Ref<DocsPageLike | null | undefined>) {
       enabled,
       popover,
       label: 'On this page',
-      activeLabel: 'On this page',
+      activeLabel: title.value,
     }
   })
 

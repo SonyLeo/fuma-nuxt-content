@@ -10,31 +10,31 @@
     {
       "type": "link",
       "title": "Overview",
-      "href": "/docs/ui",
+      "href": "/guide/getting-started",
       "icon": "overview"
     },
     {
       "type": "link",
       "title": "Component Library",
-      "href": "/docs/ui/components",
+      "href": "/guide/components",
       "icon": "library"
     },
     {
       "type": "link",
       "title": "Themes",
-      "href": "/docs/ui/theme",
+      "href": "/guide/themes",
       "icon": "theme"
     },
     "---References---",
     {
       "type": "link",
       "title": "Search UI",
-      "href": "/docs/ui/search"
+      "href": "/guide/search-ui"
     },
     {
       "type": "link",
       "title": "Translations",
-      "href": "/docs/ui/i18n"
+      "href": "/guide/translations"
     },
     "---Components---",
     {
@@ -112,6 +112,21 @@
     "!路径设计",
     "!link-index",
     "!child",
-    "!archive"
+    "!archive",
+    "!themes",
+    "!search-ui",
+    "!translations",
+    "!auto-type-table",
+    "!banner",
+    "!code-block",
+    "!code-block-dynamic",
+    "!files",
+    "!github-info",
+    "!graph-view",
+    "!zoomable-image",
+    "!inline-toc",
+    "!steps",
+    "!tabs",
+    "!type-table"
   ]
 }

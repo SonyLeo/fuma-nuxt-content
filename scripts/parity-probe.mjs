@@ -19,6 +19,7 @@ function parseArgs(argv) {
     profile: 'toc',
     rects:
       '.docs-shell-body,.docs-sidebar,.docs-sidebar-inner,.docs-shell-content,.docs-page-frame,#nd-page,#nd-toc,.docs-toc-popover',
+    retries: 1,
     selector: '#nd-toc',
     sidebarExpectedCurrent: 'Accordion',
     sidebarExpectedSeparators: 'Introduction,References,Components,Layouts',
@@ -48,8 +49,20 @@ function parseArgs(argv) {
     }
   }
 
+  if (out.profile === 'code-block') {
+    if (!seen.has('selector')) {
+      out.selector = '.fd-doc-code-block'
+    }
+
+    if (!seen.has('rects')) {
+      out.rects =
+        '.fd-doc-preview,.fd-doc-install-card,.fd-doc-code-block,.fd-doc-code-block-header,.fd-doc-code-block-body'
+    }
+  }
+
   out.chromePort = Number(out.chromePort || 9233)
   out.minBytes = Number(out.minBytes || 1000)
+  out.retries = Number(out.retries || 0)
   out.settleMs = Number(out.settleMs || 3200)
   out.rects = String(out.rects || '')
     .split(',')
@@ -70,11 +83,11 @@ function parseArgs(argv) {
 function usage() {
   return [
     'Usage:',
-    '  node scripts/parity-probe.mjs --url=http://127.0.0.1:3000/guide/component-detail',
+    '  node scripts/parity-probe.mjs --url=http://127.0.0.1:8888/guide/component-detail',
     '',
     'Options:',
     '  --selector=#nd-toc',
-    '  --profile=toc|sidebar',
+    '  --profile=toc|sidebar|code-block',
     '  --viewports=2048x1152,994x935',
     '  --rects=.docs-shell-body,#nd-page,#nd-toc',
     '  --activeSelector=.docs-toc-link.is-active',
@@ -85,6 +98,7 @@ function usage() {
     '  --sidebarExpectedSeparators=Introduction,References,Components,Layouts',
     '  --chromePath=C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
     '  --chromePort=9233',
+    '  --retries=1',
     '  --settleMs=3200',
   ].join('\n')
 }
@@ -354,6 +368,32 @@ function createProbeExpression(options) {
         text: element.textContent?.trim().replace(/\\s+/g, ' ') || '',
         top: Math.round(element.getBoundingClientRect().top + scrollY),
       }));
+    const tocPopover = () => {
+      const root = document.querySelector('.docs-toc-popover');
+      const surface = document.querySelector('.docs-toc-popover-surface');
+      const trigger = document.querySelector('.docs-toc-popover-trigger');
+      const panel = document.querySelector('.docs-toc-popover-panel');
+      const progress = trigger?.querySelector('[role="progressbar"]');
+
+      return {
+        root: pick(root),
+        surface: pick(surface),
+        trigger: pick(trigger),
+        triggerExpanded: trigger?.getAttribute('aria-expanded') || null,
+        triggerState: trigger?.getAttribute('data-state') || null,
+        progress: pick(progress),
+        progressValue: progress?.getAttribute('aria-valuenow') || null,
+        progressMax: progress?.getAttribute('aria-valuemax') || null,
+        panel: pick(panel),
+        panelHidden: panel?.hasAttribute('hidden') ?? null,
+        panelState: panel?.getAttribute('data-state') || null,
+        links: [...(panel?.querySelectorAll('a') ?? [])].map((element) => ({
+          text: element.textContent?.trim().replace(/\\s+/g, ' ') || '',
+          href: element.getAttribute('href'),
+          current: element.getAttribute('aria-current'),
+        })),
+      };
+    };
 
     const collect = (phase) => ({
       phase,
@@ -375,9 +415,13 @@ function createProbeExpression(options) {
       active: activeItems(),
       current: currentItems(),
       headings: headings(),
+      tocPopover: tocPopover(),
     });
 
     const top = collect('top');
+    document.querySelector('.docs-toc-popover-trigger')?.click();
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const popoverOpen = collect('popover-open');
     window.scrollTo(0, document.documentElement.scrollHeight);
     const startedAt = performance.now();
 
@@ -397,7 +441,7 @@ function createProbeExpression(options) {
 
     const bottom = collect('bottom');
 
-    return { top, bottom };
+    return { top, popoverOpen, bottom };
   })()`
 }
 
@@ -525,6 +569,154 @@ function createSidebarProbeExpression(options) {
   })()`
 }
 
+function createCodeBlockProbeExpression(options) {
+  return `(async () => {
+    const rectSelectors = ${JSON.stringify(options.rects)};
+    const selector = ${JSON.stringify(options.selector)};
+
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const text = (element) =>
+      element?.textContent?.trim().replace(/\\s+/g, ' ') || '';
+    const pick = (element) => {
+      if (!element) return null;
+
+      const style = getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+
+      return {
+        tag: element.tagName.toLowerCase(),
+        id: element.id || null,
+        className: typeof element.className === 'string' ? element.className : '',
+        text: text(element).slice(0, 120),
+        rect: {
+          left: Math.round(rect.left),
+          right: Math.round(rect.right),
+          width: Math.round(rect.width),
+          top: Math.round(rect.top),
+          height: Math.round(rect.height),
+        },
+        style: {
+          display: style.display,
+          position: style.position,
+          padding: style.padding,
+          margin: style.margin,
+          width: style.width,
+          height: style.height,
+          maxHeight: style.maxHeight,
+          overflow: style.overflow,
+          overflowX: style.overflowX,
+          overflowY: style.overflowY,
+          borderRadius: style.borderRadius,
+          borderTopWidth: style.borderTopWidth,
+          backgroundColor: style.backgroundColor,
+        },
+      };
+    };
+
+    const codeBlocks = () =>
+      [...document.querySelectorAll('.fd-doc-code-block')].map((root, index) => {
+        const header = root.querySelector('.fd-doc-code-block-header');
+        const caption = root.querySelector('figcaption');
+        const floating = root.querySelector('.fd-doc-code-block-floating-actions');
+        const actions = root.querySelector('.fd-doc-code-block-actions');
+        const copy = root.querySelector('.fd-doc-code-copy');
+        const body = root.querySelector('.fd-doc-code-block-body');
+        const pre = root.querySelector('pre');
+        const icon = root.querySelector('.fd-doc-code-block-icon');
+        const highlighted = root.querySelectorAll('.highlighted, .highlighted-word, .diff');
+        const lines = root.querySelectorAll('.line');
+
+        return {
+          index,
+          root: pick(root),
+          header: pick(header),
+          caption: pick(caption),
+          floating: pick(floating),
+          actions: pick(actions),
+          copy: pick(copy),
+          body: pick(body),
+          pre: pick(pre),
+          icon: pick(icon),
+          dir: root.getAttribute('dir'),
+          tabIndex: root.getAttribute('tabindex'),
+          bodyRole: body?.getAttribute('role') || null,
+          bodyTabIndex: body?.getAttribute('tabindex'),
+          copyAria: copy?.getAttribute('aria-label') || null,
+          lineNumbers: root.hasAttribute('data-line-numbers'),
+          highlightedCount: highlighted.length,
+          lineCount: lines.length,
+          scroll: body
+            ? {
+                clientWidth: Math.round(body.clientWidth),
+                scrollWidth: Math.round(body.scrollWidth),
+                clientHeight: Math.round(body.clientHeight),
+                scrollHeight: Math.round(body.scrollHeight),
+              }
+            : null,
+        };
+      });
+
+    const tabs = () =>
+      [...document.querySelectorAll('.fd-doc-code-tabs')].map((root, index) => {
+        const triggers = [...root.querySelectorAll('.fd-doc-tab-trigger')].map(
+          (element) => ({
+            text: text(element),
+            state: element.getAttribute('data-state'),
+            selected: element.getAttribute('aria-selected'),
+          }),
+        );
+        const panels = [...root.querySelectorAll('.fd-doc-tab-panel')].map(
+          (element) => ({
+            state: element.getAttribute('data-state'),
+            hidden: element.hasAttribute('hidden'),
+          }),
+        );
+
+        return {
+          index,
+          root: pick(root),
+          list: pick(root.querySelector('.fd-doc-tabs-list')),
+          triggers,
+          panels,
+        };
+      });
+
+    const collect = (phase) => ({
+      phase,
+      url: location.href,
+      title: document.title,
+      root: pick(document.querySelector(selector)),
+      rects: Object.fromEntries(
+        rectSelectors.map((item) => [item, pick(document.querySelector(item))]),
+      ),
+      headings: [...document.querySelectorAll('.docs-page-body h2[id], .docs-page-body h3[id]')]
+        .map((element) => ({
+          id: element.id,
+          text: text(element),
+        })),
+      preview: pick(document.querySelector('.fd-doc-preview')),
+      install: pick(document.querySelector('.fd-doc-install-card')),
+      codeBlocks: codeBlocks(),
+      tabs: tabs(),
+    });
+
+    const top = collect('top');
+    const secondTab = document.querySelectorAll('.fd-doc-code-tabs .fd-doc-tab-trigger').item(1);
+    if (secondTab) {
+      secondTab.scrollIntoView({ block: 'center', inline: 'center' });
+      await wait(120);
+      secondTab.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }));
+      secondTab.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+      secondTab.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+      secondTab.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    }
+    await wait(320);
+    const switched = collect('tab-switched');
+
+    return { top, switched };
+  })()`
+}
+
 async function evaluate(cdp, expression) {
   const result = await cdp.send('Runtime.evaluate', {
     expression,
@@ -550,12 +742,35 @@ async function captureViewport(options, viewportValue) {
         cdp,
         options.profile === 'sidebar'
           ? createSidebarProbeExpression(options)
-          : createProbeExpression(options),
+          : options.profile === 'code-block'
+            ? createCodeBlockProbeExpression(options)
+            : createProbeExpression(options),
       ),
     }
   } finally {
     cdp.close()
   }
+}
+
+async function runRuntimeProbe(options, preflightChecks) {
+  const report = {
+    options,
+    checks: [...preflightChecks],
+    captures: [],
+  }
+  const chrome = await startChrome(options)
+
+  try {
+    for (const viewportValue of options.viewports) {
+      report.captures.push(await captureViewport(options, viewportValue))
+    }
+  } finally {
+    chrome.kill()
+  }
+
+  summarize(report)
+
+  return report
 }
 
 function addCheck(checks, check) {
@@ -565,6 +780,11 @@ function addCheck(checks, check) {
 function summarize(report) {
   if (report.options.profile === 'sidebar') {
     summarizeSidebar(report)
+    return
+  }
+
+  if (report.options.profile === 'code-block') {
+    summarizeCodeBlock(report)
     return
   }
 
@@ -589,6 +809,66 @@ function summarize(report) {
       })
     }
 
+    if (width < 1280) {
+      const topPopover = data.top.tocPopover
+      const openPopover = data.popoverOpen.tocPopover
+      const trigger = openPopover.trigger
+      const panel = openPopover.panel
+
+      addCheck(report.checks, {
+        label: `${width}px toc popover visible`,
+        pass:
+          Boolean(topPopover.root) &&
+          topPopover.root.style.display !== 'none' &&
+          topPopover.root.rect.width > 0,
+        message: topPopover.root
+          ? `display=${topPopover.root.style.display}, width=${topPopover.root.rect.width}`
+          : 'missing',
+      })
+
+      addCheck(report.checks, {
+        label: `${width}px toc popover closed by default`,
+        pass:
+          topPopover.triggerExpanded === 'false' &&
+          topPopover.panel?.style.display === 'none',
+        message: `expanded=${topPopover.triggerExpanded}, panelDisplay=${
+          topPopover.panel?.style.display ?? 'missing'
+        }`,
+      })
+
+      addCheck(report.checks, {
+        label: `${width}px toc popover opens inline`,
+        pass:
+          openPopover.triggerExpanded === 'true' &&
+          panel?.style.display !== 'none' &&
+          panel?.style.position === 'static' &&
+          panel?.rect.left === openPopover.root?.rect.left &&
+          panel?.rect.top === (trigger?.rect.top ?? 0) + (trigger?.rect.height ?? 0),
+        message: `expanded=${openPopover.triggerExpanded}, display=${
+          panel?.style.display ?? 'missing'
+        }, position=${panel?.style.position ?? 'missing'}, left=${
+          panel?.rect.left ?? 'missing'
+        }, top=${panel?.rect.top ?? 'missing'}`,
+      })
+
+      addCheck(report.checks, {
+        label: `${width}px toc popover progressbar`,
+        pass:
+          openPopover.progress?.tag === 'svg' &&
+          openPopover.progressValue !== null &&
+          openPopover.progressMax === '1',
+        message: openPopover.progress
+          ? `tag=${openPopover.progress.tag}, value=${openPopover.progressValue}, max=${openPopover.progressMax}`
+          : 'missing',
+      })
+
+      addCheck(report.checks, {
+        label: `${width}px toc popover links available`,
+        pass: openPopover.links.length > 0,
+        message: `links=${openPopover.links.length}`,
+      })
+    }
+
     const shell = data.top.rects['.docs-shell-body']
 
     if (shell) {
@@ -609,6 +889,126 @@ function summarize(report) {
         message: `current=${bottomCurrent?.href ?? 'none'}, last=#${lastHeading.id}`,
       })
     }
+  }
+}
+
+function summarizeCodeBlock(report) {
+  for (const capture of report.captures) {
+    const { viewport, data } = capture
+    const width = viewport.width
+    const blocks = data.top.codeBlocks
+    const titled = blocks.find((block) => block.header && block.caption)
+    const untitled = blocks.find((block) => !block.header && block.floating)
+    const highlighted = blocks.find((block) => block.highlightedCount > 0)
+    const lineNumbered = blocks.find((block) => block.lineNumbers && block.lineCount > 0)
+    const first = blocks[0]
+    const headingTexts = data.top.headings.map((item) => item.text)
+
+    addCheck(report.checks, {
+      label: `${width}px code blocks present`,
+      pass: blocks.length >= 3,
+      message: `blocks=${blocks.length}`,
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px code root contract`,
+      pass:
+        first?.root?.tag === 'figure' &&
+        first.dir === 'ltr' &&
+        first.tabIndex === '-1' &&
+        first.root.className.includes('shiki') &&
+        first.root.className.includes('not-prose'),
+      message: first
+        ? `tag=${first.root?.tag}, dir=${first.dir}, tabindex=${first.tabIndex}, class=${first.root?.className}`
+        : 'missing',
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px code viewport accessible`,
+      pass:
+        blocks.every((block) => block.bodyRole === 'region') &&
+        blocks.every((block) => block.bodyTabIndex === '0') &&
+        blocks.every((block) => block.body?.style.overflow !== 'visible'),
+      message: blocks
+        .map(
+          (block) =>
+            `${block.index}:role=${block.bodyRole},tab=${block.bodyTabIndex},overflow=${block.body?.style.overflow ?? 'missing'}`,
+        )
+        .join('; '),
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px preview wrapper present`,
+      pass:
+        Boolean(data.top.preview) &&
+        data.top.preview.style.display !== 'none' &&
+        data.top.preview.rect.width > 0,
+      message: data.top.preview
+        ? `display=${data.top.preview.style.display}, width=${data.top.preview.rect.width}`
+        : 'missing',
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px install card present`,
+      pass:
+        Boolean(data.top.install) &&
+        data.top.install.style.display !== 'none' &&
+        data.top.install.text.includes('@fumadocs/cli'),
+      message: data.top.install
+        ? `display=${data.top.install.style.display}, text=${data.top.install.text}`
+        : 'missing',
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px component page headings`,
+      pass:
+        headingTexts.includes('Usage') &&
+        headingTexts.includes('Keep Background') &&
+        headingTexts.includes('Icons'),
+      message: headingTexts.join(', '),
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px titled code header`,
+      pass:
+        Boolean(titled?.header && titled.caption && titled.copy) &&
+        titled.caption.text.includes('config.js'),
+      message: titled
+        ? `caption=${titled.caption?.text || 'none'}, copy=${Boolean(titled.copy)}`
+        : 'missing',
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px titled code icon`,
+      pass: Boolean(titled?.icon?.tag === 'svg' && titled.icon.rect.width > 0),
+      message: titled?.icon
+        ? `tag=${titled.icon.tag}, width=${titled.icon.rect.width}`
+        : 'missing',
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px untitled floating copy`,
+      pass: Boolean(untitled?.floating && untitled.copy),
+      message: untitled
+        ? `floating=${Boolean(untitled.floating)}, copy=${Boolean(untitled.copy)}`
+        : 'missing',
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px highlighted code markers`,
+      pass: Boolean(highlighted),
+      message: highlighted
+        ? `block=${highlighted.index}, markers=${highlighted.highlightedCount}`
+        : 'missing highlighted markers',
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px line-number protocol`,
+      pass: Boolean(lineNumbered),
+      message: lineNumbered
+        ? `block=${lineNumbered.index}, lines=${lineNumbered.lineCount}`
+        : 'missing line-numbered block',
+    })
   }
 }
 
@@ -749,9 +1149,27 @@ function formatReport(report) {
       continue
     }
 
+    if (report.options.profile === 'code-block') {
+      const blocks = capture.data.top.codeBlocks
+      const preview = capture.data.top.preview
+      const install = capture.data.top.install
+      const markers = blocks.reduce((sum, block) => sum + block.highlightedCount, 0)
+      const lineNumbered = blocks.filter((block) => block.lineNumbers).length
+
+      lines.push(
+        `- ${capture.viewport.width}x${capture.viewport.height}: blocks=${
+          blocks.length
+        }; preview=${preview ? 'yes' : 'missing'}; install=${
+          install ? 'yes' : 'missing'
+        }; markers=${markers}; lineNumbered=${lineNumbered}`,
+      )
+      continue
+    }
+
     const shell = capture.data.top.rects['.docs-shell-body']
     const page = capture.data.top.rects['#nd-page']
     const toc = capture.data.top.rects['#nd-toc']
+    const popover = capture.data.popoverOpen?.tocPopover
     const bottomCurrent = capture.data.bottom.current.at(-1)
 
     lines.push(
@@ -759,6 +1177,10 @@ function formatReport(report) {
         shell?.style.gridTemplateColumns ?? 'missing'
       }; page=${page ? `${page.rect.left}-${page.rect.right}` : 'missing'}; toc=${
         toc ? `${toc.style.display}/${toc.rect.width}px` : 'missing'
+      }; popover=${
+        popover?.panel
+          ? `${popover.triggerExpanded}/${popover.panel.style.position}/${popover.panel.rect.top}px`
+          : 'missing'
       }; bottomCurrent=${bottomCurrent?.href ?? 'none'}`,
     )
   }
@@ -775,7 +1197,7 @@ async function main() {
     return
   }
 
-  const report = {
+  let report = {
     options,
     checks: [],
     captures: [],
@@ -790,17 +1212,16 @@ async function main() {
     return
   }
 
-  const chrome = await startChrome(options)
+  for (let attempt = 0; attempt <= options.retries; attempt++) {
+    report = await runRuntimeProbe(options, preflight.checks)
 
-  try {
-    for (const viewportValue of options.viewports) {
-      report.captures.push(await captureViewport(options, viewportValue))
+    if (!report.checks.some((check) => !check.pass) || attempt === options.retries) {
+      break
     }
-  } finally {
-    chrome.kill()
+
+    await new Promise((resolve) => setTimeout(resolve, 1000))
   }
 
-  summarize(report)
   console.log(formatReport(report))
 
   if (report.checks.some((check) => !check.pass)) {

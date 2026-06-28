@@ -24,10 +24,10 @@ function parseArgs(argv) {
 function usage() {
   return [
     'Usage:',
-    '  node scripts/parity-smoke.mjs --url=http://127.0.0.1:3000/guide/component-detail --selector=#nd-toc --contains=.docs-toc-link,.docs-toc-popover',
+    '  node scripts/parity-smoke.mjs --url=http://127.0.0.1:8888/guide/component-detail --selector=#nd-toc --contains=.docs-toc-link,.docs-toc-popover',
     '',
     'Options:',
-    '  --url=http://127.0.0.1:3000/page',
+    '  --url=http://127.0.0.1:8888/page',
     '  --selector=#nd-toc',
     '  --contains=.class,#id,tag',
     '  --minBytes=1000',

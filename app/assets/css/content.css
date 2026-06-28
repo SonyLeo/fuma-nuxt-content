@@ -151,6 +151,14 @@
   box-shadow: var(--docs-shadow-sm);
 }
 
+.fd-doc-code-block.keep-background {
+  background: var(--shiki-light-bg, var(--docs-color-card));
+}
+
+.dark .fd-doc-code-block.keep-background {
+  background: var(--shiki-dark-bg, var(--docs-color-card));
+}
+
 .fd-doc-code-block-header {
   display: flex;
   align-items: center;
@@ -170,6 +178,13 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.7rem;
+}
+
+.fd-doc-code-block-icon {
+  width: 0.9rem;
+  height: 0.9rem;
+  flex: 0 0 auto;
+  color: var(--docs-color-muted-foreground);
 }
 
 .fd-doc-code-block-title {
@@ -257,11 +272,13 @@
 }
 
 .fd-doc-code-block-pre,
-.shiki:not(.not-fumadocs-codeblock *) {
+.shiki:not(.fd-doc-code-block):not(.not-fumadocs-codeblock *) {
   --fd-code-padding-x: 1rem;
 
   margin: 0;
-  overflow-x: auto;
+  min-width: 100%;
+  width: max-content;
+  overflow: visible;
   background: var(--docs-color-code-bg);
   color: var(--docs-color-code-foreground);
   font-family: var(--docs-font-mono);
@@ -273,12 +290,38 @@
   padding: 0.95rem var(--fd-code-padding-x) 1rem;
 }
 
-.shiki:not(.not-fumadocs-codeblock *) {
+.fd-doc-code-block-body > pre {
+  margin: 0;
+  min-width: 100%;
+  width: max-content;
+  overflow: visible;
+  background: var(--docs-color-code-bg);
+  color: var(--docs-color-code-foreground);
+  font-family: var(--docs-font-mono);
+  font-size: 0.84rem;
+  line-height: 1.7;
+}
+
+.fd-doc-code-block-body > code {
+  display: block;
+  min-width: 100%;
+  width: max-content;
+  padding: 0.95rem 0 1rem;
+  background: var(--docs-color-code-bg);
+  color: var(--docs-color-code-foreground);
+  font-family: var(--docs-font-mono);
+  font-size: 0.84rem;
+  line-height: 1.7;
+  white-space: pre;
+}
+
+.shiki:not(.fd-doc-code-block):not(.not-fumadocs-codeblock *) {
   padding: 0.95rem 0 1rem;
 }
 
 .fd-doc-code-block-pre code,
-.shiki:not(.not-fumadocs-codeblock *) code {
+.fd-doc-code-block-body > pre code,
+.shiki:not(.fd-doc-code-block):not(.not-fumadocs-codeblock *) code {
   display: block;
   min-width: max-content;
   padding: 0;
@@ -287,18 +330,32 @@
   white-space: pre;
 }
 
-.shiki:not(.not-fumadocs-codeblock *) code span {
+.fd-doc-code-block-body > code span,
+.fd-doc-code-block-body > pre code span {
   color: var(--shiki-light);
   font-style: var(--shiki-light-font-style);
 }
 
-.dark .shiki:not(.not-fumadocs-codeblock *) code span {
+.dark .fd-doc-code-block-body > code span,
+.dark .fd-doc-code-block-body > pre code span {
+  color: var(--shiki-dark);
+  font-style: var(--shiki-dark-font-style);
+}
+
+.shiki:not(.fd-doc-code-block):not(.not-fumadocs-codeblock *) code span {
+  color: var(--shiki-light);
+  font-style: var(--shiki-light-font-style);
+}
+
+.dark .shiki:not(.fd-doc-code-block):not(.not-fumadocs-codeblock *) code span {
   color: var(--shiki-dark);
   font-style: var(--shiki-dark-font-style);
 }
 
 .fd-doc-code-block-pre .line,
-.shiki:not(.not-fumadocs-codeblock *) .line {
+.fd-doc-code-block-body > code .line,
+.fd-doc-code-block-body > pre .line,
+.shiki:not(.fd-doc-code-block):not(.not-fumadocs-codeblock *) .line {
   position: relative;
   display: block;
   min-height: 1lh;
@@ -307,27 +364,30 @@
 }
 
 .fd-doc-code-block-pre .line:empty,
-.shiki:not(.not-fumadocs-codeblock *) .line:empty {
+.fd-doc-code-block-body > pre .line:empty,
+.shiki:not(.fd-doc-code-block):not(.not-fumadocs-codeblock *) .line:empty {
   height: 1lh;
 }
 
-.shiki:not(.not-fumadocs-codeblock *).has-focused .line:not(.focused) {
+.shiki:not(.fd-doc-code-block):not(.not-fumadocs-codeblock *).has-focused .line:not(.focused) {
   filter: blur(2px);
   transition: filter 200ms ease;
 }
 
-.shiki:not(.not-fumadocs-codeblock *).has-focused:hover .line:not(.focused) {
+.shiki:not(.fd-doc-code-block):not(.not-fumadocs-codeblock *).has-focused:hover .line:not(.focused) {
   filter: blur(0);
 }
 
 .fd-doc-code-block-pre .diff::before,
-.shiki:not(.not-fumadocs-codeblock *) .diff::before {
+.fd-doc-code-block-body > pre .diff::before,
+.shiki:not(.fd-doc-code-block):not(.not-fumadocs-codeblock *) .diff::before {
   position: absolute;
   left: 0.4rem;
 }
 
 .fd-doc-code-block-pre .diff.remove,
-.shiki:not(.not-fumadocs-codeblock *) .diff.remove {
+.fd-doc-code-block-body > pre .diff.remove,
+.shiki:not(.fd-doc-code-block):not(.not-fumadocs-codeblock *) .diff.remove {
   --fd-counter-color: var(--docs-color-diff-remove-symbol);
 
   background: var(--docs-color-diff-remove);
@@ -335,33 +395,38 @@
 }
 
 .fd-doc-code-block-pre .diff.remove::before,
-.shiki:not(.not-fumadocs-codeblock *) .diff.remove::before {
+.fd-doc-code-block-body > pre .diff.remove::before,
+.shiki:not(.fd-doc-code-block):not(.not-fumadocs-codeblock *) .diff.remove::before {
   color: var(--docs-color-diff-remove-symbol);
   content: '-';
 }
 
 .fd-doc-code-block-pre .diff.add,
-.shiki:not(.not-fumadocs-codeblock *) .diff.add {
+.fd-doc-code-block-body > pre .diff.add,
+.shiki:not(.fd-doc-code-block):not(.not-fumadocs-codeblock *) .diff.add {
   --fd-counter-color: var(--docs-color-diff-add-symbol);
 
   background: var(--docs-color-diff-add);
 }
 
 .fd-doc-code-block-pre .diff.add::before,
-.shiki:not(.not-fumadocs-codeblock *) .diff.add::before {
+.fd-doc-code-block-body > pre .diff.add::before,
+.shiki:not(.fd-doc-code-block):not(.not-fumadocs-codeblock *) .diff.add::before {
   color: var(--docs-color-diff-add-symbol);
   content: '+';
 }
 
 .fd-doc-code-block-pre .highlighted,
-.shiki:not(.not-fumadocs-codeblock *) .highlighted {
+.fd-doc-code-block-body > pre .highlighted,
+.shiki:not(.fd-doc-code-block):not(.not-fumadocs-codeblock *) .highlighted {
   --fd-counter-color: var(--docs-color-primary);
 
   background: color-mix(in srgb, var(--docs-color-primary) 10%, transparent);
 }
 
 .fd-doc-code-block-pre .highlighted::after,
-.shiki:not(.not-fumadocs-codeblock *) .highlighted::after {
+.fd-doc-code-block-body > pre .highlighted::after,
+.shiki:not(.fd-doc-code-block):not(.not-fumadocs-codeblock *) .highlighted::after {
   position: absolute;
   inset: 0 auto 0 0;
   width: 2px;
@@ -370,7 +435,8 @@
 }
 
 .fd-doc-code-block-pre .highlighted-word,
-.shiki:not(.not-fumadocs-codeblock *) .highlighted-word {
+.fd-doc-code-block-body > pre .highlighted-word,
+.shiki:not(.fd-doc-code-block):not(.not-fumadocs-codeblock *) .highlighted-word {
   margin-top: -1px;
   margin-bottom: -1px;
   padding: 1px 2px;
@@ -381,16 +447,19 @@
   font-weight: 500;
 }
 
-.shiki:not(.not-fumadocs-codeblock *)[data-line-numbers] {
-  counter-reset: line;
+.fd-doc-code-block[data-line-numbers],
+.shiki:not(.fd-doc-code-block):not(.not-fumadocs-codeblock *)[data-line-numbers] {
+  counter-reset: line var(--fd-line-number-start, 0);
 }
 
-.shiki:not(.not-fumadocs-codeblock *)[data-line-numbers] .line {
+.fd-doc-code-block[data-line-numbers] .line,
+.shiki:not(.fd-doc-code-block):not(.not-fumadocs-codeblock *)[data-line-numbers] .line {
   counter-increment: line;
   padding-left: calc(var(--fd-code-padding-x) + 2.75rem);
 }
 
-.shiki:not(.not-fumadocs-codeblock *)[data-line-numbers] .line::after {
+.fd-doc-code-block[data-line-numbers] .line::after,
+.shiki:not(.fd-doc-code-block):not(.not-fumadocs-codeblock *)[data-line-numbers] .line::after {
   position: absolute;
   inset: 0 auto 0 0;
   width: 2.25rem;

@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import type { DocsNode } from '~/types/docs'
+import { isDocsLinkActive } from '~/utils/docs-link'
 
 const props = withDefaults(
   defineProps<{
     item: DocsNode
     currentPath: string
     level?: number
+    visualLevel?: number
   }>(),
   {
     level: 0,
+    visualLevel: 0,
   },
 )
 
@@ -59,13 +62,22 @@ function isCurrent(item: DocsNode) {
   return resolveItemPath(item) === props.currentPath
 }
 
+function isLinkCurrent(item: DocsNode) {
+  return item.type === 'link' && isDocsLinkActive(item.href, props.currentPath)
+}
+
 function emitNavigate() {
   emit('navigate')
 }
 </script>
 
 <template>
-  <li class="docs-sidebar-item">
+  <li
+    class="docs-sidebar-item"
+    :class="{ 'is-visual-nested': visualLevel > 0 }"
+    :data-level="level"
+    :data-visual-level="visualLevel"
+  >
     <p
       v-if="item.type === 'separator'"
       class="docs-sidebar-separator"
@@ -79,6 +91,8 @@ function emitNavigate() {
       :href="resolveItemPath(item)!"
       class="docs-sidebar-link"
       :class="{ 'is-active': isCurrent(item) }"
+      :data-level="level"
+      :data-visual-level="visualLevel"
       :aria-current="isCurrent(item) ? 'page' : undefined"
       @click="emitNavigate"
     >
@@ -101,6 +115,10 @@ function emitNavigate() {
       :href="item.href"
       :external="item.external"
       class="docs-sidebar-link"
+      :class="{ 'is-active': isLinkCurrent(item) }"
+      :data-level="level"
+      :data-visual-level="visualLevel"
+      :aria-current="isLinkCurrent(item) ? 'page' : undefined"
       @click="emitNavigate"
     >
       <DocsNavIcon v-if="item.icon" :name="item.icon" />
