@@ -1,0 +1,30 @@
+<script setup lang="ts">
+const props = withDefaults(
+  defineProps<{
+    command: string
+    title?: string
+    description?: string
+  }>(),
+  {
+    title: 'Install to your codebase',
+    description: 'Easier customization & control.',
+  },
+)
+</script>
+
+<template>
+  <section class="fd-doc-install-card">
+    <div class="fd-doc-install-copy">
+      <p class="fd-doc-install-title">{{ title }}</p>
+      <p v-if="description" class="fd-doc-install-description">
+        {{ description }}
+      </p>
+    </div>
+    <DocCodeBlock
+      class="fd-doc-install-command"
+      :code="props.command"
+      language="bash"
+      :allow-copy="true"
+    />
+  </section>
+</template>

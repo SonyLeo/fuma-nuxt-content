@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import type { DocsNode, DocsPageRecord } from '~/types/docs'
-import { docsNavigationFields } from '~/utils/docs-navigation'
+import {
+  docsNavigationFields,
+  normalizeDocsSourcePath,
+} from '~/utils/docs-navigation'
+import { createDocsCanonicalUrl, createDocsSeoTitle } from '~/utils/docs-seo'
+
+const route = useRoute()
+const requestUrl = useRequestURL()
+const { site } = useDocsSite()
 
 const { data: page } = await useAsyncData('page-home', () => {
   return queryCollection('docs').path('/').first()
@@ -14,6 +22,7 @@ const { data: docsPages } = await useAsyncData('home-docs-pages', () => {
   return queryCollection('docs')
     .select(
       'path',
+      'stem',
       'title',
       'description',
       'sectionLabel',
@@ -69,7 +78,9 @@ const docsPageRecords = computed<DocsPageRecord[]>(() => {
 })
 
 provideDocsLinkContext({
-  currentSourcePath: computed(() => page.value?.path ?? '/'),
+  currentSourcePath: computed(() =>
+    normalizeDocsSourcePath(page.value?.stem ?? page.value?.path ?? '/'),
+  ),
   pages: docsPageRecords,
 })
 
@@ -98,16 +109,38 @@ const foundationEntries = computed(() => {
     .filter((item) => resolveNodePath(item))
     .slice(0, 6)
 })
+
+const homeDescription = computed(() => site.seo?.defaultDescription ?? site.description)
+const homeTitle = computed(() => createDocsSeoTitle(site.title, site))
+const canonicalUrl = computed(() => {
+  return createDocsCanonicalUrl(route.path, site, requestUrl.origin)
+})
+
+useSeoMeta({
+  title: homeTitle,
+  description: homeDescription,
+  ogTitle: homeTitle,
+  ogDescription: homeDescription,
+  ogImage: computed(() => site.seo?.defaultOgImage),
+})
+
+useHead({
+  link: [
+    {
+      rel: 'canonical',
+      href: canonicalUrl,
+    },
+  ],
+})
 </script>
 
 <template>
   <main class="docs-home">
     <section class="docs-home-hero">
-      <p class="docs-home-kicker">Fuma Nuxt Content</p>
-      <h1 class="docs-home-title">Vue docs foundation</h1>
+      <p class="docs-home-kicker">{{ site.name }}</p>
+      <h1 class="docs-home-title">{{ site.title }}</h1>
       <p class="docs-home-description">
-        一个面向 Nuxt Content 的 docs
-        基础层实验，优先收稳页面协议、目录树协议和内容组件协议。
+        {{ site.description }}
       </p>
     </section>
 

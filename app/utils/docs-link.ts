@@ -1,6 +1,7 @@
 import type { DocsPageRecord } from '~/types/docs'
 import {
   normalizeDocsRoutePath,
+  resolveDocsRecordSourcePath,
   resolveDocsRoutePath,
 } from '~/utils/docs-navigation'
 
@@ -89,14 +90,14 @@ function resolveRouteFromSourcePath(
   const { pathname, suffix } = splitPathSuffix(sourcePath)
   const normalizedSource = normalizeDocsSourcePath(pathname)
   const match = (pages ?? []).find((page) => {
-    return normalizeDocsSourcePath(page.path) === normalizedSource
+    return normalizeDocsSourcePath(resolveDocsRecordSourcePath(page)) === normalizedSource
   })
 
   if (!match) {
     return `${normalizedSource}${suffix}`
   }
 
-  return `${resolveDocsRoutePath(match.path, match)}${suffix}`
+  return `${resolveDocsRoutePath(resolveDocsRecordSourcePath(match), match)}${suffix}`
 }
 
 export function resolveDocsLink(

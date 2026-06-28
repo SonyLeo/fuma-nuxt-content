@@ -28,8 +28,8 @@
   --docs-radius-pill: 999px;
 
   --docs-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --docs-shadow-panel: 0 18px 50px rgba(15, 23, 42, 0.06);
-  --docs-shadow-card: 0 16px 40px rgba(15, 23, 42, 0.08);
+  --docs-shadow-panel: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --docs-shadow-card: 0 2px 8px rgba(15, 23, 42, 0.06);
 
   --docs-motion-fast: 0.15s ease;
   --docs-motion-base: 0.18s ease;
@@ -112,12 +112,13 @@
   --color-fd-diff-add-symbol: var(--docs-color-diff-add-symbol);
 
   /* Component and layout tokens */
-  --docs-header-height: 3.5rem;
-  --docs-sidebar-width: 15rem;
-  --docs-toc-width: 14rem;
-  --docs-shell-max-width: 88rem;
+  --docs-header-height: 0px;
+  --docs-mobile-header-height: 3.5rem;
+  --docs-sidebar-width: 16.75rem;
+  --docs-toc-width: 16.75rem;
+  --docs-shell-max-width: 97rem;
   --docs-shell-gap: 2rem;
-  --docs-page-width: 48rem;
+  --docs-page-width: 56.25rem;
   --docs-card-radius: var(--docs-radius-sm);
   --docs-callout-radius: var(--docs-radius-md);
   --docs-code-radius: var(--docs-radius-md);
@@ -176,9 +177,5 @@ body {
   margin: 0;
   font-family: var(--docs-font-sans);
   color: var(--docs-color-foreground);
-  background: linear-gradient(
-    180deg,
-    var(--docs-color-card) 0%,
-    var(--docs-color-background) 100%
-  );
+  background: var(--docs-color-background);
 }

@@ -1,17 +1,20 @@
 <script setup lang="ts">
 import { Folder, FolderOpen } from '@lucide/vue'
+import { readBooleanLike } from '~/utils/doc-accordion'
 
 const props = withDefaults(
   defineProps<{
     name: string
-    defaultOpen?: boolean
-    disabled?: boolean
+    defaultOpen?: boolean | 'true' | 'false'
+    disabled?: boolean | 'true' | 'false'
   }>(),
   {
     defaultOpen: false,
     disabled: false,
   },
 )
+const defaultOpenState = computed(() => readBooleanLike(props.defaultOpen))
+const disabledState = computed(() => readBooleanLike(props.disabled))
 
 function toggleLabel(open: boolean) {
   return `${open ? 'Collapse' : 'Expand'} ${props.name} folder`
@@ -21,8 +24,8 @@ function toggleLabel(open: boolean) {
 <template>
   <DocCollapsible
     class="fd-doc-folder"
-    :default-open="defaultOpen"
-    :disabled="disabled"
+    :default-open="defaultOpenState"
+    :disabled="disabledState"
   >
     <template #default="{ open, toggle, contentId }">
       <button
@@ -31,7 +34,7 @@ function toggleLabel(open: boolean) {
         :aria-label="toggleLabel(open)"
         :aria-expanded="open"
         :aria-controls="contentId"
-        :disabled="disabled"
+        :disabled="disabledState"
         @click="toggle"
       >
         <FolderOpen v-if="open" class="fd-doc-file-icon" aria-hidden="true" />

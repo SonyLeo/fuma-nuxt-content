@@ -1,26 +1,37 @@
 <script setup lang="ts">
-import type { DocsNavLink } from '~/types/docs'
+import type { DocsBrandOptions, DocsNavLink } from '~/types/docs'
 import { isDocsLinkActive } from '~/utils/docs-link'
 
 const props = withDefaults(
   defineProps<{
     title?: string
+    brand?: DocsBrandOptions
     links?: DocsNavLink[]
     currentPath?: string
     githubUrl?: string
   }>(),
   {
     title: undefined,
+    brand: undefined,
     links: () => [],
     currentPath: '/',
     githubUrl: undefined,
   },
 )
 
+const brandLabel = computed(() => props.brand?.label ?? 'Documentation')
+const brandMark = computed(() => props.brand?.mark ?? brandLabel.value.charAt(0))
+const brandHref = computed(() => props.brand?.href ?? '/')
 const navLinks = computed(() => {
   return props.links.filter((link) => {
     return (link.on ?? 'all') === 'all' || link.on === 'nav'
   })
+})
+const showGithubShortcut = computed(() => {
+  return Boolean(
+    props.githubUrl &&
+      !navLinks.value.some((link) => link.href === props.githubUrl),
+  )
 })
 
 function isActive(link: DocsNavLink) {
@@ -31,9 +42,9 @@ function isActive(link: DocsNavLink) {
 <template>
   <header class="docs-header">
     <div class="docs-header-inner">
-      <NuxtLink to="/" class="docs-header-brand">
-        <span class="docs-header-brand-mark">F</span>
-        <span class="docs-header-brand-text">Fuma Nuxt Content</span>
+      <NuxtLink :to="brandHref" class="docs-header-brand">
+        <span class="docs-header-brand-mark">{{ brandMark }}</span>
+        <span class="docs-header-brand-text">{{ brandLabel }}</span>
       </NuxtLink>
 
       <nav
@@ -55,9 +66,13 @@ function isActive(link: DocsNavLink) {
           :aria-label="link.ariaLabel"
           :aria-current="isActive(link) ? 'page' : undefined"
         >
-          {{
-            link.type === 'icon' ? (link.ariaLabel ?? link.title) : link.title
-          }}
+          <DocsNavIcon v-if="link.icon" :name="link.icon" />
+          <span v-if="link.type !== 'icon'" class="docs-header-nav-label">
+            {{ link.title }}
+          </span>
+          <span v-else class="docs-sr-only">
+            {{ link.ariaLabel ?? link.title }}
+          </span>
         </DocsLink>
       </nav>
 
@@ -67,13 +82,13 @@ function isActive(link: DocsNavLink) {
         <slot name="theme-switch" />
         <slot name="language-select" />
         <DocsLink
-          v-if="githubUrl"
+          v-if="showGithubShortcut"
           :href="githubUrl"
           external
           class="docs-header-icon-link"
           aria-label="GitHub repository"
         >
-          GH
+          <DocsNavIcon name="github" />
         </DocsLink>
       </div>
     </div>

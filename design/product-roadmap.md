@@ -468,23 +468,73 @@ content
 - i18n/versioning 不污染单语言基础 tree
 - language/version switch 是 layout slot，不是 sidebar hack
 
-## 当前阶段建议
+## 当前阶段状态
 
-当前不进入产品层实现。
+Foundation UI Gate 已完成第一轮。
 
-先完成 foundation 的：
-
-1. default MDX/MDC components mapping
-2. link protocol / relative link
-3. shared layout options
-4. nav links contract
-5. search/theme/language slots
-6. UI primitives baseline
-7. code/prose/preview gate
-
-完成后，产品层第一步只做：
+产品层第一步也已完成第一轮：
 
 1. site config
 2. config -> layout props adapter
-3. Git metadata config
-4. page actions 第一批
+3. nav links schema 第一轮消费
+4. Git metadata config/helper
+5. page actions 第一批
+6. GitHub source/edit link
+7. Copy Markdown
+
+当前实现结论：
+
+- site config 是产品数据入口。
+- layout 仍消费 foundation props，不直接读取产品 config。
+- page actions 通过 `DocsPage` slot 挂载，不改 page foundation contract。
+- GitHub source/edit 基于 page `sourcePath`，不基于 route path 猜文件。
+- Copy Markdown 当前使用 Vite raw import 读取 `content/**/*.md(x)`，避免引入 Node type 依赖。
+
+产品层增强第一轮也已完成：
+
+1. search config / local search shell / local index
+2. feedback config / page footer feedback
+3. sitemap / SEO / canonical / OG metadata
+4. llms.txt
+5. image pipeline baseline
+6. link validation command
+
+当前实现结论：
+
+- Search 是 product composition，不进入 `DocsHeader` 或 `DocsLayoutShell`。
+- Feedback 是 page footer slot 内容，不进入 `DocsPage` foundation。
+- Sitemap / llms / SEO 是 server/product output，不要求 docs components 感知。
+- Image pipeline 当前只定义产品规则和 prose safety baseline，不做 CDN。
+- Link validation 是 tooling/product quality gate，复刻 sourcePath/routePath 规则离线检查。
+
+Stage 7.5：Fumadocs-Aligned UI Primitives Gate 已完成第一轮。
+
+当前实现结论：
+
+- `DocsSearchTrigger` 已迁移到 Fumadocs-like `UiButton` variant contract。
+- `DocsSearchDialog` 已迁移到 command dialog structure：
+  - overlay
+  - content
+  - header
+  - input
+  - close
+  - list
+  - list item
+  - footer
+  - keyboard navigation
+- `DocsPageActions` 已迁移到 shared action group 和 button/copy contract。
+- `DocsFeedback` 已消费 shared button primitive。
+- `DocsTocPopover` 已消费 shared popover behavior。
+- `DocCodeBlock / DocAccordion / DocTabs / DocTypeTable` 已消费 shared
+  copy/tabs/collapsible/accordion primitive。
+
+下一步可以进入产品层高级能力：
+
+1. remote search provider / search API
+2. feedback backend / GitHub issue template
+3. RSS
+4. image CDN / ImageZoom / llms-full.txt
+5. blog / changelog / API 多 source
+6. story / playground runtime
+7. AI / MCP / docs assistant
+8. versioning / i18n

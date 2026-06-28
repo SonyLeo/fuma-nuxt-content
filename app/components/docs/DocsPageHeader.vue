@@ -9,12 +9,10 @@ withDefaults(defineProps<DocsPageHeaderProps>(), {
 <template>
   <header class="docs-page-header">
     <p v-if="sectionLabel" class="docs-page-kicker">{{ sectionLabel }}</p>
-    <div class="docs-page-heading-row">
-      <DocsTitle>{{ title }}</DocsTitle>
-      <div v-if="$slots.actions" class="docs-page-actions">
-        <slot name="actions" />
-      </div>
-    </div>
+    <DocsTitle>{{ title }}</DocsTitle>
     <DocsDescription v-if="description">{{ description }}</DocsDescription>
+    <div v-if="$slots.actions" class="docs-page-actions">
+      <slot name="actions" />
+    </div>
   </header>
 </template>

@@ -298,7 +298,64 @@ site config 可以提供链接数据，但链接渲染和解析规则属于基�
 - focus trap / overlay
 - copy button state
 
-不要求第一版引入 Reka UI，但不能让每个 feature 各自重复实现一套交互状态。
+对照 Fumadocs，本项目的 primitive 设计基线应尽量复刻
+`@fumadocs/base-ui` 的三层模型：
+
+1. `components/ui/*`
+   - 只负责行为 primitive 和最小视觉 variant。
+   - Fumadocs 这里使用 `@base-ui/react`，当前项目需要提供 Vue 等价层。
+   - 不在这一层读取 docs tree、site config、route、search provider 或产品数据。
+2. docs component wrapper
+   - `DocTabs / DocAccordion / DocCodeBlock / DocTypeTable` 等消费 ui primitive。
+   - 这一层负责 docs authoring contract、图标、copy、hash anchor、content spacing。
+3. layout / product consumer
+   - `DocsSearch / DocsPageActions / DocsTocPopover / mobile nav` 等只消费 primitive 或 slot。
+   - 产品能力不能各自再手写按钮、弹层、copy 状态和键盘交互。
+
+与 Fumadocs 必须保持一致的标准：
+
+- Button variant contract：
+  - `primary`
+  - `outline`
+  - `ghost`
+  - `secondary`
+  - `color` alias 等价 `variant`
+  - size 至少包含 `sm / icon / icon-sm / icon-xs`
+  - 默认 class 语义对齐：`inline-flex / items-center / justify-center / rounded-md / text-sm / font-medium / transition-colors / disabled:pointer-events-none / disabled:opacity-50 / focus-visible:ring`
+- Popover contract：
+  - Root / Trigger / Content / Close 四件套。
+  - Content 默认 portal 到 body，支持 `align`、`sideOffset`。
+  - panel 使用 popover token、border、shadow、backdrop blur、`max-height` 和 viewport width 保护。
+  - 需要有 open/closed data state，供动画和 active trigger 样式消费。
+- Dialog / command dialog contract：
+  - Root / Overlay / Content / Header / Input / Close / List / ListItem / Footer。
+  - 必须支持 ESC 关闭、overlay、focus trap、focus return、keyboard result navigation。
+  - Search dialog 可以先是产品组件，但结构应能迁移到 `UiDialog` / `UiCommandDialog`。
+- Tabs contract：
+  - Root / List / Trigger / Content。
+  - 支持 controlled/uncontrolled value。
+  - 支持 `groupId` 共享状态、`persist`、`updateAnchor`。
+  - Content 默认 keep mounted，并用 inactive state 隐藏，避免 code/previews 重挂载。
+- Accordion / Collapsible contract：
+  - Root / Item / Header / Trigger / Content。
+  - 支持 single/multiple、default value、controlled value、collapsible。
+  - Content 使用 height transition，支持 `hidden="until-found"`。
+  - Header/Trigger 暴露 data state，chevron 通过 data state 旋转。
+- ScrollArea contract：
+  - Root / Viewport / Scrollbar / Thumb。
+  - Scrollbar hover 时显隐，thumb 使用 border token。
+- Copy state contract：
+  - 统一 `idle / loading / copied / failed` 或等价 boolean checked。
+  - 成功态默认 1500ms reset。
+  - unmount 时清 timer。
+  - code copy、accordion anchor copy、markdown copy 都必须复用同一状态 helper。
+
+实现策略：
+
+- 第一版不强制引入 Reka UI，但所有 Vue-native primitive 必须按上述 contract 命名、状态和 ARIA 对齐。
+- 如果 Vue-native 实现开始重复处理 focus trap、portal positioning、keyboard roving、dialog accessibility，应重新评估引入 Reka UI 或其他 Vue behavior primitive。
+- 样式 token 优先使用 `--color-fd-*` bridge 和现有 `--docs-*` 源 token，避免 feature-local hardcoded colors。
+- Fumadocs 的 React/`@base-ui/react` 代码不可照搬，但 DOM 语义、data state、ARIA、slot 分层和视觉节奏应尽量一致。
 
 ### 7. Markdown Transform Pipeline
 
@@ -468,6 +525,66 @@ P0 只实现当前 Docs Layout。
 - image pipeline
 - link validation
 
+### Stage 7.5：Fumadocs-Aligned UI Primitives Gate
+
+进入 Stage 8 前，应补一轮 primitive contract gate。
+
+目标不是创建通用业务组件库，而是让当前 Vue docs UI 拥有与 Fumadocs
+`@fumadocs/base-ui` 尽量一致的行为和设计底座。
+
+必须完成：
+
+- `UiButton` / button variants：
+  - 对齐 Fumadocs `buttonVariants`
+  - 支持 `primary / outline / ghost / secondary`
+  - 支持 `sm / icon / icon-sm / icon-xs`
+  - 支持 disabled、focus-visible ring、icon sizing
+- `UiPopover`：
+  - Root / Trigger / Content / Close
+  - portal、position、outside click、ESC、focus return
+  - `data-state` 或等价 open state
+- `UiDialog` / `UiCommandDialog`：
+  - overlay、content、header、input、close、list、list item、footer
+  - keyboard navigation、active item、aria-selected、empty/loading state
+- `UiTabs`：
+  - Root / List / Trigger / Content
+  - controlled/uncontrolled
+  - group sync、persist、hash anchor
+  - keep mounted content
+- `UiAccordion` / `UiCollapsible`：
+  - Root / Item / Header / Trigger / Content
+  - single/multiple、collapsible、default value
+  - height transition、`hidden="until-found"`
+- `UiScrollArea`：
+  - viewport、scrollbar、thumb
+  - hover opacity、tokenized thumb
+- `useCopyState()` 或等价 composable：
+  - copy helpers 统一 reset timing、unmount cleanup、success/failed/loading state
+
+必须迁移的现有消费者：
+
+- `DocsSearchTrigger`
+- `DocsSearchDialog`
+- `DocsTocPopover`
+- `DocsPageActions`
+- `DocsFeedback`
+- `DocCodeBlock`
+- `DocAccordion`
+- `DocCollapsible`
+- `DocTabs`
+- `DocTypeTable`
+- `DocFolder`
+
+验收标准：
+
+- 不再出现新的 feature-local button style。
+- 不再出现新的 feature-local popover/dialog/focus trap。
+- code copy、markdown copy、accordion link copy 使用同一个 copy state helper。
+- search dialog 与 Fumadocs search dialog 的结构能力对齐：overlay、content、header、input、close、list、footer、keyboard navigation。
+- tabs/accordion/collapsible 的 data state、ARIA 和 keyboard 行为与 Fumadocs 尽量一致。
+- 所有 primitive 使用 token，不新增局部硬编码色板。
+- 完成后再进入 Stage 8。
+
 ### Stage 8：产品层高级能力
 
 - blog / changelog / API
@@ -512,6 +629,18 @@ P0 只实现当前 Docs Layout。
 
 Foundation UI Gate 已完成第一轮。
 
+Stage 6：产品层起步已完成第一轮。
+
+已完成：
+
+- site config schema
+- layout shared options 由 config 生成
+- nav links schema 第一轮消费
+- Git metadata config/helper
+- page actions contract
+- GitHub source/edit link
+- Copy Markdown
+
 仍后置为 P1，不阻塞产品层起步：
 
 - ImageZoom
@@ -520,14 +649,52 @@ Foundation UI Gate 已完成第一轮。
 - 完整 page-tree transformer/plugin runtime
 - 完整 markdown transform pipeline
 
-下一步进入 Stage 6：产品层起步。
+仍可后续增强但不阻塞 Stage 7：
 
-优先顺序：
+- page actions 的图标体系扩展
+- Copy Markdown 的 server/API 读取模式
+- page actions 的更多 placement 和分组
 
-1. site config schema
-2. layout shared options 由 config 生成
-3. nav links schema
-4. Git metadata config
-5. page actions contract
-6. GitHub source link
-7. Copy Markdown
+Stage 7：产品层增强已完成第一轮。
+
+已完成：
+
+- search config / trigger / dialog / local index
+- page-level feedback
+- docs page / home SEO metadata
+- sitemap.xml
+- llms.txt
+- image pipeline baseline
+- offline docs link validation
+
+仍后置为 P1：
+
+- remote search provider / search API
+- feedback backend 或 GitHub issue 模板提交
+- RSS
+- image CDN / ImageZoom
+- llms-full.txt / per-page markdown export
+
+Stage 7.5：Fumadocs-Aligned UI Primitives Gate 已完成第一轮。
+
+已完成：
+
+1. 对照 Fumadocs 审计当前重复交互。
+2. 实现 `UiButton` / `useCopyState()` / docs action wrappers。
+3. 实现 `UiPopover` / `UiDialog` / `UiCommandDialog`。
+4. 实现 `UiTabs` / `UiAccordion` / `UiCollapsible`。
+5. 实现 `UiScrollArea`。
+6. 迁移现有 docs/content/product 消费者。
+7. 完成 primitive boundary、CSS token、类型、构建和链接校验。
+
+下一步可以进入 Stage 8：产品层高级能力。
+
+建议优先顺序：
+
+1. remote search provider / search API
+2. feedback backend / GitHub issue template
+3. RSS / image CDN / ImageZoom / llms-full.txt
+4. blog / changelog / API 多 source
+5. story / playground runtime
+6. AI / MCP / docs assistant
+7. versioning / i18n

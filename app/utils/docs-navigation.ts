@@ -45,6 +45,7 @@ type RootContext = {
 
 type DocsRouteRecord = {
   path: string
+  stem?: string
   slug?: string
 }
 
@@ -198,6 +199,25 @@ function normalizeRouteSegments(segments: DocsPathSegments) {
     .map((segment) => decodeRouteSegment(segment.trim()))
     .filter((segment) => segment.length > 0)
     .map((segment) => encodeRouteSegment(segment))
+}
+
+export function normalizeDocsSourcePath(path?: string) {
+  if (!path) {
+    return '/'
+  }
+
+  const normalized = path
+    .replace(/\\/g, '/')
+    .replace(/^\/+|\/+$/g, '')
+    .replace(/\/index$/, '')
+
+  return normalized ? `/${normalized}` : '/'
+}
+
+export function resolveDocsRecordSourcePath(
+  record: Pick<DocsRouteRecord, 'path' | 'stem'>,
+) {
+  return normalizeDocsSourcePath(record.stem || record.path)
 }
 
 function createDocsNodeId(parts: Array<string | number | undefined>) {
@@ -392,7 +412,11 @@ function createNodeFromNavigation(
   pageMetaByPath: Map<string, DocsPageMeta>,
   directoryMetaByStem: Map<string, DocsDirectoryMeta>,
 ): DocsNode {
-  const sourcePath = item.path || undefined
+  const sourcePath = item.stem
+    ? normalizeDocsSourcePath(item.stem)
+    : item.path
+      ? normalizeDocsSourcePath(item.path)
+      : undefined
   const stem = item.stem
   const pageMeta = sourcePath ? pageMetaByPath.get(sourcePath) : undefined
   const mergedMeta = applyPageMeta(item, pageMeta)
@@ -879,9 +903,8 @@ function annotateTree(
 }
 
 function flattenNode(node: DocsNode): DocsNode[] {
-  const index = node.index && node.index.pager !== false ? [node.index] : []
-  const current =
-    node.type === 'page' && node.path && node.pager !== false ? [node] : []
+  const index = node.index ? [node.index] : []
+  const current = node.type === 'page' && node.path ? [node] : []
 
   return [...index, ...current, ...node.children.flatMap(flattenNode)]
 }
@@ -891,6 +914,7 @@ export function createDocsMetaMap(
     | Array<
         DocsPageMeta & {
           path: string
+          stem?: string
         }
       >
     | null
@@ -900,7 +924,7 @@ export function createDocsMetaMap(
 
   return new Map(
     (items ?? []).map((item) => [
-      item.path,
+      resolveDocsRecordSourcePath(item),
       {
         title: item.title,
         description: item.description,
@@ -932,7 +956,7 @@ export function assertUniqueDocsRoutePaths(
   const routeToSources = new Map<string, string[]>()
 
   for (const item of items ?? []) {
-    const routePath = resolveDocsRoutePath(item.path, item)
+    const routePath = resolveDocsRoutePath(resolveDocsRecordSourcePath(item), item)
     const sources = routeToSources.get(routePath) ?? []
     sources.push(item.path)
     routeToSources.set(routePath, sources)
@@ -1010,6 +1034,7 @@ export function resolveDocsSourcePath(
     | Array<
         DocsPageMeta & {
           path: string
+          stem?: string
         }
       >
     | null
@@ -1018,10 +1043,32 @@ export function resolveDocsSourcePath(
 ) {
   const normalizedRoutePath = normalizeDocsRoutePath(routePath)
   const match = (items ?? []).find((item) => {
-    return resolveDocsRoutePath(item.path, item) === normalizedRoutePath
+    return (
+      resolveDocsRoutePath(resolveDocsRecordSourcePath(item), item) ===
+      normalizedRoutePath
+    )
   })
 
-  return match?.path ?? null
+  return match ? resolveDocsRecordSourcePath(match) : null
+}
+
+export function findDocsPageRecordByRoute<
+  T extends DocsPageMeta & {
+    path: string
+    stem?: string
+  },
+>(items: T[] | null | undefined, routePath: string) {
+  const normalizedRoutePath = normalizeDocsRoutePath(routePath)
+
+  return (
+    (items ?? []).find((item) => {
+      return (
+        resolveDocsRoutePath(resolveDocsRecordSourcePath(item), item) ===
+          normalizedRoutePath ||
+        normalizeDocsRoutePath(item.path) === normalizedRoutePath
+      )
+    }) ?? null
+  )
 }
 
 export function flattenDocsNodes(items: DocsNode[]): DocsNode[] {

@@ -99,7 +99,10 @@ function isActive(link: DocsNavLink) {
           :aria-current="isActive(link) ? 'page' : undefined"
           @click="close"
         >
-          <span>{{ link.title }}</span>
+          <span class="docs-mobile-menu-link-main">
+            <DocsNavIcon v-if="link.icon" :name="link.icon" />
+            <span>{{ link.title }}</span>
+          </span>
           <span v-if="link.description" class="docs-mobile-menu-description">
             {{ link.description }}
           </span>

@@ -8,7 +8,7 @@ type DocCodeTab = {
 
 const props = withDefaults(
   defineProps<{
-    tabs: DocCodeTab[]
+    tabs: DocCodeTab[] | string
     label?: string
     defaultValue?: string
   }>(),
@@ -18,8 +18,22 @@ const props = withDefaults(
   },
 )
 
+const resolvedTabs = computed<DocCodeTab[]>(() => {
+  if (Array.isArray(props.tabs)) {
+    return props.tabs
+  }
+
+  try {
+    const parsed = JSON.parse(
+      props.tabs.replaceAll('&quot;', '"').replaceAll('&apos;', "'"),
+    )
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+})
 const validTabs = computed(() =>
-  props.tabs.filter((tab) => tab.label.trim() && tab.code.trim()),
+  resolvedTabs.value.filter((tab) => tab.label.trim() && tab.code.trim()),
 )
 const defaultTab = computed(
   () => props.defaultValue ?? validTabs.value[0]?.label ?? '',
@@ -27,7 +41,11 @@ const defaultTab = computed(
 </script>
 
 <template>
-  <DocTabs v-if="validTabs.length > 0" :default-value="defaultTab">
+  <DocTabs
+    v-if="validTabs.length > 0"
+    class="fd-doc-code-tabs"
+    :default-value="defaultTab"
+  >
     <template #triggers>
       <span v-if="label" class="fd-doc-code-tabs-label">{{ label }}</span>
       <DocTab

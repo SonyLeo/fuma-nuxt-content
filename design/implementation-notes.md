@@ -454,13 +454,379 @@ Foundation 阶段的 P0-P2 临时 TODO 已闭环，后续不再保留 `design/fo
 
 - `pnpm exec nuxi typecheck` 已通过。
 
+## Stage 6 产品层起步完成记录
+
+本轮已按临时 `stage-6-product-todo.md` 完成产品层第一轮闭环。
+
+已实现：
+
+- site config schema：
+  - `DocsSiteConfig`
+  - `DocsSiteBrandConfig`
+  - `DocsSiteGithubConfig`
+  - `DocsSiteNavConfig`
+  - `DocsSitePageActionsConfig`
+  - `defineDocsSiteConfig()`
+- 产品配置入口：
+  - `app/config/docs-site.ts`
+  - 当前站点名、描述、GitHub owner/repo/branch/contentDir、nav links、page actions 开关集中在一处。
+- config -> layout props adapter：
+  - `createDocsSiteLayoutProps()`
+  - `useDocsSite()`
+  - layout/header/mobile nav 继续消费 foundation props，不直接读取 site config。
+- nav links schema 第一轮消费：
+  - `DocsNavLink.icon` 已被 header/mobile menu 消费。
+  - GitHub icon 使用用户提供的 SVG path。
+  - icon-only nav link 保留隐藏文本，避免丢失 accessible name。
+- Git metadata helper：
+  - `getDocsGithubRepositoryUrl()`
+  - `resolveDocsGithubFilePath()`
+  - `getDocsGithubSourceUrl()`
+  - `getDocsGithubEditUrl()`
+  - source/edit URL 基于 `sourcePath` 生成，不使用 route path 猜文件。
+- page actions contract：
+  - `DocsPageAction`
+  - `DocsPageActionState`
+  - `DocsPageActions.vue`
+  - link action 和 button action 共用一个展示 contract。
+- GitHub source/edit page actions：
+  - route 页面根据当前 page `sourcePath` 生成 `View source` 和 `Edit page`。
+  - GitHub 配置缺失或页面 source path 缺失时不渲染坏链接。
+- Copy Markdown：
+  - `readDocsMarkdownSource()` 通过 Vite raw import 读取 `content/**/*.md(x)`。
+  - route 页面通过 `copy-markdown` button action 调用 `writeDocsClipboardText()`。
+  - 状态覆盖 idle / loading / success / failed，并在短延迟后 reset。
+
+实现判断：
+
+- 产品 config 只在 `useDocsSite()` 和 route/home composition 层消费。
+- `DocsLayoutShell`、`DocsHeader`、`DocsMobileNav`、`DocsPage` 没有 import 产品 config。
+- `DocsPage` 仍只提供 `pageActions` slot，GitHub 和 Copy Markdown 都没有写进 page foundation 组件。
+- Copy Markdown 初版没有使用 server fs API，因为当前项目未配置 Node type definitions；改用 Vite raw import 更轻，并避免新增依赖。
+- Vite raw import 会把可复制的 Markdown 作为构建资源纳入 bundle/chunks，后续若内容规模变大，可以再切换到带 Node types 的 server API 或 Nitro storage。
+
+验证：
+
+- `pnpm exec nuxi typecheck` 已通过。
+- `pnpm build` 已通过。
+- build 仍存在 Nuxt/Vite/Nitro 既有 warning：
+  - module-preload-polyfill sourcemap
+  - Tailwind Vite sourcemap
+  - Nitro cache-driver external dependency
+  - Node trailing slash pattern deprecation
+
 下一步：
 
-- 可以进入产品层第一步：
-  - site config schema
-  - layout shared options 由 config 生成
-  - nav links schema
-  - Git metadata config
-  - page actions contract
-  - GitHub source link
-  - Copy Markdown
+- Stage 7 产品层增强第一轮已完成，后续可以进入 Stage 8 高级产品能力，或回补 Stage 7 的 P1 provider / backend 能力。
+
+## Stage 7 产品层增强完成记录
+
+本轮已按临时 `stage-7-product-todo.md` 完成产品层增强第一轮闭环。
+
+已实现：
+
+- Stage 6 runtime smoke 修复：
+  - Nuxt Content 的 `path` 是 route path，不是 Markdown source path。
+  - `DocsPageRecord` 已补 `stem`，source/edit/copy markdown 改为基于 `stem -> sourcePath`。
+  - route 页面按最终 route 找 record，再用 record path 查询内容。
+  - relative docs link 解析也改为按 sourcePath 匹配，再输出最终 route path。
+- Search product：
+  - `DocsSiteSearchConfig`
+  - `DocsSearchTrigger`
+  - `DocsSearchDialog`
+  - `DocsSearch`
+  - `useDocsSearch()`
+  - `createDocsSearchIndex()`
+  - `searchDocsIndex()`
+  - 初版 local search 覆盖 title / description / section / headings / body excerpt。
+- Feedback product：
+  - `DocsSiteFeedbackConfig`
+  - `DocsFeedback`
+  - Helpful / Not helpful 前端状态与 thanks label。
+  - 通过 `DocsPage` footer slot 接入，不写进 page foundation。
+- SEO / sitemap：
+  - `DocsSiteSeoConfig`
+  - `createDocsSeoTitle()`
+  - `createDocsCanonicalUrl()`
+  - docs page 与 home page 已补 title / description / OG / canonical。
+  - `/sitemap.xml` 已按 visible docs pages 输出 canonical URL。
+- LLM consumption boundary：
+  - `/llms.txt` 已输出站点标题、描述和 visible docs page list。
+  - 当前只做 discoverability，不实现 chat / embedding / MCP。
+- Image pipeline baseline：
+  - `DocsSiteImageConfig`
+  - `ProseImg` 默认 `loading="lazy"` 和 `decoding="async"`。
+  - prose media / figure 已补 max-width、height auto 和 overflow 保护。
+- Link validation：
+  - `scripts/validate-docs-links.mjs`
+  - `pnpm validate:links`
+  - 离线检查 Markdown link、directive `href`、internal route、relative `.md/.mdx`、hash anchor、external URL format。
+
+实现判断：
+
+- Search、feedback、SEO、sitemap、llms、image rules、link validation 都留在产品层或 tooling 层。
+- `DocsHeader`、`DocsLayoutShell`、`DocsPage` 没有直接读取产品 config。
+- Search 通过既有 `search-trigger` slot 接入；feedback 通过 page footer slot 接入。
+- route 页面作为 composition surface 变厚，但没有承载 search scoring、feedback UI 或 sitemap/llms 生成逻辑。
+- 本轮确认 `stem/sourcePath` 是所有 source/edit/copy/relative link 的稳定基础，route `path` 只能作为最终消费键。
+- RSS、远程 search provider、feedback backend、image CDN/zoom、`llms-full.txt` 均后置为 P1。
+
+验证：
+
+- `pnpm validate:links` 已通过。
+- `pnpm exec nuxi typecheck` 已通过。
+- `pnpm build` 已通过。
+- build 仍存在 Nuxt/Vite/Nitro 既有 warning：
+  - module-preload-polyfill sourcemap
+  - Tailwind Vite sourcemap
+  - Nitro cache-driver external dependency
+  - Node trailing slash pattern deprecation
+
+## Fumadocs UI Primitives 对照结论
+
+本轮对照本地 Fumadocs 源码：
+
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\ui\button.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\ui\tabs.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\ui\accordion.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\ui\collapsible.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\ui\popover.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\ui\scroll-area.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\dialog\search.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\shared\page-actions.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\shared\slots\search-trigger.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\codeblock.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\tabs.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\accordion.tsx`
+
+确认 Fumadocs 不是把每个 feature 单独手写交互，而是三层模型：
+
+1. `components/ui/*`
+   - 对 `@base-ui/react` 做薄封装。
+   - 提供 Button variants、Tabs、Accordion、Collapsible、Popover、ScrollArea 等底层行为和最小样式。
+2. docs component wrapper
+   - `components/tabs.tsx`
+   - `components/accordion.tsx`
+   - `components/codeblock.tsx`
+   - `components/dialog/search.tsx`
+   - 负责 docs authoring contract、copy、hash、search result、code toolbar 等语义。
+3. layout/product consumer
+   - search trigger
+   - page actions
+   - sidebar tabs dropdown
+   - TOC / layout slots
+   - 只消费 primitives 和 wrapper，不重复实现交互底座。
+
+当前项目的差距：
+
+- 已有 button/copy/dialog/popover/tabs/collapsible/accordion 行为，但分散在多个组件里。
+- `DocsSearchDialog`、`DocsTocPopover`、`DocsMobileNav`、`DocsPageActions`、`DocsFeedback`、`DocCodeBlock`、`DocAccordion`、`DocTabs`、`DocTypeTable` 各自维护了部分按钮、弹层、copy 或展开状态。
+- 当前 token 已有 `--color-fd-*` bridge，视觉标准具备对齐基础，但缺 primitive contract。
+
+下一步结论：
+
+- Stage 8 前插入 `Stage 7.5：Fumadocs-Aligned UI Primitives Gate`。
+- 目标是让 Vue 实现的 contract 尽量对齐 Fumadocs，而不是照搬 React 代码。
+- 第一版可以 Vue-native，但必须对齐：
+  - button variant / size
+  - open/closed data state
+  - ARIA
+  - focus-visible ring
+  - overlay / portal / focus return
+  - tabs controlled/uncontrolled / keep mounted / group sync / anchor
+  - accordion/collapsible height transition / `hidden="until-found"`
+  - copy state reset timing 和 unmount cleanup
+- 如果 Vue-native 实现开始重复处理复杂 accessibility，应重新评估引入 Reka UI 或其他 Vue behavior primitive。
+
+## Stage 7.5 UI Primitives Gate 完成记录
+
+本轮已按临时 `stage-7-5-primitives-todo.md` 完成
+Fumadocs-aligned UI primitives 第一轮闭环。
+
+已实现：
+
+- `UiButton`：
+  - `primary / outline / ghost / secondary`
+  - `color` alias
+  - `sm / icon / icon-sm / icon-xs`
+  - disabled / loading / pressed / focus-visible state
+- `useCopyState()`：
+  - `idle / loading / copied / failed`
+  - async copy callback
+  - success reset timer
+  - unmount cleanup
+- `UiPopover`：
+  - Root / Trigger / Content / Close
+  - controlled/uncontrolled open
+  - Teleport content
+  - ESC close
+  - outside click close
+  - focus return
+  - `data-state`
+- `UiDialog` and command dialog structure：
+  - Overlay / Content / Header / Close
+  - CommandInput / CommandList / CommandItem / CommandFooter
+  - focus trap
+  - focus return
+  - ESC close
+  - active result navigation
+  - `aria-selected`
+- `UiTabs`：
+  - Root / List / Trigger / Content
+  - controlled/uncontrolled value
+  - `groupId`
+  - optional persistence
+  - optional anchor update
+  - keep-mounted panels hidden by inactive state
+  - ArrowLeft / ArrowRight / Home / End navigation
+- `UiAccordion` / `UiCollapsible`：
+  - Root / Item / Header / Trigger / Content
+  - single/multiple
+  - controlled/uncontrolled state
+  - collapsible behavior
+  - `hidden="until-found"` support where useful
+  - stable trigger/content ids
+- `UiScrollArea`：
+  - Area / Viewport / Scrollbar / Thumb
+  - browser-native overflow
+  - tokenized visual scrollbar
+- docs wrappers：
+  - `DocsCopyButton`
+  - `DocsActionGroup`
+
+已迁移：
+
+- `DocsSearchTrigger`
+- `DocsSearchDialog`
+- `DocsTocPopover`
+- `DocsPageActions`
+- `DocsFeedback`
+- `DocCodeBlock`
+- `DocAccordion`
+- `DocAccordions`
+- `DocCollapsible`
+- `DocTabs`
+- `DocTab`
+- `DocTypeTable`
+
+实现判断：
+
+- 当前 Vue-native primitives 足够支撑下一阶段产品开发，暂不引入
+  Reka UI / shadcn-vue / Nuxt UI。
+- `components/ui/*` 只依赖 Vue 和 `utils/ui-*` context，不读取 docs tree、
+  route、site config、search index 或产品配置。
+- docs authoring 语义保留在 content/docs wrapper 层：
+  - code copy
+  - heading anchor copy
+  - hash-triggered accordion open
+  - page action grouping
+  - search result rendering
+- 产品/布局组件只组合数据和 primitives，不再各自手写按钮、copy state、
+  popover/dialog/tabs/accordion/collapsible 底层交互。
+- `ui.css` 现在是 primitive stylesheet；`shell.css` 和 `content.css`
+  继续分别承接 docs shell 和 docs content 样式。
+- ScrollArea 第一版保留浏览器原生滚动，避免为了视觉一致性牺牲键盘、
+  wheel 和 touch 可访问性。
+
+验证：
+
+- `pnpm exec nuxi typecheck` 已通过。
+- `pnpm build` 已通过。
+- `pnpm validate:links` 已通过。
+- `git diff --check` 已通过。
+- build 仍存在 Nuxt/Vite/Nitro 既有 warning：
+  - module-preload-polyfill sourcemap
+  - Tailwind Vite sourcemap
+  - Nitro cache-driver external dependency
+  - Node trailing slash pattern deprecation
+
+下一步：
+
+- 可以进入 Stage 8 高级产品能力。
+- 如果先补 P1，优先顺序建议是：
+  1. remote search provider / search API
+  2. feedback backend / GitHub issue template
+  3. RSS
+  4. image CDN / ImageZoom
+  5. llms-full.txt / per-page markdown export
+  6. blog / changelog / API 多 source
+
+## Stage 7.6 Visual Layout Parity 完成记录
+
+本轮已按临时 `stage-7-6-visual-parity-todo.md` 完成 Fumadocs visual shell
+第一轮闭环。
+
+已实现：
+
+- 桌面 docs shell 改为 Fumadocs-like root grid：
+  - `#nd-docs-layout`
+  - `#nd-sidebar`
+  - `article#nd-page`
+  - `#nd-toc`
+  - sidebar / article / toc 宽度对齐到约 `268px / 900px / 268px`
+- 桌面顶栏降级，brand / search / footer links 进入 sidebar。
+- `DocsPageHeader` 顺序对齐为 section/breadcrumb signal、`h1`、description、
+  compact actions row。
+- `DocsPageActions` 对齐为一层 `Copy Markdown` + `Open` popover：
+  - source/edit 等 secondary actions 进入 popover
+  - compact 30px 级按钮
+  - 保留当前 copy/link action contract
+- right TOC 补齐：
+  - `On this page` 图标标题
+  - SVG rail
+  - active thumb
+  - depth-aware padding：h2 `20px`、h3 `32px`、h4+ `44px`
+  - mobile popover 圆形 progress trigger
+- `DocsPage` 增加 rendered heading fallback：
+  - 当 Nuxt Content 没有提供 `body.toc.links`，客户端从 `.docs-page-body`
+    的 `h2/h3/h4[id]` 扫描生成 TOC
+  - 仍尊重 page-level `toc: false`
+- 新增 component detail fixture：`content/guide/component-detail.md`。
+- 新增 / 对齐 detail primitives：
+  - `DocInstallCard`
+  - `DocPreview variant="sandbox"`
+  - `DocCodeTabs` dedicated visual hook
+  - `DocTypeTable` row id + hash-open
+- 内容 primitive 视觉收敛：
+  - callout 支持 `warn` alias、图标、左色条
+  - code block 支持 untitled floating copy、focusable code region、600px max height
+  - cards/code/tabs/files/inline-toc/type-table 阴影降级为 Fumadocs-like
+  - feedback 改为 divider row
+  - pager 改为轻量 border-first
+
+经验：
+
+- Nuxt Content / MDC 对复杂 props 的 YAML-like 写法不稳定时，可以让组件
+  同时接受数组和 JSON string，避免 authoring 层被解析细节卡住。
+- raw Vue component 在 Markdown 里不要依赖自闭合写法；显式 closing tag 更稳。
+- Fumadocs 的 TOC 本质是 heading protocol，不应只依赖某一个 content provider
+  的 `body.toc.links` 字段。需要保留 provider data 优先，同时提供 DOM fallback。
+- prose stylesheet 的全局规则会压过内容组件内部元素，例如
+  `.docs-page-body p` / `.docs-page-body figure`。内容组件需要用更具体的
+  selector 保护内部 margin，尤其是 install card / code block 这类复合组件。
+- build 能捕获 template parse 问题，typecheck 不一定能捕获，例如模板事件里
+  多语句换行导致的 Vue expression parse error。
+- Nuxt Content 的 navigation payload 会把未声明的 boolean 字段也序列化成
+  `false`。pager 这类 Fumadocs-like 默认开启语义不能直接依赖
+  `item.pager !== false`，否则所有未声明页面都会被排除出 previous/next。
+  后续如果要精准支持显式 `pager: false`，需要保留 frontmatter 原始性或引入
+  schema/default normalization 层。
+- Markdown/MDC 里的 boolean-like props 可能以字符串形式进入 Vue 组件，例如
+  `default-open=true` 会变成 `"true"`。面向 Markdown 的 wrapper 组件需要在
+  边界层 normalize，再向底层 primitive 传标准 boolean。
+
+验证：
+
+- `pnpm exec nuxi typecheck` 已通过。
+- `pnpm build` 已通过；最终检查使用 `NUXT_IGNORE_LOCK=1` 避开 dev server
+  lock。
+- 浏览器已验证 `http://127.0.0.1:3000/guide/component-detail`：
+  - desktop grid columns: `268px / 900px / 268px`
+  - actions: `Copy Markdown` + `Open`
+  - preview / install card / code tabs / type table / feedback 均渲染
+  - TOC fallback 生成 4 个 links，h2/h3 缩进符合预期
+- 最终复验补充：
+  - `/guide/components` 已恢复 previous/next pager。
+  - `/guide/components` 的 Files 默认展开不再触发 `defaultOpen` prop warning。
+  - `/guide/component-detail` 已验证 preview / install / code tabs / type tables /
+    feedback / pager 同时渲染。

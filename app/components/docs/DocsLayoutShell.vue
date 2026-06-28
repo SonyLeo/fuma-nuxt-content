@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import type { DocsLayoutProps } from '~/types/docs'
 
-const props = withDefaults(defineProps<DocsLayoutProps>(), {
+withDefaults(defineProps<DocsLayoutProps>(), {
   navigation: () => [],
   currentPath: '/',
   links: () => [],
   nav: undefined,
 })
+
+const sidebarCollapsed = shallowRef(false)
 </script>
 
 <template>
@@ -16,6 +18,7 @@ const props = withDefaults(defineProps<DocsLayoutProps>(), {
     <slot name="header">
       <DocsHeader
         :title="title"
+        :brand="brand"
         :links="links"
         :current-path="currentPath"
         :github-url="githubUrl"
@@ -32,7 +35,11 @@ const props = withDefaults(defineProps<DocsLayoutProps>(), {
       </DocsHeader>
     </slot>
 
-    <div class="docs-shell-body">
+    <div
+      id="nd-docs-layout"
+      class="docs-shell-body"
+      :data-sidebar-collapsed="sidebarCollapsed ? 'true' : 'false'"
+    >
       <slot name="mobile-nav">
         <DocsMobileNav
           :headline="headline"
@@ -44,10 +51,26 @@ const props = withDefaults(defineProps<DocsLayoutProps>(), {
 
       <slot name="sidebar">
         <DocsSidebar
+          :brand="brand"
+          :links="links"
+          :github-url="githubUrl"
           :headline="headline"
           :items="navigation"
           :current-path="currentPath"
-        />
+          :nav="nav"
+          :collapsed="sidebarCollapsed"
+          @update:collapsed="sidebarCollapsed = $event"
+        >
+          <template #search-trigger>
+            <slot name="search-trigger" />
+          </template>
+          <template #theme-switch>
+            <slot name="theme-switch" />
+          </template>
+          <template #language-select>
+            <slot name="language-select" />
+          </template>
+        </DocsSidebar>
       </slot>
 
       <main class="docs-shell-content">

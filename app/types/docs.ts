@@ -91,6 +91,7 @@ export type DocsPageMeta = {
 
 export type DocsPageLike = DocsPageMeta & {
   path?: string
+  stem?: string
 }
 
 export type DocsTocTreeItem = {
@@ -110,6 +111,7 @@ export type DocsContentPage = DocsPageLike & {
 
 export type DocsPageRecord = DocsPageMeta & {
   path: string
+  stem?: string
 }
 
 export type DocsNode = {
@@ -176,11 +178,19 @@ export type DocsNavLink = {
 export type DocsNavOptions = {
   title?: string
   enabled?: boolean
+  tabs?: DocsNavLink[]
+}
+
+export type DocsBrandOptions = {
+  label?: string
+  mark?: string
+  href?: string
 }
 
 export type DocsLayoutProps = {
   title?: string
   headline?: string
+  brand?: DocsBrandOptions
   navigation?: DocsNode[]
   currentPath?: string
   githubUrl?: string

@@ -1,16 +1,4 @@
-import type { InjectionKey } from 'vue'
-
 export type DocAccordionType = 'multiple' | 'single'
-
-export type DocAccordionContext = {
-  isOpen: (value: string) => boolean
-  open: (value: string) => void
-  close: (value: string) => void
-  toggle: (value: string) => void
-}
-
-export const docAccordionKey: InjectionKey<DocAccordionContext> =
-  Symbol('doc-accordion')
 
 export function readBooleanLike(
   value: boolean | 'true' | 'false' | undefined,

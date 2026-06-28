@@ -1,11 +1,32 @@
 <script setup lang="ts">
+import type {
+  DocsPageAction,
+  DocsPageActionState,
+} from '~/types/docs-actions'
 import type { DocsContentPage, DocsPageRecord } from '~/types/docs'
 import {
   docsNavigationFields,
+  findDocsPageRecordByRoute,
+  resolveDocsRecordSourcePath,
   resolveDocsSourcePath,
 } from '~/utils/docs-navigation'
+import {
+  getDocsGithubEditUrl,
+  getDocsGithubSourceUrl,
+} from '~/utils/docs-site'
+import { writeDocsClipboardText } from '~/utils/docs-clipboard'
+import {
+  readDocsFrontmatterBoolean,
+  readDocsMarkdownSource,
+} from '~/utils/docs-markdown'
+import { createDocsCanonicalUrl, createDocsSeoTitle } from '~/utils/docs-seo'
+import { createDocsSearchIndex } from '~/utils/docs-search'
 
 const route = useRoute()
+const requestUrl = useRequestURL()
+const { site, layout: siteLayout } = useDocsSite()
+const copyMarkdownState = shallowRef<DocsPageActionState>('idle')
+let copyMarkdownResetTimer: ReturnType<typeof setTimeout> | undefined
 
 const { data: navigation } = await useAsyncData('docs-navigation', () => {
   return queryCollectionNavigation('docs', [...docsNavigationFields])
@@ -15,6 +36,7 @@ const { data: docsPages } = await useAsyncData('docs-pages', () => {
   return queryCollection('docs')
     .select(
       'path',
+      'stem',
       'title',
       'description',
       'sectionLabel',
@@ -38,12 +60,33 @@ const { data: docsPages } = await useAsyncData('docs-pages', () => {
     .all()
 })
 
+const { data: docsSearchPages } = await useAsyncData('docs-search-pages', () => {
+  return queryCollection('docs')
+    .select(
+      'path',
+      'stem',
+      'title',
+      'description',
+      'sectionLabel',
+      'hidden',
+      'slug',
+      'body',
+    )
+    .all()
+})
+
 const docsPageRecords = computed<DocsPageRecord[]>(() => {
   return (docsPages.value ?? []) as DocsPageRecord[]
 })
 
+const currentPageRecord = computed(() => {
+  return findDocsPageRecordByRoute(docsPageRecords.value, route.path)
+})
+
 const pageSourcePath = computed(() => {
-  return resolveDocsSourcePath(docsPageRecords.value, route.path)
+  return currentPageRecord.value
+    ? resolveDocsRecordSourcePath(currentPageRecord.value)
+    : resolveDocsSourcePath(docsPageRecords.value, route.path)
 })
 
 provideDocsLinkContext({
@@ -54,13 +97,29 @@ provideDocsLinkContext({
 const { data: page } = await useAsyncData<DocsContentPage | null>(
   'page-' + route.path,
   async () => {
-    if (!pageSourcePath.value) {
+    const pageRecord = currentPageRecord.value
+
+    if (!pageSourcePath.value || !pageRecord) {
       return null
     }
 
     return (await queryCollection('docs')
-      .path(pageSourcePath.value)
+      .path(pageRecord.path)
       .first()) as DocsContentPage | null
+  },
+)
+const { data: pageFrontmatter } = await useAsyncData(
+  'page-frontmatter-' + route.path,
+  async () => {
+    if (!pageSourcePath.value) {
+      return {}
+    }
+
+    const markdown = await readDocsMarkdownSource(pageSourcePath.value)
+
+    return {
+      tocPopover: readDocsFrontmatterBoolean(markdown, 'tocPopover'),
+    }
   },
 )
 
@@ -130,10 +189,24 @@ const { items: toc } = useDocsToc(computed(() => page.value))
 const pageHeader = computed(() => {
   return createHeader([])
 })
+const pageDescription = computed(() => {
+  return page.value?.description || site.seo?.defaultDescription || site.description
+})
+const pageSeoTitle = computed(() => createDocsSeoTitle(title.value, site))
+const canonicalUrl = computed(() => {
+  return createDocsCanonicalUrl(route.path, site, requestUrl.origin)
+})
 const pageToc = computed(() => {
+  const tocOptions = pageOptions.value.toc
+  const popover =
+    pageFrontmatter.value?.tocPopover === undefined
+      ? tocOptions.enabled
+      : pageFrontmatter.value.tocPopover
+
   return {
-    ...pageOptions.value.toc,
+    ...tocOptions,
     items: toc.value,
+    popover,
   }
 })
 const pageBreadcrumb = computed(() => {
@@ -149,16 +222,130 @@ const pageFooter = computed(() => {
     next: next.value,
   }
 })
+const pageActions = computed<DocsPageAction[]>(() => {
+  const actions: DocsPageAction[] = []
+  const sourceUrl = getDocsGithubSourceUrl(site.github, pageSourcePath.value)
+  const editUrl = getDocsGithubEditUrl(site.github, pageSourcePath.value)
+
+  if (site.pageActions?.source !== false && sourceUrl) {
+    actions.push({
+      id: 'view-source',
+      type: 'link',
+      label: 'View source',
+      href: sourceUrl,
+      external: true,
+      icon: 'source',
+      ariaLabel: 'View source on GitHub',
+    })
+  }
+
+  if (site.pageActions?.edit && editUrl) {
+    actions.push({
+      id: 'edit-page',
+      type: 'link',
+      label: 'Edit page',
+      href: editUrl,
+      external: true,
+      icon: 'edit',
+      ariaLabel: 'Edit this page on GitHub',
+    })
+  }
+
+  if (site.pageActions?.copyMarkdown && pageSourcePath.value) {
+    actions.push({
+      id: 'copy-markdown',
+      type: 'button',
+      label: 'Copy Markdown',
+      icon: 'copy',
+      ariaLabel: 'Copy Markdown source',
+      state: copyMarkdownState.value,
+      disabled: copyMarkdownState.value === 'loading',
+    })
+  }
+
+  return actions
+})
+const searchIndex = computed(() => {
+  return createDocsSearchIndex(
+    (docsSearchPages.value ?? []) as DocsContentPage[],
+    items.value,
+  )
+})
+
+useSeoMeta({
+  title: pageSeoTitle,
+  description: pageDescription,
+  ogTitle: pageSeoTitle,
+  ogDescription: pageDescription,
+  ogImage: computed(() => site.seo?.defaultOgImage),
+})
+
+useHead({
+  link: [
+    {
+      rel: 'canonical',
+      href: canonicalUrl,
+    },
+  ],
+})
+
+function scheduleCopyMarkdownReset() {
+  if (copyMarkdownResetTimer) {
+    clearTimeout(copyMarkdownResetTimer)
+  }
+
+  copyMarkdownResetTimer = setTimeout(() => {
+    copyMarkdownState.value = 'idle'
+  }, 1800)
+}
+
+async function copyCurrentMarkdown() {
+  if (!import.meta.client || !pageSourcePath.value) {
+    return
+  }
+
+  copyMarkdownState.value = 'loading'
+
+  try {
+    const markdown = await readDocsMarkdownSource(pageSourcePath.value)
+    await writeDocsClipboardText(markdown)
+    copyMarkdownState.value = 'success'
+  } catch {
+    copyMarkdownState.value = 'failed'
+  } finally {
+    scheduleCopyMarkdownReset()
+  }
+}
+
+function runPageAction(action: DocsPageAction) {
+  if (action.id === 'copy-markdown') {
+    void copyCurrentMarkdown()
+  }
+}
+
+onBeforeUnmount(() => {
+  if (copyMarkdownResetTimer) {
+    clearTimeout(copyMarkdownResetTimer)
+  }
+})
 </script>
 
 <template>
   <NuxtLayout
     name="docs"
-    :title="title"
+    :title="siteLayout.title"
     :headline="headline"
+    :brand="siteLayout.brand"
     :navigation="sidebarItems"
     :current-path="route.path"
+    :github-url="siteLayout.githubUrl"
+    :links="siteLayout.links"
+    :nav="siteLayout.nav"
   >
+    <template #search-trigger>
+      <DocsSearch :config="site.search" :index="searchIndex" />
+    </template>
+
     <DocsPage
       :full="pageOptions.full"
       :header="pageHeader"
@@ -166,9 +353,28 @@ const pageFooter = computed(() => {
       :breadcrumb="pageBreadcrumb"
       :footer="pageFooter"
     >
+      <template #pageActions>
+        <DocsPageActions :actions="pageActions" @run="runPageAction" />
+      </template>
+
       <DocsBody>
         <ContentRenderer v-if="page" :value="page" />
       </DocsBody>
+
+      <template #footer="{ footer }">
+        <DocsPageFooter
+          :enabled="(footer?.enabled ?? true) || site.feedback?.enabled === true"
+          :previous="footer?.previous"
+          :next="footer?.next"
+          :pager-labels="footer?.pagerLabels"
+        >
+          <DocsFeedback
+            :config="site.feedback"
+            :path="route.path"
+            :source-path="pageSourcePath"
+          />
+        </DocsPageFooter>
+      </template>
     </DocsPage>
   </NuxtLayout>
 </template>

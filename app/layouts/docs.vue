@@ -11,6 +11,7 @@ withDefaults(defineProps<DocsLayoutProps>(), {
   <DocsLayoutShell
     :title="title"
     :headline="headline"
+    :brand="brand"
     :navigation="navigation"
     :current-path="currentPath"
     :github-url="githubUrl"

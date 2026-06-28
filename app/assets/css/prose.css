@@ -317,12 +317,15 @@
 .docs-page-body picture,
 .docs-page-body video {
   max-width: 100%;
+  height: auto;
   margin: 2rem 0;
   border-radius: var(--docs-radius-lg);
 }
 
 .docs-page-body .fd-doc-image {
+  max-width: 100%;
   margin: 2rem 0;
+  overflow-x: auto;
 }
 
 .docs-page-body .fd-doc-image img {
@@ -331,6 +334,8 @@
 
 .docs-page-body picture {
   display: block;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .docs-page-body picture > img {
@@ -338,7 +343,9 @@
 }
 
 .docs-page-body figure {
+  max-width: 100%;
   margin: 2rem 0;
+  overflow-x: auto;
 }
 
 .docs-page-body figure > * {

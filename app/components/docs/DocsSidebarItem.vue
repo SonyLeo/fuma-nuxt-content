@@ -82,6 +82,7 @@ function emitNavigate() {
       :aria-current="isCurrent(item) ? 'page' : undefined"
       @click="emitNavigate"
     >
+      <DocsNavIcon v-if="item.icon" :name="item.icon" />
       <span class="docs-sidebar-link-label">
         {{ item.title }}
       </span>
@@ -102,6 +103,7 @@ function emitNavigate() {
       class="docs-sidebar-link"
       @click="emitNavigate"
     >
+      <DocsNavIcon v-if="item.icon" :name="item.icon" />
       <span class="docs-sidebar-link-label">
         {{ item.title }}
       </span>
@@ -116,6 +118,7 @@ function emitNavigate() {
     </DocsLink>
 
     <div v-else class="docs-sidebar-group-block">
+      <DocsNavIcon v-if="item.icon" :name="item.icon" />
       <p class="docs-sidebar-group">{{ item.title }}</p>
       <span class="docs-sidebar-link-meta">
         <span v-if="item.status" class="docs-sidebar-status">

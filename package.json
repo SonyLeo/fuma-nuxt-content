@@ -12,7 +12,8 @@
     "format:check": "prettier . --check",
     "postinstall": "nuxt prepare",
     "preview": "nuxt preview",
-    "typecheck": "nuxi typecheck"
+    "typecheck": "nuxi typecheck",
+    "validate:links": "node scripts/validate-docs-links.mjs"
   },
   "dependencies": {
     "@lucide/vue": "^1.21.0",

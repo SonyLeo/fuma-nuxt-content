@@ -10,8 +10,8 @@ export function useDocsTocState(
   options: UseDocsTocStateOptions = {},
 ) {
   const activeId = shallowRef<string>()
-  const visibleIds = shallowRef<string[]>([])
   let observer: IntersectionObserver | null = null
+  let activeRafId = 0
 
   const activeIndex = computed(() => {
     if (!activeId.value) {
@@ -38,38 +38,83 @@ export function useDocsTocState(
     return index / items.value.length
   })
 
-  function syncActiveId(entries: IntersectionObserverEntry[]) {
-    const currentVisible = new Set(visibleIds.value)
+  function getAbsoluteTop(element: HTMLElement) {
+    let current: HTMLElement | null = element
+    let offsetTop = 0
 
-    for (const entry of entries) {
-      const targetId = (entry.target as HTMLElement).id
-      if (!targetId) {
-        continue
-      }
-
-      if (entry.isIntersecting) {
-        currentVisible.add(targetId)
-      } else {
-        currentVisible.delete(targetId)
-      }
+    while (current && current !== document.body) {
+      offsetTop += current.offsetTop
+      current = current.offsetParent as HTMLElement | null
     }
 
-    visibleIds.value = items.value
-      .map((item) => item.id)
-      .filter((id) => currentVisible.has(id))
+    return current ? offsetTop : Number.NaN
+  }
 
-    if (visibleIds.value.length > 0) {
-      activeId.value = visibleIds.value[0]
+  function getHeadingElement(id: string) {
+    return (
+      document.getElementById(id) ??
+      document.querySelector<HTMLElement>(
+        `${options.headingSelector ?? '.docs-page-body'} #${CSS.escape(id)}`,
+      )
+    )
+  }
+
+  function updateActiveId() {
+    if (items.value.length === 0) {
+      activeId.value = undefined
       return
     }
 
-    const scrollPosition = window.scrollY + 128
-    const lastReached = items.value.findLast((item) => {
-      const element = document.getElementById(item.id)
-      return element ? element.offsetTop <= scrollPosition : false
-    })
+    const positionedHeadings = items.value
+      .map((item) => {
+        const element = getHeadingElement(item.id)
 
-    activeId.value = lastReached?.id ?? items.value[0]?.id
+        return {
+          id: item.id,
+          top: element ? getAbsoluteTop(element) : Number.NaN,
+        }
+      })
+      .filter((item) => !Number.isNaN(item.top))
+      .sort((a, b) => a.top - b.top)
+
+    if (positionedHeadings.length === 0) {
+      activeId.value = items.value[0]?.id
+      return
+    }
+
+    const scrollY = window.scrollY
+    const scrollHeight = Math.max(
+      document.documentElement.scrollHeight,
+      document.body.offsetHeight,
+    )
+    const isBottom = Math.abs(scrollY + window.innerHeight - scrollHeight) < 2
+
+    if (isBottom) {
+      activeId.value = positionedHeadings[positionedHeadings.length - 1]?.id
+      return
+    }
+
+    const scrollPosition = scrollY + 128
+    let current = positionedHeadings[0]?.id
+
+    for (const heading of positionedHeadings) {
+      if (heading.top > scrollPosition) {
+        break
+      }
+
+      current = heading.id
+    }
+
+    activeId.value = current ?? items.value[0]?.id
+  }
+
+  function queueActiveUpdate() {
+    window.cancelAnimationFrame(activeRafId)
+    activeRafId = window.requestAnimationFrame(updateActiveId)
+  }
+
+  function syncActiveId() {
+    queueActiveUpdate()
   }
 
   function disconnect() {
@@ -82,23 +127,15 @@ export function useDocsTocState(
 
     if (items.value.length === 0) {
       activeId.value = undefined
-      visibleIds.value = []
       return
     }
 
     const headings = items.value
-      .map(
-        (item) =>
-          document.getElementById(item.id) ??
-          document.querySelector<HTMLElement>(
-            `${options.headingSelector ?? '.docs-page-body'} #${CSS.escape(item.id)}`,
-          ),
-      )
+      .map((item) => getHeadingElement(item.id))
       .filter((heading): heading is HTMLElement => Boolean(heading))
 
     if (headings.length === 0) {
       activeId.value = items.value[0]?.id
-      visibleIds.value = []
       return
     }
 
@@ -111,14 +148,19 @@ export function useDocsTocState(
       observer.observe(heading)
     }
 
-    activeId.value = items.value[0]?.id
+    queueActiveUpdate()
   }
 
   onMounted(() => {
     observeHeadings()
+    window.addEventListener('scroll', queueActiveUpdate, { passive: true })
+    window.addEventListener('resize', queueActiveUpdate)
   })
 
   onBeforeUnmount(() => {
+    window.cancelAnimationFrame(activeRafId)
+    window.removeEventListener('scroll', queueActiveUpdate)
+    window.removeEventListener('resize', queueActiveUpdate)
     disconnect()
   })
 

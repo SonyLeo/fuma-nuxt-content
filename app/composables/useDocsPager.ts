@@ -1,13 +1,21 @@
 import type { DocsNode } from '~/types/docs'
-import { flattenDocsNodes } from '~/utils/docs-navigation'
+import {
+  flattenDocsNodes,
+  normalizeDocsRoutePath,
+} from '~/utils/docs-navigation'
 
 export function useDocsPager(items: Ref<DocsNode[]>, currentPath: Ref<string>) {
   const pages = computed(() =>
-    flattenDocsNodes(items.value).filter((item) => item.pager !== false),
+    flattenDocsNodes(items.value).filter((item) => item.path),
+  )
+  const normalizedCurrentPath = computed(() =>
+    normalizeDocsRoutePath(currentPath.value),
   )
 
   const currentIndex = computed(() => {
-    return pages.value.findIndex((item) => item.path === currentPath.value)
+    return pages.value.findIndex((item) => {
+      return normalizeDocsRoutePath(item.path) === normalizedCurrentPath.value
+    })
   })
 
   const previous = computed(() => {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ComponentPublicInstance } from 'vue'
 import type { DocsPageProps, DocsTocItem } from '~/types/docs'
 
 const props = withDefaults(defineProps<DocsPageProps>(), {
@@ -8,6 +9,7 @@ const props = withDefaults(defineProps<DocsPageProps>(), {
   breadcrumb: undefined,
   footer: undefined,
 })
+const articleRef = shallowRef<HTMLElement | null>(null)
 
 defineSlots<{
   header(props: { header: DocsPageProps['header'] }): unknown
@@ -30,7 +32,11 @@ defineSlots<{
   }): unknown
 }>()
 
-const tocItems = computed(() => props.toc?.items ?? [])
+const scannedTocItems = shallowRef<DocsTocItem[]>([])
+const tocItems = computed(() => {
+  const providedItems = props.toc?.items ?? []
+  return providedItems.length > 0 ? providedItems : scannedTocItems.value
+})
 provideDocsInlineToc(tocItems)
 const tocEnabled = computed(() => {
   return (props.toc?.enabled ?? true) && tocItems.value.length > 0
@@ -56,6 +62,52 @@ const { activeId, activeItem, progress } = useDocsTocState(
     tocEnabled.value || tocPopoverEnabled.value ? tocItems.value : [],
   ),
 )
+
+function scanRenderedHeadings() {
+  if (!import.meta.client || (props.toc?.items?.length ?? 0) > 0) {
+    return
+  }
+
+  const article = articleRef.value
+  if (!article) {
+    return
+  }
+
+  const headings = Array.from(
+    article.querySelectorAll<HTMLElement>(
+      '.docs-page-body h2[id], .docs-page-body h3[id], .docs-page-body h4[id]',
+    ),
+  )
+
+  scannedTocItems.value = headings.map((heading) => {
+    return {
+      id: heading.id,
+      text: heading.textContent?.trim() ?? heading.id,
+      depth: Number(heading.tagName.slice(1)),
+    }
+  })
+}
+
+function setArticleRef(element: Element | ComponentPublicInstance | null) {
+  articleRef.value = element instanceof HTMLElement ? element : null
+}
+
+onMounted(async () => {
+  await nextTick()
+  scanRenderedHeadings()
+
+  requestAnimationFrame(() => {
+    scanRenderedHeadings()
+  })
+
+  window.setTimeout(() => {
+    scanRenderedHeadings()
+  }, 250)
+})
+
+onUpdated(() => {
+  scanRenderedHeadings()
+})
 </script>
 
 <template>
@@ -83,7 +135,12 @@ const { activeId, activeItem, progress } = useDocsTocState(
       />
     </slot>
 
-    <article class="docs-page" :class="{ 'is-full': full }">
+    <article
+      id="nd-page"
+      :ref="setArticleRef"
+      class="docs-page"
+      :class="{ 'is-full': full }"
+    >
       <slot v-if="breadcrumbEnabled" name="breadcrumb" :breadcrumb="breadcrumb">
         <DocsBreadcrumb :items="breadcrumbItems" />
       </slot>

@@ -1,15 +1,117 @@
 {
-  "title": "Guide",
-  "description": "Foundation docs for the Nuxt Content-aligned shell and protocol work.",
+  "title": "Fumadocs UI",
+  "description": "The default theme",
   "order": 1,
   "root": true,
   "defaultOpen": true,
   "collapsible": true,
   "pages": [
-    "getting-started",
+    "---Introduction---",
+    {
+      "type": "link",
+      "title": "Overview",
+      "href": "/docs/ui",
+      "icon": "overview"
+    },
+    {
+      "type": "link",
+      "title": "Component Library",
+      "href": "/docs/ui/components",
+      "icon": "library"
+    },
+    {
+      "type": "link",
+      "title": "Themes",
+      "href": "/docs/ui/theme",
+      "icon": "theme"
+    },
+    "---References---",
+    {
+      "type": "link",
+      "title": "Search UI",
+      "href": "/docs/ui/search"
+    },
+    {
+      "type": "link",
+      "title": "Translations",
+      "href": "/docs/ui/i18n"
+    },
     "---Components---",
-    "components",
-    "---Protocol---",
-    "protocol-playground"
+    {
+      "type": "page",
+      "name": "component-detail",
+      "title": "Accordion"
+    },
+    {
+      "type": "link",
+      "title": "Auto Type Table",
+      "href": "/guide/auto-type-table"
+    },
+    {
+      "type": "link",
+      "title": "Banner",
+      "href": "/guide/banner"
+    },
+    {
+      "type": "link",
+      "title": "Code Block",
+      "href": "/guide/code-block"
+    },
+    {
+      "type": "link",
+      "title": "Code Block (Dynamic)",
+      "href": "/guide/code-block-dynamic"
+    },
+    {
+      "type": "link",
+      "title": "Files",
+      "href": "/guide/files"
+    },
+    {
+      "type": "link",
+      "title": "GitHub Info",
+      "href": "/guide/github-info"
+    },
+    {
+      "type": "link",
+      "title": "Graph View",
+      "href": "/guide/graph-view"
+    },
+    {
+      "type": "link",
+      "title": "Zoomable Image",
+      "href": "/guide/zoomable-image"
+    },
+    {
+      "type": "link",
+      "title": "Inline TOC",
+      "href": "/guide/inline-toc"
+    },
+    {
+      "type": "link",
+      "title": "Steps",
+      "href": "/guide/steps"
+    },
+    {
+      "type": "link",
+      "title": "Tabs",
+      "href": "/guide/tabs"
+    },
+    {
+      "type": "link",
+      "title": "Type Table",
+      "href": "/guide/type-table"
+    },
+    "---Layouts---",
+    "!getting-started",
+    "!components",
+    "!protocol-playground",
+    "!overview",
+    "!routing",
+    "!sidebar",
+    "!路径设计",
+    "!link-index",
+    "!child",
+    "!archive"
   ]
 }

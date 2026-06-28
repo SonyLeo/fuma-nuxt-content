@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { readBooleanLike } from '~/utils/doc-accordion'
+
 const props = withDefaults(
   defineProps<{
-    open?: boolean
-    defaultOpen?: boolean
-    disabled?: boolean
+    open?: boolean | 'true' | 'false'
+    defaultOpen?: boolean | 'true' | 'false'
+    disabled?: boolean | 'true' | 'false'
   }>(),
   {
     open: undefined,
@@ -11,45 +13,39 @@ const props = withDefaults(
     disabled: false,
   },
 )
+const openState = computed(() =>
+  props.open === undefined ? undefined : readBooleanLike(props.open),
+)
+const defaultOpenState = computed(() => readBooleanLike(props.defaultOpen))
+const disabledState = computed(() => readBooleanLike(props.disabled))
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
   openChange: [value: boolean]
 }>()
 
-const localOpen = shallowRef(props.defaultOpen)
-const contentId = `fd-doc-collapsible-${useId()}`
-const isOpen = computed(() => props.open ?? localOpen.value)
-
-function setOpen(value: boolean) {
-  if (props.disabled || value === isOpen.value) {
-    return
-  }
-
-  if (props.open === undefined) {
-    localOpen.value = value
-  }
-
+function emitOpenChange(value: boolean) {
   emit('update:open', value)
   emit('openChange', value)
-}
-
-function toggle() {
-  setOpen(!isOpen.value)
 }
 </script>
 
 <template>
-  <div
+  <UiCollapsible
     class="fd-doc-collapsible"
-    :data-open="isOpen ? 'true' : 'false'"
-    :data-disabled="disabled ? 'true' : 'false'"
+    :open="openState"
+    :default-open="defaultOpenState"
+    :disabled="disabledState"
+    :data-disabled="disabledState ? 'true' : 'false'"
+    @update:open="emitOpenChange"
   >
-    <slot
-      :open="isOpen"
-      :toggle="toggle"
-      :set-open="setOpen"
-      :content-id="contentId"
-    />
-  </div>
+    <template #default="{ open: slotOpen, toggle, setOpen, contentId }">
+      <slot
+        :open="slotOpen"
+        :toggle="toggle"
+        :set-open="setOpen"
+        :content-id="contentId"
+      />
+    </template>
+  </UiCollapsible>
 </template>

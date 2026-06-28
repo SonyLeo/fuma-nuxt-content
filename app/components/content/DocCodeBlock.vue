@@ -1,20 +1,10 @@
 <script setup lang="ts">
 import { Check, Copy } from '@lucide/vue'
-import {
-  computed,
-  onBeforeUnmount,
-  shallowRef,
-  useSlots,
-  useTemplateRef,
-} from 'vue'
+import { computed, useSlots, useTemplateRef } from 'vue'
 import { writeDocsClipboardText } from '~/utils/docs-clipboard'
-
-type CopyState = 'idle' | 'copied' | 'failed'
 
 const bodyRef = useTemplateRef<HTMLElement>('body')
 const slots = useSlots()
-const copyState = shallowRef<CopyState>('idle')
-let resetTimer: ReturnType<typeof setTimeout> | undefined
 
 const props = withDefaults(
   defineProps<{
@@ -38,25 +28,9 @@ const props = withDefaults(
 const displayTitle = computed(() => props.title ?? props.filename)
 const hasHeader = computed(() => {
   return Boolean(
-    displayTitle.value ||
-    props.language ||
-    props.meta ||
-    slots.actions ||
-    props.allowCopy,
+    displayTitle.value || props.language || props.meta || slots.actions,
   )
 })
-const copyLabel = computed(() => {
-  if (copyState.value === 'copied') {
-    return 'Code copied'
-  }
-
-  if (copyState.value === 'failed') {
-    return 'Copy failed'
-  }
-
-  return 'Copy code'
-})
-
 function readRenderedCode() {
   const container = bodyRef.value
   if (!container) {
@@ -71,32 +45,9 @@ function readRenderedCode() {
   return clone.textContent?.trimEnd() ?? ''
 }
 
-function scheduleReset() {
-  if (resetTimer) {
-    clearTimeout(resetTimer)
-  }
-
-  resetTimer = setTimeout(() => {
-    copyState.value = 'idle'
-  }, 1800)
-}
-
 async function copyCode() {
-  try {
-    await writeDocsClipboardText(props.code || readRenderedCode())
-    copyState.value = 'copied'
-  } catch {
-    copyState.value = 'failed'
-  } finally {
-    scheduleReset()
-  }
+  await writeDocsClipboardText(props.code || readRenderedCode())
 }
-
-onBeforeUnmount(() => {
-  if (resetTimer) {
-    clearTimeout(resetTimer)
-  }
-})
 </script>
 
 <template>
@@ -119,19 +70,50 @@ onBeforeUnmount(() => {
         data-doc-copy-ignore
       >
         <slot name="actions" />
-        <button
+        <DocsCopyButton
           v-if="allowCopy"
-          type="button"
+          :copy="copyCode"
+          label="Copy Text"
+          copied-label="Copied Text"
+          failed-label="Copy failed"
+          variant="outline"
+          size="icon-sm"
           class="fd-doc-code-copy"
-          :aria-label="copyLabel"
-          @click="copyCode"
         >
-          <Check v-if="copyState === 'copied'" :size="15" aria-hidden="true" />
-          <Copy v-else :size="15" aria-hidden="true" />
-        </button>
+          <template #default="{ state }">
+            <Check v-if="state === 'copied'" :size="15" aria-hidden="true" />
+            <Copy v-else :size="15" aria-hidden="true" />
+          </template>
+        </DocsCopyButton>
       </div>
     </figcaption>
-    <div ref="body" class="fd-doc-code-block-body">
+    <div
+      v-if="!hasHeader && allowCopy"
+      class="fd-doc-code-block-floating-actions"
+      data-doc-copy-ignore
+    >
+      <DocsCopyButton
+        :copy="copyCode"
+        label="Copy Text"
+        copied-label="Copied Text"
+        failed-label="Copy failed"
+        variant="outline"
+        size="icon-sm"
+        class="fd-doc-code-copy"
+      >
+        <template #default="{ state }">
+          <Check v-if="state === 'copied'" :size="15" aria-hidden="true" />
+          <Copy v-else :size="15" aria-hidden="true" />
+        </template>
+      </DocsCopyButton>
+    </div>
+    <div
+      ref="body"
+      class="fd-doc-code-block-body"
+      role="region"
+      tabindex="0"
+      aria-label="Code"
+    >
       <slot v-if="$slots.default" />
       <pre
         v-else-if="code"
