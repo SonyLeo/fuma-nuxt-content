@@ -229,13 +229,13 @@ const pageActions = computed<DocsPageAction[]>(() => {
 
   if (site.pageActions?.source !== false && sourceUrl) {
     actions.push({
-      id: 'view-source',
+      id: 'open-github',
       type: 'link',
-      label: 'View source',
+      label: 'Open in GitHub',
       href: sourceUrl,
       external: true,
-      icon: 'source',
-      ariaLabel: 'View source on GitHub',
+      icon: 'github',
+      ariaLabel: 'Open source on GitHub',
     })
   }
 
@@ -261,6 +261,54 @@ const pageActions = computed<DocsPageAction[]>(() => {
       state: copyMarkdownState.value,
       disabled: copyMarkdownState.value === 'loading',
     })
+  }
+
+  if (site.pageActions?.openInAi === true) {
+    const prompt = createPageActionPrompt(canonicalUrl.value)
+
+    actions.push(
+      {
+        id: 'open-scira',
+        type: 'link',
+        label: 'Open in Scira AI',
+        href: withSearchParams('https://scira.ai/', {
+          q: prompt,
+        }),
+        external: true,
+        ariaLabel: 'Open this page in Scira AI',
+      },
+      {
+        id: 'open-chatgpt',
+        type: 'link',
+        label: 'Open in ChatGPT',
+        href: withSearchParams('https://chatgpt.com/', {
+          prompt,
+          hints: 'search',
+        }),
+        external: true,
+        ariaLabel: 'Open this page in ChatGPT',
+      },
+      {
+        id: 'open-claude',
+        type: 'link',
+        label: 'Open in Claude',
+        href: withSearchParams('https://claude.ai/new', {
+          q: prompt,
+        }),
+        external: true,
+        ariaLabel: 'Open this page in Claude',
+      },
+      {
+        id: 'open-cursor',
+        type: 'link',
+        label: 'Open in Cursor',
+        href: withSearchParams('https://cursor.com/link/prompt', {
+          text: prompt,
+        }),
+        external: true,
+        ariaLabel: 'Open this page in Cursor',
+      },
+    )
   }
 
   return actions
@@ -297,6 +345,17 @@ function scheduleCopyMarkdownReset() {
   copyMarkdownResetTimer = setTimeout(() => {
     copyMarkdownState.value = 'idle'
   }, 1800)
+}
+
+function createPageActionPrompt(url: string) {
+  return `Read ${url}, I want to ask questions about it.`
+}
+
+function withSearchParams(
+  url: string,
+  params: Record<string, string>,
+) {
+  return `${url}?${new URLSearchParams(params)}`
 }
 
 async function copyCurrentMarkdown() {

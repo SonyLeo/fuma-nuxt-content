@@ -22,6 +22,7 @@ export type DocsSitePageActionsConfig = {
   source?: boolean
   edit?: boolean
   copyMarkdown?: boolean
+  openInAi?: boolean
 }
 
 export type DocsSiteSearchProvider = 'local'

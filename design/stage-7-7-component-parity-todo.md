@@ -63,7 +63,7 @@ Tasks:
 
 - [x] Confirm current dirty/staged files and avoid reverting unrelated changes.
 - [x] Keep the temporary todo file scoped to Stage 7.7.
-- [x] Confirm `scripts/parity-probe.mjs` can host more profiles without
+- [x] Confirm parity profiles can be split into modular runner files without
       weakening existing TOC/sidebar checks.
 - [x] Define profile naming:
   - `code-block`
@@ -88,7 +88,8 @@ Target files:
 - `app/components/content/DocTab.vue`
 - `app/components/content/ProsePre.vue`
 - `app/assets/css/content.css`
-- `scripts/parity-probe.mjs`
+- `scripts/parity/profiles/code-block.mjs`
+- `scripts/parity/suites/code.mjs`
 - `content/guide/component-detail.md` or `content/guide/code-block.md`
 
 Fumadocs contract to align:
@@ -145,7 +146,7 @@ Fixture requirements:
 
 Development tasks:
 
-- [x] Add or extend `code-block` profile in `scripts/parity-probe.mjs`.
+- [x] Add or extend `code-block` profile in `scripts/parity/profiles/code-block.mjs`.
 - [x] Capture root/header/actions/viewport/copy/tabs metrics.
 - [x] Add strict checks for DOM ownership, copy button presence, viewport
       accessibility, and tabs active state.
@@ -171,9 +172,9 @@ Findings from the first runtime profile:
 
 Verification:
 
-- [x] `node --check scripts/parity-probe.mjs`
+- [x] `Get-ChildItem -Recurse -Filter *.mjs -LiteralPath scripts/parity | ForEach-Object { node --check $_.FullName }`
 - [x] `pnpm typecheck`
-- [x] `node scripts/parity-probe.mjs --profile=code-block --url=http://127.0.0.1:8888/guide/code-block --viewports=1440x1000,994x935 --chromePort=9245`
+- [x] `node scripts/parity/run.mjs --profile=code-block --url=http://127.0.0.1:8888/guide/code-block --viewports=1440x1000,994x935 --chromePort=9251`
 - [ ] Screenshot sanity only after DOM/state checks pass.
 
 Runtime status:
@@ -189,7 +190,7 @@ Runtime status:
 - Dev server control was consolidated into `scripts/dev-server.mjs`.
 - After `pnpm dev:restart -- --path=/guide/code-block --timeout=60000`, runtime
   profile passed with `20/20` checks:
-  - `node scripts/parity-probe.mjs --profile=code-block --url=http://127.0.0.1:8888/guide/code-block --viewports=1440x1000,994x935 --chromePort=9245`
+  - `node scripts/parity/run.mjs --profile=code-block --url=http://127.0.0.1:8888/guide/code-block --viewports=1440x1000,994x935 --chromePort=9251`
 - The first shell-only profile was insufficient: it passed while the page still
   looked unlike Fumadocs because the fixture used explicit `::doc-code-block`
   strings instead of the fenced-code path Fumadocs documents.
@@ -203,7 +204,7 @@ Runtime status:
   titled fenced code, deterministic language icon, highlight markers, line
   numbers, viewport accessibility, and floating copy.
 - After protocol/profile fixes, runtime profile passed with `26/26` checks:
-  - `node scripts/parity-probe.mjs --profile=code-block --url=http://127.0.0.1:8888/guide/code-block --viewports=1440x1000,994x935 --chromePort=9245`
+  - `node scripts/parity/run.mjs --profile=code-block --url=http://127.0.0.1:8888/guide/code-block --viewports=1440x1000,994x935 --chromePort=9251`
 
 Phase review:
 
@@ -215,7 +216,7 @@ Phase review:
 
 ## Phase 2: Callout / Tabs / Accordion / TypeTable / Files / InlineTOC
 
-Status: pending
+Status: in progress
 
 Target files:
 
@@ -271,7 +272,7 @@ Development tasks:
 
 Verification:
 
-- [ ] `node --check scripts/parity-probe.mjs`
+- [x] `Get-ChildItem -Recurse -Filter *.mjs -LiteralPath scripts/parity | ForEach-Object { node --check $_.FullName }`
 - [ ] `pnpm typecheck`
 - [ ] component profile command
 - [ ] screenshot sanity for representative components
@@ -283,7 +284,7 @@ Phase review:
 
 ## Phase 3: Preview / Page Actions / Feedback / Pager
 
-Status: pending
+Status: in progress
 
 Target files:
 
@@ -303,6 +304,7 @@ Fumadocs contract to align:
 - Page actions:
   - `Copy Markdown` primary compact action
   - `Open` dropdown
+  - `View as Markdown` link after per-page markdown URL is exposed
   - source/edit/open-in actions in menu
   - copy state labels and button size
 - Feedback:
@@ -315,13 +317,16 @@ Fumadocs contract to align:
 
 Development tasks:
 
-- [ ] Add `page-actions` and/or `preview` probe profile.
-- [ ] Fix profile-exposed mismatches.
+- [x] Add `page-actions` probe profile.
+- [x] Fix `page-actions` profile-exposed mismatches.
+- [ ] Expose per-page markdown URL and add `View as Markdown` menu item.
+- [ ] Add or expand `preview` probe profile.
+- [ ] Fix `preview` / `feedback` / `pager` profile-exposed mismatches.
 
 Verification:
 
-- [ ] static check
-- [ ] runtime profile
+- [x] static check for `page-actions`
+- [x] runtime profile for `page-actions`
 - [ ] screenshot sanity
 
 Phase review:

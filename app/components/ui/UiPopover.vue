@@ -120,14 +120,14 @@ watch(openState, async (isOpen) => {
   if (isOpen) {
     const content = contentRef.value
     const firstFocusable = content ? getFocusableElements(content)[0] : null
-    firstFocusable?.focus()
+    firstFocusable?.focus({ preventScroll: true })
     if (!firstFocusable) {
-      content?.focus()
+      content?.focus({ preventScroll: true })
     }
     return
   }
 
-  triggerRef.value?.focus()
+  triggerRef.value?.focus({ preventScroll: true })
 })
 
 provide(uiPopoverKey, {

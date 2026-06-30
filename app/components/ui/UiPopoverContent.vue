@@ -40,7 +40,15 @@ if (!popover) {
 }
 
 const popoverContext = popover
-const positionStyle = shallowRef<Record<string, string>>({})
+const hiddenPositionStyle = {
+  left: '0px',
+  position: 'fixed',
+  top: '0px',
+  visibility: 'hidden',
+}
+const positionStyle = shallowRef<Record<string, string>>({
+  ...hiddenPositionStyle,
+})
 const resolvedId = computed(() => props.id ?? popoverContext.contentId.value)
 const resolvedAlign = computed(() => props.align ?? popoverContext.align.value)
 const resolvedSideOffset = computed(
@@ -52,7 +60,7 @@ function setContentRef(element: Element | ComponentPublicInstance | null) {
     element instanceof HTMLElement ? element : null
 }
 
-function updatePosition() {
+async function updatePosition() {
   if (!import.meta.client || !popoverContext.open.value) {
     return
   }
@@ -63,8 +71,20 @@ function updatePosition() {
   }
 
   const rect = trigger.getBoundingClientRect()
-  const contentWidth = popoverContext.contentRef.value?.offsetWidth ?? rect.width
   const viewportPadding = 8
+  const top = rect.bottom + resolvedSideOffset.value
+  const maxHeight = Math.max(160, window.innerHeight - top - viewportPadding)
+  const baseStyle = {
+    ...hiddenPositionStyle,
+    maxHeight: `${maxHeight}px`,
+    maxWidth: `calc(100vw - ${viewportPadding * 2}px)`,
+    '--ui-popover-trigger-width': `${rect.width}px`,
+  }
+
+  positionStyle.value = baseStyle
+  await nextTick()
+
+  const contentWidth = popoverContext.contentRef.value?.offsetWidth ?? rect.width
   const maxLeft = window.innerWidth - contentWidth - viewportPadding
   let left = rect.left
 
@@ -76,16 +96,11 @@ function updatePosition() {
 
   left = Math.max(viewportPadding, Math.min(left, maxLeft))
 
-  const top = rect.bottom + resolvedSideOffset.value
-  const maxHeight = Math.max(160, window.innerHeight - top - viewportPadding)
-
   positionStyle.value = {
-    position: 'fixed',
+    ...baseStyle,
     top: `${top}px`,
     left: `${left}px`,
-    minWidth: `${rect.width}px`,
-    maxWidth: `calc(100vw - ${viewportPadding * 2}px)`,
-    maxHeight: `${maxHeight}px`,
+    visibility: 'visible',
   }
 }
 
@@ -97,23 +112,28 @@ watch(
   ],
   async ([isOpen]) => {
     if (!isOpen) {
+      positionStyle.value = { ...hiddenPositionStyle }
       return
     }
 
     await nextTick()
-    updatePosition()
+    await updatePosition()
   },
   { immediate: true },
 )
 
+function onWindowUpdatePosition() {
+  void updatePosition()
+}
+
 onMounted(() => {
-  window.addEventListener('resize', updatePosition)
-  window.addEventListener('scroll', updatePosition, true)
+  window.addEventListener('resize', onWindowUpdatePosition)
+  window.addEventListener('scroll', onWindowUpdatePosition, true)
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', updatePosition)
-  window.removeEventListener('scroll', updatePosition, true)
+  window.removeEventListener('resize', onWindowUpdatePosition)
+  window.removeEventListener('scroll', onWindowUpdatePosition, true)
 })
 </script>
 

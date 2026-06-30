@@ -1072,6 +1072,7 @@
 
 .docs-page-actions {
   display: inline-flex;
+  align-items: center;
   flex-wrap: wrap;
   justify-content: flex-start;
   gap: 0.5rem;
@@ -1099,13 +1100,13 @@
   gap: 0.5rem;
   min-height: 2rem;
   max-width: 12rem;
-  padding: 0.375rem 0.75rem;
+  padding: 0.375rem 0.5rem;
   border: 1px solid var(--docs-color-border);
   border-radius: var(--docs-radius-sm);
   background: var(--docs-color-secondary);
   color: var(--docs-color-secondary-foreground);
   font: inherit;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 500;
   line-height: 1.25rem;
   text-decoration: none;
@@ -1157,6 +1158,7 @@
 
 .docs-page-open-popover {
   min-width: 15rem;
+  max-width: min(24rem, calc(100vw - 1rem));
   overflow: hidden;
   padding: 0.5rem;
   border: 1px solid var(--docs-color-border);
@@ -1167,14 +1169,15 @@
 }
 
 .docs-page-open-options {
-  display: grid;
-  gap: 0.12rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 .docs-page-open-option {
-  display: grid;
-  grid-template-columns: 1rem minmax(0, 1fr) auto;
+  display: inline-flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 0.5rem;
   min-height: 2rem;
   width: 100%;
@@ -1192,6 +1195,7 @@
 }
 
 .docs-page-open-option span {
+  flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1214,6 +1218,8 @@
 }
 
 .docs-page-open-option-external {
+  flex: 0 0 auto;
+  margin-left: auto;
   color: var(--docs-color-muted-foreground);
 }
 

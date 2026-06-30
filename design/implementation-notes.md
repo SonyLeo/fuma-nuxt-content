@@ -830,3 +830,122 @@ Fumadocs-aligned UI primitives 第一轮闭环。
   - `/guide/components` 的 Files 默认展开不再触发 `defaultOpen` prop warning。
   - `/guide/component-detail` 已验证 preview / install / code tabs / type tables /
     feedback / pager 同时渲染。
+
+## Stage 7.7 Parity Probe 拆分记录
+
+本轮已把旧单文件 parity runner 的增长压力迁移到模块化 runner：
+
+- 新入口：`scripts/parity/run.mjs`
+- profile 模块：`scripts/parity/profiles/*.mjs`
+- suite 模块：`scripts/parity/suites/*.mjs`
+- core 能力：HTTP preflight、Chrome/CDP、assertion helpers、report formatter
+- 已迁移 profile：
+  - `callout`
+  - `tabs`
+  - `accordion`
+  - `files`
+  - `inline-toc`
+  - `type-table`
+  - `code-block`
+  - `toc`
+  - `sidebar`
+  - `page-actions`
+
+执行策略：
+
+- 改单个组件时先跑对应增量 profile，例如：
+  `node scripts/parity/run.mjs --profile=callout --url=http://127.0.0.1:8888/guide/components`
+- 再跑所在 suite，例如：
+  `node scripts/parity/run.mjs --suite=content-components --url=http://127.0.0.1:8888/guide/components`
+- 阶段收口时运行 `full-regression` suite；旧单文件入口已在迁移完成并验证后删除。
+
+Callout 漏检原因：
+
+- 旧 `content-components` profile 只检查 root display、rail 宽度、icon 尺寸和
+  title 字重，没有检查真正影响精致度的 computed metrics。
+- Fumadocs callout 的关键隐含契约是 flex 默认 stretch 和 title `my-0!`。
+  本地实现曾被 `.docs-page-body p` 的全局 margin 覆盖，同时 rail 没有跟随内容
+  高度 stretch。
+- 以后内容组件 parity 必须把 prose reset 和关键 bounding box 写入组件级 profile：
+  root layout、内部 margin reset、font/line-height、rail/icon/content 对齐，以及
+  open/active/hover 等状态语义。
+
+契约卡流程验证：
+
+- `callout` profile 已增加 rich capture，采集 DOM tree、关键节点 rect、
+  computed box model、typography、color/elevation、transition/transform 等字段。
+- 新增 `--dump`，用于把 raw capture 写入 `.parity/artifacts`。该目录是本地诊断
+  生成物，已加入 `.gitignore`。
+- 新增非破坏式 `--mutation=callout-broken-layout`，运行时只向当前浏览器页面注入
+  临时坏样式，不修改源码。
+- mutation 验证可以稳定复现过去的漏检类型：
+  - root `align-items` 从 `stretch` 变成 `flex-start`
+  - root `line-height` 从 `20px` 变成 `24.5px`
+  - title margin 从 `0px` 变成 `20px 0px`
+  - rail 高度不再跟随 content 高度
+- 结论：rich capture 适合作为诊断层，assertions 继续只提升稳定关键契约。
+  这能让组件还原时有更多参考数据，同时避免把回归变成易碎的全量像素锁。
+
+验证：
+
+- `node scripts/parity/run.mjs --profile=callout --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935 --chromePort=9242 --settleMs=1000`
+  已通过，`14/14` checks。
+- `node scripts/parity/run.mjs --suite=content-components --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935 --chromePort=9243 --settleMs=1000`
+  已通过，当前 suite 包含已迁移的 `callout` profile。
+- `node scripts/parity/run.mjs --suite=content-components --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935 --chromePort=9250 --settleMs=1000`
+  已通过，拆分后的 `callout` / `tabs` / `accordion` / `files` /
+  `inline-toc` / `type-table` profiles 均通过。
+- `node scripts/parity/run.mjs --profile=page-actions --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935 --chromePort=9245 --settleMs=1000`
+  已通过，`16/16` checks。
+- `node scripts/parity/run.mjs --suite=page-actions --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935 --chromePort=9246 --settleMs=1000`
+  已通过，`16/16` checks。
+- `node scripts/parity/run.mjs --suite=code --viewports=1440x1000,994x935 --chromePort=9252 --settleMs=1000`
+  已通过，`42/42` checks。
+- `node scripts/parity/run.mjs --suite=docs-shell --viewports=1440x1000,994x935 --chromePort=9253 --settleMs=1600`
+  已通过，`toc` 与 `sidebar` profiles 均通过。
+- 删除旧单文件入口后，`node scripts/parity/run.mjs --suite=full-regression --viewports=1440x1000,994x935 --chromePort=9256 --settleMs=1600`
+  已通过，全部 migrated profiles 通过。
+- `node scripts/parity/run.mjs --profile=callout --viewports=1440x1000,390x844 --chromePort=9260 --settleMs=1000 --dump`
+  已通过，生成 rich capture dump。
+- `node scripts/parity/run.mjs --profile=callout --viewports=1440x1000,390x844 --chromePort=9261 --settleMs=1000 --mutation=callout-broken-layout --dump`
+  按预期失败，错误信息准确指向 root rhythm、rail stretch、title prose reset。
+- mutation 后重新运行
+  `node scripts/parity/run.mjs --profile=callout --viewports=1440x1000,390x844 --chromePort=9262 --settleMs=1000`
+  已通过，证明 mutation 不污染源码或正常页面。
+- `node scripts/parity/run.mjs --suite=full-regression --viewports=1440x1000,994x935 --chromePort=9263 --settleMs=1600`
+  已通过，证明 dump/mutation 能力没有破坏现有 parity gates。
+
+Page actions 契约卡验证：
+
+- `page-actions` profile 从“可见且可展开”扩展为 button/menu contract：
+  - 捕捉 `data-action-id / data-state / aria-label`、computed position、
+    min/max width、按钮字号/高度、菜单项 display/font/href/target。
+  - 新增断言覆盖 actions row `align-items:center`、Copy/Open 同字号同高度、
+    popover `240px` 最小宽度、相对 trigger 的 top/left 几何、菜单项文案与外链。
+- 新流程发现旧断言漏掉的差异：
+  - Copy 走 `UiButton size=sm` 是 `12px`，Open trigger 只靠
+    `.docs-page-action` 曾是 `14px`。
+  - `UiPopoverContent` 内联 `minWidth: trigger.width` 会压过
+    `.docs-page-open-popover { min-width: 15rem }`，导致菜单只有约 `153px`。
+  - popover 打开后自动 focus 首个菜单项会触发页面滚动；同时移动端在固定定位前
+    先测量 block 宽度，导致 top/left 偏离 trigger。
+- 已对齐：
+  - Page actions 按钮统一为 Fumadocs-like compact `12px / 34px` rhythm。
+  - Copy 成功态保持 `Copy Markdown` 文案，只切换 check 图标，避免宽度跳动。
+  - Open 菜单扩展为 `Open in GitHub / Edit page / Open in Scira AI /
+    Open in ChatGPT / Open in Claude / Open in Cursor`。
+  - Popover 改为先隐藏固定定位测量，再写入最终位置，并使用
+    `focus({ preventScroll: true })` 避免焦点滚动破坏几何。
+- 验证：
+  - `node scripts/parity/run.mjs --profile=page-actions --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,390x844 --chromePort=9266 --settleMs=1200 --dump`
+    已通过，`20/20` checks。最终 dump 关键值：desktop popover
+    `left=439/top=216/width=240`，mobile popover `left=142/top=276/width=240`。
+  - `node scripts/parity/run.mjs --suite=page-actions --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,390x844 --chromePort=9267 --settleMs=1200`
+    已通过，`20/20` checks。
+  - `node scripts/parity/run.mjs --suite=full-regression --viewports=1440x1000,994x935 --chromePort=9270 --settleMs=1600`
+    已通过。注意 full-regression 不应传单一 `--url` 覆盖所有 profile fixture。
+- 已采纳流程优化：`scripts/parity/run.mjs` 现在会拒绝
+  `--suite=full-regression --url=...`，避免全局 URL 覆盖混合 fixture 后产生
+  假失败。需要固定页面时改跑窄 profile 或共享 fixture 的 suite。
+- 后续待办：`View as Markdown` 需要先暴露 per-page markdown URL，再加入 Open
+  菜单并补 profile 断言。

@@ -73,6 +73,8 @@ function runPopoverAction(action: DocsPageAction, close: () => void) {
       :disabled="copyAction.disabled || copyAction.state === 'loading'"
       :loading="copyAction.state === 'loading'"
       :aria-label="actionLabel(copyAction)"
+      :data-action-id="copyAction.id"
+      :data-state="copyAction.state ?? 'idle'"
       @click="runAction(copyAction)"
     >
       <Check
@@ -81,11 +83,7 @@ function runPopoverAction(action: DocsPageAction, close: () => void) {
         aria-hidden="true"
       />
       <Copy v-else :size="14" aria-hidden="true" />
-      <span>
-        <template v-if="copyAction.state === 'success'">Copied</template>
-        <template v-else-if="copyAction.state === 'failed'">Failed</template>
-        <template v-else>{{ copyAction.label }}</template>
-      </span>
+      <span>{{ copyAction.label }}</span>
     </UiButton>
 
     <UiPopover
@@ -109,6 +107,8 @@ function runPopoverAction(action: DocsPageAction, close: () => void) {
                 :external="action.external"
                 class="docs-page-open-option"
                 :aria-label="actionLabel(action)"
+                :data-action-id="action.id"
+                :data-state="action.state ?? 'idle'"
                 @click="close"
               >
                 <DocsNavIcon v-if="action.icon === 'github'" name="github" />
@@ -143,6 +143,8 @@ function runPopoverAction(action: DocsPageAction, close: () => void) {
                 class="docs-page-open-option"
                 :disabled="action.disabled || action.state === 'loading'"
                 :aria-label="actionLabel(action)"
+                :data-action-id="action.id"
+                :data-state="action.state ?? 'idle'"
                 @click="runPopoverAction(action, close)"
               >
                 <Copy v-if="action.icon === 'copy'" :size="15" aria-hidden="true" />
@@ -171,6 +173,8 @@ function runPopoverAction(action: DocsPageAction, close: () => void) {
           :external="action.external"
           class="docs-page-action"
           :aria-label="actionLabel(action)"
+          :data-action-id="action.id"
+          :data-state="action.state ?? 'idle'"
         >
           <DocsNavIcon v-if="action.icon === 'github'" name="github" />
           <FileCode2
@@ -199,6 +203,8 @@ function runPopoverAction(action: DocsPageAction, close: () => void) {
           :disabled="action.disabled || action.state === 'loading'"
           :loading="action.state === 'loading'"
           :aria-label="actionLabel(action)"
+          :data-action-id="action.id"
+          :data-state="action.state ?? 'idle'"
           @click="runAction(action)"
         >
           <Copy v-if="action.icon === 'copy'" :size="15" aria-hidden="true" />

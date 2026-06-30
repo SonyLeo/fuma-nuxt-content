@@ -79,6 +79,7 @@ export const docsSiteConfig = defineDocsSiteConfig({
     source: true,
     edit: true,
     copyMarkdown: true,
+    openInAi: true,
   },
   search: {
     enabled: true,

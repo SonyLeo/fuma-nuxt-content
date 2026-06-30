@@ -560,13 +560,13 @@ answer basic runtime questions:
 - Is the observed issue in layout geometry, state source, or final styling?
 
 Those questions should be answered before opening the full reference/local
-extract-and-compare loop. The new `scripts/parity-probe.mjs` command captures
+extract-and-compare loop. The modular `scripts/parity/run.mjs` command captures
 that local runtime state in one pass.
 
 ### Probe Command
 
 ```bash
-node scripts/parity-probe.mjs \
+node scripts/parity/run.mjs \
   --url=http://127.0.0.1:3002/guide/component-detail \
   --selector=#nd-toc \
   --viewports=2048x1152,994x935
@@ -666,10 +666,10 @@ so they should live in a reusable probe profile.
 
 ### New Probe Profile
 
-`scripts/parity-probe.mjs` now supports `--profile=sidebar`.
+`scripts/parity/run.mjs` now supports `--profile=sidebar`.
 
 ```bash
-node scripts/parity-probe.mjs \
+node scripts/parity/run.mjs \
   --profile=sidebar \
   --url=http://127.0.0.1:3002/guide/component-detail \
   --viewports=2048x1152,994x935
@@ -727,7 +727,7 @@ For interaction-heavy parity tasks, use this stricter order:
    - Add enough local content to make the expected state visible.
    - Exclude unrelated fixture pages before visual comparison.
 4. Local probe profile
-   - Add or extend a `parity-probe` profile for the state matrix.
+   - Add or extend a modular parity profile for the state matrix.
    - The profile must fail on stale server, missing selectors, wrong flow
      ownership, or broken interaction state.
 5. Implement contract inward
@@ -768,7 +768,7 @@ state is added.
 Validated against a fresh local server on `127.0.0.1:3002`:
 
 ```bash
-node scripts/parity-probe.mjs \
+node scripts/parity/run.mjs \
   --profile=sidebar \
   --url=http://127.0.0.1:3002/guide/component-detail \
   --viewports=2048x1152,994x935 \
@@ -828,8 +828,8 @@ The new flow was tested by using the skill's "prefer existing profile" path
 against the current local dev server at `http://127.0.0.1:3000`.
 
 ```bash
-node scripts/parity-probe.mjs --profile=sidebar --url=http://127.0.0.1:3000/guide/component-detail --viewports=2048x1152,994x935 --chromePort=9234
-node scripts/parity-probe.mjs --profile=toc --url=http://127.0.0.1:3000/guide/component-detail --viewports=2048x1152,994x935 --chromePort=9234
+node scripts/parity/run.mjs --profile=sidebar --url=http://127.0.0.1:3000/guide/component-detail --viewports=2048x1152,994x935 --chromePort=9234
+node scripts/parity/run.mjs --profile=toc --url=http://127.0.0.1:3000/guide/component-detail --viewports=2048x1152,994x935 --chromePort=9234
 ```
 
 Results:
@@ -881,7 +881,7 @@ Validation result:
 pnpm dev:restart -- --path=/guide/code-block --timeout=60000
 Health: ok status=200 bytes=83957 url=http://127.0.0.1:8888/guide/code-block
 
-node scripts/parity-probe.mjs --profile=code-block --url=http://127.0.0.1:8888/guide/code-block --viewports=1440x1000,994x935 --chromePort=9245
+node scripts/parity/run.mjs --profile=code-block --url=http://127.0.0.1:8888/guide/code-block --viewports=1440x1000,994x935 --chromePort=9251
 Status: PASS
 Checks: 20/20 passed
 ```
