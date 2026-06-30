@@ -47,32 +47,19 @@ badge: MVP
 ::doc-tab{label="Code" value="code" trigger=true}
 ::
 
+#default
 ::doc-tab{value="preview" label="Preview"}
 这是预览内容。
 ::
 
 ::doc-tab{value="code" label="Code"}
-::doc-code-block{title="tokens.css" language="css" code=":root { --docs-color-primary: #2563eb; }"}
-::
+这里是代码内容。
 ::
 ::
 
 ## Code tabs
 
-## ::doc-code-tabs
-
-tabs:
-
-- label: pnpm
-  language: bash
-  code: pnpm install
-- label: npm
-  language: bash
-  code: npm install
-
----
-
-::
+<DocCodeTabs :tabs='[{"label":"pnpm","language":"bash","code":"pnpm install"},{"label":"npm","language":"bash","code":"npm install"}]'></DocCodeTabs>
 
 ## Accordion
 
@@ -103,6 +90,7 @@ hash 命中时可以自动展开，内容区也能继续沿用现有 prose 节�
 ::
 ::doc-file{name="nuxt.config.ts"}
 ::
+::
 
 ## Inline TOC
 
@@ -111,22 +99,7 @@ hash 命中时可以自动展开，内容区也能继续沿用现有 prose 节�
 
 ## Type table
 
-## ::doc-type-table
-
-rows:
-
-- name: title
-  type: string
-  description: Page title displayed in the docs header.
-  required: true
-- name: toc
-  type: boolean
-  description: Controls table of contents rendering for a page.
-  default: true
-
----
-
-::
+<DocTypeTable :rows='[{"id":"page-title","name":"title","type":"string","description":"Page title displayed in the docs header.","required":true},{"id":"page-toc","name":"toc","type":"boolean","description":"Controls table of contents rendering for a page.","default":"true"}]'></DocTypeTable>
 
 ## Steps
 
@@ -141,17 +114,8 @@ rows:
 
 ## Preview
 
-::doc-preview
+::doc-preview{description="这里验证 markdown 中的交互组件仍然可用。" source-title="PreviewCounter.vue" source-language="vue" source-code="<PreviewCounter />"}
 #preview
 ::preview-counter
-::
-
-#description
-这里验证 markdown 中的交互组件仍然可用。
-::
-
-#source
-::doc-code-block{title="PreviewCounter.vue" language="vue" code="<PreviewCounter />"}
-::
 ::
 ::

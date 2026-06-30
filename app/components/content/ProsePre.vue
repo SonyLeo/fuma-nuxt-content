@@ -75,6 +75,6 @@ function parseCodeBlockMeta(meta?: string) {
     :class="props.class"
     :data-highlights="props.highlights.join(',')"
   >
-    <slot />
+    <pre class="fd-doc-code-block-pre shiki"><slot /></pre>
   </DocCodeBlock>
 </template>

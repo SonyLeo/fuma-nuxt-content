@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const props = withDefaults(
   defineProps<{
-    command: string
+    command?: string
     title?: string
     description?: string
   }>(),
@@ -20,11 +20,14 @@ const props = withDefaults(
         {{ description }}
       </p>
     </div>
-    <DocCodeBlock
-      class="fd-doc-install-command"
-      :code="props.command"
-      language="bash"
-      :allow-copy="true"
-    />
+    <div class="fd-doc-install-command">
+      <slot v-if="$slots.default" />
+      <DocCodeBlock
+        v-else-if="props.command"
+        :code="props.command"
+        language="bash"
+        :allow-copy="true"
+      />
+    </div>
   </section>
 </template>

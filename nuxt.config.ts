@@ -12,6 +12,14 @@ export default defineNuxtConfig({
       sqliteConnector: 'native',
     },
   },
+  mdc: {
+    highlight: {
+      theme: {
+        default: 'catppuccin-latte',
+        dark: 'catppuccin-mocha',
+      },
+    },
+  },
   devtools: { enabled: true },
   compatibilityDate: '2024-04-03',
 })

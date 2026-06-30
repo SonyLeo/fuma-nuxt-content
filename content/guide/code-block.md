@@ -7,7 +7,7 @@ toc: true
 
 ::doc-preview{variant="sandbox" label="Code block preview"}
 #preview
-```js title="config.js" lineNumbers
+```js title="config.js"
 import createMDX from 'fumadocs-mdx/config';
 
 const withMDX = createMDX();
@@ -23,7 +23,10 @@ export default withMDX(config);
 ```
 ::
 
-::doc-install-card{command="npx @fumadocs/cli@latest add codeblock"}
+::doc-install-card
+```bash
+npx @fumadocs/cli@latest add codeblock
+```
 ::
 
 This is a **MDX component** meant to be used with `Rehype Code` to display highlighted codeblocks.

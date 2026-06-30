@@ -14,9 +14,9 @@
       "icon": "overview"
     },
     {
-      "type": "link",
+      "type": "page",
+      "name": "components",
       "title": "Component Library",
-      "href": "/guide/components",
       "icon": "library"
     },
     {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ChevronLeft, ChevronRight } from '@lucide/vue'
 import type { DocsPagerItem, DocsPagerLabels } from '~/types/docs'
 
 withDefaults(
@@ -21,33 +22,38 @@ withDefaults(
 </script>
 
 <template>
-  <nav v-if="previous || next" class="docs-pager" aria-label="Page navigation">
+  <nav
+    v-if="previous || next"
+    class="docs-pager"
+    :class="{ 'has-both': previous && next }"
+    aria-label="Page navigation"
+  >
     <DocsLink
       v-if="previous?.path"
       :href="previous.path"
       class="docs-pager-link is-previous"
     >
-      <span class="docs-pager-caption">{{ labels.previous }}</span>
-      <span class="docs-pager-title">{{ previous.title }}</span>
+      <span class="docs-pager-title-row">
+        <ChevronLeft class="docs-pager-icon" aria-hidden="true" />
+        <span class="docs-pager-title">{{ previous.title }}</span>
+      </span>
       <span class="docs-pager-description">
         {{ previous.description || labels.previousDescription }}
       </span>
     </DocsLink>
-
-    <div v-else class="docs-pager-spacer" />
 
     <DocsLink
       v-if="next?.path"
       :href="next.path"
       class="docs-pager-link is-next"
     >
-      <span class="docs-pager-caption">{{ labels.next }}</span>
-      <span class="docs-pager-title">{{ next.title }}</span>
+      <span class="docs-pager-title-row">
+        <ChevronRight class="docs-pager-icon" aria-hidden="true" />
+        <span class="docs-pager-title">{{ next.title }}</span>
+      </span>
       <span class="docs-pager-description">
         {{ next.description || labels.nextDescription }}
       </span>
     </DocsLink>
-
-    <div v-else class="docs-pager-spacer" />
   </nav>
 </template>

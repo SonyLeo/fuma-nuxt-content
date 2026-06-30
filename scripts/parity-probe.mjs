@@ -60,6 +60,28 @@ function parseArgs(argv) {
     }
   }
 
+  if (out.profile === 'content-components') {
+    if (!seen.has('selector')) {
+      out.selector = '.fd-callout'
+    }
+
+    if (!seen.has('rects')) {
+      out.rects =
+        '.fd-callout,.fd-doc-tabs,.fd-doc-accordions,.fd-doc-files,.fd-doc-inline-toc,.fd-doc-type-table'
+    }
+  }
+
+  if (out.profile === 'page-actions') {
+    if (!seen.has('selector')) {
+      out.selector = '.docs-page-actions'
+    }
+
+    if (!seen.has('rects')) {
+      out.rects =
+        '.fd-doc-preview,.docs-page-actions,.docs-feedback,.docs-pager,.docs-page-footer'
+    }
+  }
+
   out.chromePort = Number(out.chromePort || 9233)
   out.minBytes = Number(out.minBytes || 1000)
   out.retries = Number(out.retries || 0)
@@ -87,7 +109,7 @@ function usage() {
     '',
     'Options:',
     '  --selector=#nd-toc',
-    '  --profile=toc|sidebar|code-block',
+    '  --profile=toc|sidebar|code-block|content-components|page-actions',
     '  --viewports=2048x1152,994x935',
     '  --rects=.docs-shell-body,#nd-page,#nd-toc',
     '  --activeSelector=.docs-toc-link.is-active',
@@ -608,7 +630,12 @@ function createCodeBlockProbeExpression(options) {
           overflowY: style.overflowY,
           borderRadius: style.borderRadius,
           borderTopWidth: style.borderTopWidth,
+          borderColor: style.borderColor,
           backgroundColor: style.backgroundColor,
+          color: style.color,
+          fontSize: style.fontSize,
+          fontWeight: style.fontWeight,
+          lineHeight: style.lineHeight,
         },
       };
     };
@@ -622,9 +649,23 @@ function createCodeBlockProbeExpression(options) {
         const copy = root.querySelector('.fd-doc-code-copy');
         const body = root.querySelector('.fd-doc-code-block-body');
         const pre = root.querySelector('pre');
+        const code = root.querySelector('pre code, .fd-doc-code-block-body > code');
         const icon = root.querySelector('.fd-doc-code-block-icon');
         const highlighted = root.querySelectorAll('.highlighted, .highlighted-word, .diff');
+        const highlightedWords = root.querySelectorAll('.highlighted-word');
         const lines = root.querySelectorAll('.line');
+        const firstLine = root.querySelector('.line');
+        const tokenColors = [
+          ...root.querySelectorAll('.line span:not(.highlighted-word)'),
+        ]
+          .map((element) => ({
+            text: text(element),
+            color: getComputedStyle(element).color,
+          }))
+          .filter((item) => item.text && item.color);
+        const distinctTokenColors = new Set(
+          tokenColors.map((item) => item.color),
+        );
 
         return {
           index,
@@ -636,7 +677,9 @@ function createCodeBlockProbeExpression(options) {
           copy: pick(copy),
           body: pick(body),
           pre: pick(pre),
+          code: pick(code),
           icon: pick(icon),
+          firstLine: pick(firstLine),
           dir: root.getAttribute('dir'),
           tabIndex: root.getAttribute('tabindex'),
           bodyRole: body?.getAttribute('role') || null,
@@ -644,7 +687,11 @@ function createCodeBlockProbeExpression(options) {
           copyAria: copy?.getAttribute('aria-label') || null,
           lineNumbers: root.hasAttribute('data-line-numbers'),
           highlightedCount: highlighted.length,
+          highlightedWordCount: highlightedWords.length,
           lineCount: lines.length,
+          markerVisible: root.textContent.includes('[!code'),
+          distinctTokenColorCount: distinctTokenColors.size,
+          tokenColorSample: Array.from(distinctTokenColors).slice(0, 6),
           scroll: body
             ? {
                 clientWidth: Math.round(body.clientWidth),
@@ -717,6 +764,363 @@ function createCodeBlockProbeExpression(options) {
   })()`
 }
 
+function createContentComponentsProbeExpression(options) {
+  return `(async () => {
+    const rectSelectors = ${JSON.stringify(options.rects)};
+    const selector = ${JSON.stringify(options.selector)};
+
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const text = (element) =>
+      element?.textContent?.trim().replace(/\\s+/g, ' ') || '';
+    const pick = (element) => {
+      if (!element) return null;
+
+      const style = getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+
+      return {
+        tag: element.tagName.toLowerCase(),
+        id: element.id || null,
+        className: typeof element.className === 'string' ? element.className : '',
+        text: text(element).slice(0, 160),
+        rect: {
+          left: Math.round(rect.left),
+          right: Math.round(rect.right),
+          width: Math.round(rect.width),
+          top: Math.round(rect.top),
+          height: Math.round(rect.height),
+        },
+        style: {
+          display: style.display,
+          flexDirection: style.flexDirection,
+          gridTemplateColumns: style.gridTemplateColumns,
+          gap: style.gap,
+          flexWrap: style.flexWrap,
+          alignItems: style.alignItems,
+          padding: style.padding,
+          margin: style.margin,
+          width: style.width,
+          height: style.height,
+          overflow: style.overflow,
+          overflowX: style.overflowX,
+          borderRadius: style.borderRadius,
+          borderTopWidth: style.borderTopWidth,
+          borderBottomWidth: style.borderBottomWidth,
+          borderLeftWidth: style.borderLeftWidth,
+          borderColor: style.borderColor,
+          backgroundColor: style.backgroundColor,
+          color: style.color,
+          fontSize: style.fontSize,
+          fontWeight: style.fontWeight,
+          lineHeight: style.lineHeight,
+          boxShadow: style.boxShadow,
+        },
+      };
+    };
+
+    const callouts = () =>
+      [...document.querySelectorAll('.fd-callout')].map((root, index) => ({
+        index,
+        root: pick(root),
+        bar: pick(root.querySelector('.fd-callout-bar')),
+        icon: pick(root.querySelector('.fd-callout-icon')),
+        content: pick(root.querySelector('.fd-callout-content')),
+        title: pick(root.querySelector('.fd-callout-title')),
+        body: pick(root.querySelector('.fd-callout-body')),
+      }));
+
+    const tabs = () =>
+      [...document.querySelectorAll('.fd-doc-tabs:not(.fd-doc-code-tabs)')].map(
+        (root, index) => ({
+          index,
+          root: pick(root),
+          list: pick(root.querySelector('.fd-doc-tabs-list')),
+          triggers: [...root.querySelectorAll('.fd-doc-tab-trigger')].map(
+            (element) => ({
+              root: pick(element),
+              text: text(element),
+              state: element.getAttribute('data-state'),
+              selected: element.getAttribute('aria-selected'),
+            }),
+          ),
+          panels: [...root.querySelectorAll('.fd-doc-tab-panel')].map(
+            (element) => ({
+              root: pick(element),
+              state: element.getAttribute('data-state'),
+              hidden: element.hasAttribute('hidden'),
+            }),
+          ),
+        }),
+      );
+
+    const accordions = () =>
+      [...document.querySelectorAll('.fd-doc-accordions')].map((root, index) => ({
+        index,
+        root: pick(root),
+        items: [...root.querySelectorAll('.fd-doc-accordion-item')].map(
+          (element) => {
+            const trigger = element.querySelector('.fd-doc-accordion-trigger');
+            const panel = element.querySelector('.fd-doc-accordion-panel');
+
+            return {
+              root: pick(element),
+              trigger: pick(trigger),
+              copy: pick(element.querySelector('.fd-doc-accordion-copy')),
+              panel: pick(panel),
+              state: element.getAttribute('data-state'),
+              value: element.getAttribute('data-accordion-value'),
+              triggerExpanded: trigger?.getAttribute('aria-expanded') || null,
+              panelHidden: panel?.getAttribute('hidden') || null,
+              panelRole: panel?.getAttribute('role') || null,
+            };
+          },
+        ),
+      }));
+
+    const files = () =>
+      [...document.querySelectorAll('.fd-doc-files')].map((root, index) => ({
+        index,
+        root: pick(root),
+        rows: [...root.querySelectorAll('.fd-doc-file,.fd-doc-folder-trigger')].map(
+          (element) => pick(element),
+        ),
+        folderContent: pick(root.querySelector('.fd-doc-folder-content')),
+      }));
+
+    const inlineTocs = () =>
+      [...document.querySelectorAll('.fd-doc-inline-toc')].map((root, index) => ({
+        index,
+        root: pick(root),
+        trigger: pick(root.querySelector('.fd-doc-inline-toc-trigger')),
+        content: pick(root.querySelector('.fd-doc-inline-toc-content')),
+        expanded:
+          root
+            .querySelector('.fd-doc-inline-toc-trigger')
+            ?.getAttribute('aria-expanded') || null,
+        links: [...root.querySelectorAll('.fd-doc-inline-toc-link')].map(
+          (element) => ({
+            root: pick(element),
+            href: element.getAttribute('href'),
+            paddingInlineStart: getComputedStyle(element).paddingInlineStart,
+          }),
+        ),
+      }));
+
+    const typeTables = () =>
+      [...document.querySelectorAll('.fd-doc-type-table')].map((root, index) => ({
+        index,
+        root: pick(root),
+        head: pick(root.querySelector('.fd-doc-type-table-head')),
+        rows: [...root.querySelectorAll('.fd-doc-type-row')].map((element) => {
+          const trigger = element.querySelector('.fd-doc-type-trigger');
+          const details = element.querySelector('.fd-doc-type-details');
+
+          return {
+            root: pick(element),
+            trigger: pick(trigger),
+            prop: pick(element.querySelector('.fd-doc-type-prop')),
+            value: pick(element.querySelector('.fd-doc-type-value')),
+            details: pick(details),
+            open: element.getAttribute('data-open'),
+            expanded: trigger?.getAttribute('aria-expanded') || null,
+            detailsVisible: details ? getComputedStyle(details).display !== 'none' : false,
+          };
+        }),
+      }));
+
+    const collect = (phase) => ({
+      phase,
+      url: location.href,
+      title: document.title,
+      root: pick(document.querySelector(selector)),
+      rects: Object.fromEntries(
+        rectSelectors.map((item) => [item, pick(document.querySelector(item))]),
+      ),
+      callouts: callouts(),
+      tabs: tabs(),
+      accordions: accordions(),
+      files: files(),
+      inlineTocs: inlineTocs(),
+      typeTables: typeTables(),
+    });
+
+    const top = collect('top');
+
+    const secondTab = document
+      .querySelectorAll('.fd-doc-tabs:not(.fd-doc-code-tabs) .fd-doc-tab-trigger')
+      .item(1);
+    secondTab?.click();
+    await wait(180);
+    const tabSwitched = collect('tab-switched');
+
+    const secondAccordion = document
+      .querySelectorAll('.fd-doc-accordion-trigger')
+      .item(1);
+    secondAccordion?.click();
+    await wait(220);
+    const accordionOpened = collect('accordion-opened');
+
+    const firstTypeTrigger = document.querySelector('.fd-doc-type-trigger');
+    firstTypeTrigger?.click();
+    await wait(180);
+    const typeOpened = collect('type-opened');
+
+    return { top, tabSwitched, accordionOpened, typeOpened };
+  })()`
+}
+
+function createPageActionsProbeExpression(options) {
+  return `(async () => {
+    const rectSelectors = ${JSON.stringify(options.rects)};
+    const selector = ${JSON.stringify(options.selector)};
+
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const text = (element) =>
+      element?.textContent?.trim().replace(/\\s+/g, ' ') || '';
+    const pick = (element) => {
+      if (!element) return null;
+
+      const style = getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+
+      return {
+        tag: element.tagName.toLowerCase(),
+        id: element.id || null,
+        className: typeof element.className === 'string' ? element.className : '',
+        text: text(element).slice(0, 180),
+        rect: {
+          left: Math.round(rect.left),
+          right: Math.round(rect.right),
+          width: Math.round(rect.width),
+          top: Math.round(rect.top),
+          height: Math.round(rect.height),
+        },
+        style: {
+          display: style.display,
+          gridTemplateColumns: style.gridTemplateColumns,
+          flexDirection: style.flexDirection,
+          flexWrap: style.flexWrap,
+          alignItems: style.alignItems,
+          justifyContent: style.justifyContent,
+          gap: style.gap,
+          padding: style.padding,
+          margin: style.margin,
+          width: style.width,
+          minHeight: style.minHeight,
+          overflow: style.overflow,
+          borderRadius: style.borderRadius,
+          borderTopWidth: style.borderTopWidth,
+          borderBottomWidth: style.borderBottomWidth,
+          borderColor: style.borderColor,
+          backgroundColor: style.backgroundColor,
+          color: style.color,
+          fontSize: style.fontSize,
+          fontWeight: style.fontWeight,
+          lineHeight: style.lineHeight,
+        },
+      };
+    };
+
+    const pageActions = () => {
+      const root = document.querySelector(selector);
+      const openTrigger = document.querySelector('.docs-page-open-trigger');
+      const popover = document.querySelector('.docs-page-open-popover');
+
+      return {
+        root: pick(root),
+        copy: pick(document.querySelector('.docs-page-action[aria-label*="Copy"]')),
+        openTrigger: pick(openTrigger),
+        openExpanded: openTrigger?.getAttribute('aria-expanded') || null,
+        openState: openTrigger?.getAttribute('data-state') || null,
+        popover: pick(popover),
+        options: [...document.querySelectorAll('.docs-page-open-option')].map(
+          (element) => ({
+            root: pick(element),
+            href: element.getAttribute('href'),
+            target: element.getAttribute('target'),
+          }),
+        ),
+      };
+    };
+
+    const feedback = () => {
+      const root = document.querySelector('.docs-feedback');
+      const buttons = [...document.querySelectorAll('.docs-feedback-button')].map(
+        (element) => ({
+          root: pick(element),
+          pressed: element.getAttribute('data-pressed'),
+          ariaPressed: element.getAttribute('aria-pressed'),
+        }),
+      );
+
+      return {
+        root: pick(root),
+        prompt: pick(document.querySelector('.docs-feedback-prompt')),
+        buttons,
+        thanks: pick(document.querySelector('.docs-feedback-thanks')),
+      };
+    };
+
+    const pager = () => {
+      const root = document.querySelector('.docs-pager');
+
+      return {
+        root: pick(root),
+        links: [...document.querySelectorAll('.docs-pager-link')].map(
+          (element) => ({
+            root: pick(element),
+            title: pick(element.querySelector('.docs-pager-title')),
+            description: pick(element.querySelector('.docs-pager-description')),
+            icon: pick(element.querySelector('.docs-pager-icon')),
+            href: element.getAttribute('href'),
+          }),
+        ),
+        spacers: [...document.querySelectorAll('.docs-pager-spacer')].length,
+      };
+    };
+
+    const collect = (phase) => ({
+      phase,
+      url: location.href,
+      title: document.title,
+      root: pick(document.querySelector(selector)),
+      rects: Object.fromEntries(
+        rectSelectors.map((item) => [item, pick(document.querySelector(item))]),
+      ),
+      preview: {
+        root: pick(document.querySelector('.fd-doc-preview')),
+        canvas: pick(document.querySelector('.fd-doc-preview-canvas')),
+        description: pick(document.querySelector('.fd-doc-preview-description')),
+        source: pick(document.querySelector('.fd-doc-preview-source')),
+        codeBlock: pick(
+          document.querySelector('.fd-doc-preview-source .fd-doc-code-block'),
+        ),
+        rawComponents: [
+          ...document.querySelectorAll(
+            '.fd-doc-preview doccodeblock,.fd-doc-preview previewcounter',
+          ),
+        ].map((element) => element.tagName.toLowerCase()),
+      },
+      pageActions: pageActions(),
+      feedback: feedback(),
+      pager: pager(),
+      footer: pick(document.querySelector('.docs-page-footer')),
+    });
+
+    const top = collect('top');
+
+    document.querySelector('.docs-page-open-trigger')?.click();
+    await wait(220);
+    const openMenu = collect('open-menu');
+
+    document.querySelector('.docs-feedback-button')?.click();
+    await wait(180);
+    const feedbackSelected = collect('feedback-selected');
+
+    return { top, openMenu, feedbackSelected };
+  })()`
+}
+
 async function evaluate(cdp, expression) {
   const result = await cdp.send('Runtime.evaluate', {
     expression,
@@ -744,7 +1148,11 @@ async function captureViewport(options, viewportValue) {
           ? createSidebarProbeExpression(options)
           : options.profile === 'code-block'
             ? createCodeBlockProbeExpression(options)
-            : createProbeExpression(options),
+            : options.profile === 'content-components'
+              ? createContentComponentsProbeExpression(options)
+              : options.profile === 'page-actions'
+                ? createPageActionsProbeExpression(options)
+                : createProbeExpression(options),
       ),
     }
   } finally {
@@ -777,6 +1185,16 @@ function addCheck(checks, check) {
   checks.push(check)
 }
 
+function cssPx(value) {
+  return Number.parseFloat(String(value ?? '').replace('px', ''))
+}
+
+function cssPxNear(value, expected, tolerance = 0.75) {
+  const actual = cssPx(value)
+
+  return Number.isFinite(actual) && Math.abs(actual - expected) <= tolerance
+}
+
 function summarize(report) {
   if (report.options.profile === 'sidebar') {
     summarizeSidebar(report)
@@ -785,6 +1203,16 @@ function summarize(report) {
 
   if (report.options.profile === 'code-block') {
     summarizeCodeBlock(report)
+    return
+  }
+
+  if (report.options.profile === 'content-components') {
+    summarizeContentComponents(report)
+    return
+  }
+
+  if (report.options.profile === 'page-actions') {
+    summarizePageActions(report)
     return
   }
 
@@ -892,6 +1320,244 @@ function summarize(report) {
   }
 }
 
+function summarizeContentComponents(report) {
+  for (const capture of report.captures) {
+    const { viewport, data } = capture
+    const width = viewport.width
+    const top = data.top
+    const callouts = top.callouts
+    const tabs = top.tabs[0]
+    const activeTab = tabs?.triggers.find((item) => item.state === 'active')
+    const inactivePanels = tabs?.panels.filter((item) => item.state === 'inactive') ?? []
+    const switchedTab = data.tabSwitched.tabs[0]?.triggers.find(
+      (item) => item.text === 'Code',
+    )
+    const accordion = top.accordions[0]
+    const closedAccordion = accordion?.items.find((item) => item.state === 'closed')
+    const openedAccordion = data.accordionOpened.accordions[0]?.items.find(
+      (item) => item.value === 'why-not-vitepress',
+    )
+    const files = top.files[0]
+    const inlineToc = top.inlineTocs[0]
+    const typeTable = top.typeTables[0]
+    const openedTypeRow = data.typeOpened.typeTables[0]?.rows.find(
+      (item) => item.expanded === 'true',
+    )
+
+    addCheck(report.checks, {
+      label: `${width}px runtime selector ${report.options.selector}`,
+      pass: Boolean(top.root),
+      message: top.root ? `${top.root.rect.width}px wide` : 'missing',
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px callout contract`,
+      pass:
+        callouts.length >= 2 &&
+        callouts.every(
+          (item) =>
+            item.root?.style.display === 'flex' &&
+            item.root?.style.alignItems === 'stretch' &&
+            cssPxNear(item.root?.style.lineHeight, 20, 1) &&
+            item.bar?.rect.width <= 3 &&
+            Math.abs((item.bar?.rect.height ?? 0) - (item.content?.rect.height ?? 0)) <=
+              1 &&
+            cssPxNear(item.icon?.style.width, 20, 1) &&
+            item.icon?.rect.height <= 21 &&
+            (!item.title || item.title.style.margin === '0px') &&
+            item.title?.style.fontWeight !== '700',
+        ),
+      message:
+        callouts.length === 0
+          ? 'missing'
+          : callouts
+              .map(
+                (item) =>
+                  `${item.index}:display=${item.root?.style.display},align=${item.root?.style.alignItems},line=${item.root?.style.lineHeight},bar=${item.bar?.rect.width}x${item.bar?.rect.height},contentH=${item.content?.rect.height},icon=${item.icon?.style.width}x${item.icon?.rect.height},titleMargin=${item.title?.style.margin},titleWeight=${item.title?.style.fontWeight}`,
+              )
+              .join('; '),
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px tabs list rhythm`,
+      pass:
+        Boolean(tabs) &&
+        tabs.root?.style.display === 'flex' &&
+        tabs.list?.style.flexWrap === 'nowrap' &&
+        tabs.list?.style.overflowX !== 'visible' &&
+        activeTab?.root?.style.borderBottomWidth !== '0px',
+      message: tabs
+        ? `root=${tabs.root?.style.display}, wrap=${tabs.list?.style.flexWrap}, overflowX=${tabs.list?.style.overflowX}, active=${activeTab?.text ?? 'none'}, border=${activeTab?.root?.style.borderBottomWidth ?? 'missing'}`
+        : 'missing',
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px tabs state switches`,
+      pass:
+        switchedTab?.state === 'active' &&
+        switchedTab?.selected === 'true' &&
+        inactivePanels.some((item) => item.hidden),
+      message: `code=${switchedTab?.state ?? 'missing'}/${switchedTab?.selected ?? 'missing'}, inactiveHidden=${inactivePanels
+        .map((item) => item.hidden)
+        .join(',')}`,
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px accordion protocol`,
+      pass:
+        Boolean(accordion) &&
+        accordion.items.length >= 3 &&
+        closedAccordion?.panelHidden === 'until-found' &&
+        accordion.items.some((item) => item.copy),
+      message: accordion
+        ? `items=${accordion.items.length}, closedHidden=${closedAccordion?.panelHidden ?? 'missing'}, copy=${accordion.items.some((item) => item.copy)}`
+        : 'missing',
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px accordion opens clicked item`,
+      pass:
+        openedAccordion?.state === 'open' &&
+        openedAccordion?.triggerExpanded === 'true' &&
+        openedAccordion?.panelRole === 'region',
+      message: openedAccordion
+        ? `state=${openedAccordion.state}, expanded=${openedAccordion.triggerExpanded}, role=${openedAccordion.panelRole}`
+        : 'missing',
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px files tree density`,
+      pass:
+        Boolean(files) &&
+        files.rows.length >= 4 &&
+        files.folderContent?.style.borderLeftWidth === '1px',
+      message: files
+        ? `rows=${files.rows.length}, folderBorder=${files.folderContent?.style.borderLeftWidth ?? 'missing'}`
+        : 'missing',
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px inline toc contract`,
+      pass:
+        Boolean(inlineToc) &&
+        inlineToc.expanded === 'true' &&
+        inlineToc.links.length >= 3 &&
+        inlineToc.links.every((item) => item.root?.style.borderLeftWidth === '1px'),
+      message: inlineToc
+        ? `expanded=${inlineToc.expanded}, links=${inlineToc.links.length}, border=${inlineToc.links[0]?.root?.style.borderLeftWidth ?? 'missing'}`
+        : 'missing',
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px type table rendered`,
+      pass:
+        Boolean(typeTable) &&
+        typeTable.rows.length >= 2 &&
+        typeTable.root?.style.display === 'flex' &&
+        typeTable.head?.style.display === 'flex',
+      message: typeTable
+        ? `rows=${typeTable.rows.length}, root=${typeTable.root?.style.display}, head=${typeTable.head?.style.display}`
+        : 'missing',
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px type table expands details`,
+      pass:
+        openedTypeRow?.expanded === 'true' &&
+        openedTypeRow?.detailsVisible &&
+        openedTypeRow?.details?.style.display === 'grid',
+      message: openedTypeRow
+        ? `expanded=${openedTypeRow.expanded}, visible=${openedTypeRow.detailsVisible}, display=${openedTypeRow.details?.style.display}`
+        : 'missing',
+    })
+  }
+}
+
+function summarizePageActions(report) {
+  for (const capture of report.captures) {
+    const { viewport, data } = capture
+    const width = viewport.width
+    const top = data.top
+    const openMenu = data.openMenu
+    const feedbackSelected = data.feedbackSelected
+    const actions = top.pageActions
+    const pager = top.pager
+
+    addCheck(report.checks, {
+      label: `${width}px runtime selector ${report.options.selector}`,
+      pass: Boolean(top.root),
+      message: top.root ? `${top.root.rect.width}px wide` : 'missing',
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px preview frame`,
+      pass:
+        Boolean(top.preview.root) &&
+        Boolean(top.preview.canvas) &&
+        Boolean(top.preview.source) &&
+        Boolean(top.preview.codeBlock) &&
+        top.preview.rawComponents.length === 0 &&
+        top.preview.root.style.overflow === 'hidden',
+      message: top.preview.root
+        ? `canvas=${Boolean(top.preview.canvas)}, source=${Boolean(top.preview.source)}, code=${Boolean(top.preview.codeBlock)}, raw=${top.preview.rawComponents.join('/') || 'none'}, overflow=${top.preview.root.style.overflow}`
+        : 'missing',
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px page actions visible`,
+      pass:
+        Boolean(actions.root) &&
+        Boolean(actions.copy) &&
+        Boolean(actions.openTrigger) &&
+        actions.copy.text.includes('Copy Markdown'),
+      message: actions.root
+        ? `copy=${actions.copy?.text ?? 'missing'}, open=${actions.openTrigger?.text ?? 'missing'}`
+        : 'missing',
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px open menu expands`,
+      pass:
+        openMenu.pageActions.openExpanded === 'true' &&
+        openMenu.pageActions.openState === 'open' &&
+        Boolean(openMenu.pageActions.popover) &&
+        openMenu.pageActions.options.length > 0,
+      message: `expanded=${openMenu.pageActions.openExpanded}, state=${openMenu.pageActions.openState}, options=${openMenu.pageActions.options.length}`,
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px feedback controls`,
+      pass:
+        Boolean(top.feedback.root) &&
+        top.feedback.buttons.length === 2 &&
+        feedbackSelected.feedback.buttons.some(
+          (item) => item.pressed === 'true' || item.ariaPressed === 'true',
+        ) &&
+        Boolean(feedbackSelected.feedback.thanks),
+      message: top.feedback.root
+        ? `buttons=${top.feedback.buttons.length}, selected=${feedbackSelected.feedback.buttons
+            .map((item) => item.pressed || item.ariaPressed || 'false')
+            .join('/')}, thanks=${Boolean(feedbackSelected.feedback.thanks)}`
+        : 'missing',
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px pager items`,
+      pass:
+        Boolean(pager.root) &&
+        pager.links.length >= 1 &&
+        pager.links.every((item) => item.href && item.title && item.icon),
+      message: pager.root
+        ? `links=${pager.links.length}, spacers=${pager.spacers}, titles=${pager.links
+            .map((item) => item.title?.text || 'missing')
+            .join('/')}, icons=${pager.links
+            .map((item) => Boolean(item.icon))
+            .join('/')}`
+        : 'missing',
+    })
+  }
+}
+
 function summarizeCodeBlock(report) {
   for (const capture of report.captures) {
     const { viewport, data } = capture
@@ -900,7 +1566,39 @@ function summarizeCodeBlock(report) {
     const titled = blocks.find((block) => block.header && block.caption)
     const untitled = blocks.find((block) => !block.header && block.floating)
     const highlighted = blocks.find((block) => block.highlightedCount > 0)
-    const lineNumbered = blocks.find((block) => block.lineNumbers && block.lineCount > 0)
+    const highlightedWord = blocks.find((block) => block.highlightedWordCount > 0)
+    const markerLeaks = blocks.filter((block) => block.markerVisible)
+    const missingPreBlocks = blocks.filter((block) => block.lineCount > 0 && !block.pre)
+    const collapsedTokenBlocks = blocks.filter(
+      (block) => block.lineCount > 0 && block.distinctTokenColorCount < 2,
+    )
+    const brokenLineNumberedBlocks = blocks.filter(
+      (block) => block.lineNumbers && block.lineCount === 0,
+    )
+    const highlightedBlocks = blocks.filter((block) => block.lineCount > 0)
+    const wrongThemeBlocks = highlightedBlocks.filter(
+      (block) =>
+        !block.root?.className.includes('catppuccin-latte') ||
+        !block.root?.className.includes('catppuccin-mocha'),
+    )
+    const paddedPreBlocks = highlightedBlocks.filter(
+      (block) =>
+        block.pre?.style.padding !== '0px' ||
+        block.pre?.style.backgroundColor !== 'rgba(0, 0, 0, 0)',
+    )
+    const wrongCodeScaleBlocks = highlightedBlocks.filter(
+      (block) =>
+        !cssPxNear(block.code?.style.fontSize, 13) ||
+        !cssPxNear(block.firstLine?.style.lineHeight, 18.57),
+    )
+    const heavyHeaderCopyBlocks = blocks.filter(
+      (block) =>
+        block.header &&
+        block.copy &&
+        (block.copy.rect.height > 26 ||
+          block.copy.style.borderTopWidth !== '0px' ||
+          block.copy.style.backgroundColor !== 'rgba(0, 0, 0, 0)'),
+    )
     const first = blocks[0]
     const headingTexts = data.top.headings.map((item) => item.text)
 
@@ -921,6 +1619,17 @@ function summarizeCodeBlock(report) {
       message: first
         ? `tag=${first.root?.tag}, dir=${first.dir}, tabindex=${first.tabIndex}, class=${first.root?.className}`
         : 'missing',
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px code theme contract`,
+      pass: wrongThemeBlocks.length === 0,
+      message:
+        wrongThemeBlocks.length === 0
+          ? 'highlighted blocks use catppuccin-latte/mocha'
+          : `wrong theme blocks=${wrongThemeBlocks
+              .map((block) => `${block.index}:${block.root?.className}`)
+              .join('; ')}`,
     })
 
     addCheck(report.checks, {
@@ -972,10 +1681,41 @@ function summarizeCodeBlock(report) {
       label: `${width}px titled code header`,
       pass:
         Boolean(titled?.header && titled.caption && titled.copy) &&
-        titled.caption.text.includes('config.js'),
+        titled.caption.text === 'config.js' &&
+        titled.header.text === titled.caption.text &&
+        titled.caption.style.margin === '0px' &&
+        titled.caption.style.fontWeight === '400',
       message: titled
-        ? `caption=${titled.caption?.text || 'none'}, copy=${Boolean(titled.copy)}`
+        ? `header=${titled.header?.text || 'none'}, caption=${titled.caption?.text || 'none'}, margin=${titled.caption?.style.margin}, weight=${titled.caption?.style.fontWeight}, copy=${Boolean(titled.copy)}`
         : 'missing',
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px code typography density`,
+      pass: wrongCodeScaleBlocks.length === 0,
+      message:
+        wrongCodeScaleBlocks.length === 0
+          ? 'code font-size and line-height match compact profile'
+          : `wrong scale blocks=${wrongCodeScaleBlocks
+              .map(
+                (block) =>
+                  `${block.index}:font=${block.code?.style.fontSize},line=${block.firstLine?.style.lineHeight}`,
+              )
+              .join('; ')}`,
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px pre wrapper is neutral`,
+      pass: paddedPreBlocks.length === 0,
+      message:
+        paddedPreBlocks.length === 0
+          ? 'pre wrappers have no padding/background'
+          : `padded pre blocks=${paddedPreBlocks
+              .map(
+                (block) =>
+                  `${block.index}:padding=${block.pre?.style.padding},bg=${block.pre?.style.backgroundColor}`,
+              )
+              .join('; ')}`,
     })
 
     addCheck(report.checks, {
@@ -995,6 +1735,20 @@ function summarizeCodeBlock(report) {
     })
 
     addCheck(report.checks, {
+      label: `${width}px header copy button weight`,
+      pass: heavyHeaderCopyBlocks.length === 0,
+      message:
+        heavyHeaderCopyBlocks.length === 0
+          ? 'header copy buttons are compact and transparent'
+          : `heavy copy blocks=${heavyHeaderCopyBlocks
+              .map(
+                (block) =>
+                  `${block.index}:h=${block.copy.rect.height},border=${block.copy.style.borderTopWidth},bg=${block.copy.style.backgroundColor}`,
+              )
+              .join('; ')}`,
+    })
+
+    addCheck(report.checks, {
       label: `${width}px highlighted code markers`,
       pass: Boolean(highlighted),
       message: highlighted
@@ -1003,11 +1757,58 @@ function summarizeCodeBlock(report) {
     })
 
     addCheck(report.checks, {
+      label: `${width}px highlighted word marker`,
+      pass: Boolean(highlightedWord),
+      message: highlightedWord
+        ? `block=${highlightedWord.index}, words=${highlightedWord.highlightedWordCount}`
+        : 'missing highlighted word',
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px notation markers removed`,
+      pass: markerLeaks.length === 0,
+      message:
+        markerLeaks.length === 0
+          ? 'no notation text leaked'
+          : `leaked blocks=${markerLeaks.map((block) => block.index).join(',')}`,
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px highlighted code uses pre wrapper`,
+      pass: missingPreBlocks.length === 0,
+      message:
+        missingPreBlocks.length === 0
+          ? 'all highlighted blocks have pre'
+          : `missing pre blocks=${missingPreBlocks.map((block) => block.index).join(',')}`,
+    })
+
+    addCheck(report.checks, {
+      label: `${width}px token colors applied`,
+      pass: collapsedTokenBlocks.length === 0,
+      message:
+        collapsedTokenBlocks.length === 0
+          ? blocks
+              .filter((block) => block.lineCount > 0)
+              .map(
+                (block) =>
+                  `${block.index}:${block.distinctTokenColorCount} colors`,
+              )
+              .join('; ')
+          : `collapsed blocks=${collapsedTokenBlocks
+              .map(
+                (block) =>
+                  `${block.index}:${block.tokenColorSample.join('|') || 'none'}`,
+              )
+              .join('; ')}`,
+    })
+
+    addCheck(report.checks, {
       label: `${width}px line-number protocol`,
-      pass: Boolean(lineNumbered),
-      message: lineNumbered
-        ? `block=${lineNumbered.index}, lines=${lineNumbered.lineCount}`
-        : 'missing line-numbered block',
+      pass: brokenLineNumberedBlocks.length === 0,
+      message:
+        brokenLineNumberedBlocks.length === 0
+          ? 'line-numbered blocks have line nodes when present'
+          : `broken blocks=${brokenLineNumberedBlocks.map((block) => block.index).join(',')}`,
     })
   }
 }
@@ -1162,6 +1963,46 @@ function formatReport(report) {
         }; preview=${preview ? 'yes' : 'missing'}; install=${
           install ? 'yes' : 'missing'
         }; markers=${markers}; lineNumbered=${lineNumbered}`,
+      )
+      continue
+    }
+
+    if (report.options.profile === 'content-components') {
+      const top = capture.data.top
+      const switchedTab = capture.data.tabSwitched.tabs[0]?.triggers.find(
+        (item) => item.state === 'active',
+      )
+      const openedTypeRow = capture.data.typeOpened.typeTables[0]?.rows.find(
+        (item) => item.expanded === 'true',
+      )
+
+      lines.push(
+        `- ${capture.viewport.width}x${capture.viewport.height}: callouts=${
+          top.callouts.length
+        }; tabs=${top.tabs.length}/${switchedTab?.text ?? 'none'}; accordions=${
+          top.accordions[0]?.items.length ?? 0
+        }; files=${top.files[0]?.rows.length ?? 0}; inlineToc=${
+          top.inlineTocs[0]?.links.length ?? 0
+        }; typeRows=${top.typeTables[0]?.rows.length ?? 0}/open=${
+          openedTypeRow?.prop?.text ?? 'none'
+        }`,
+      )
+      continue
+    }
+
+    if (report.options.profile === 'page-actions') {
+      const top = capture.data.top
+      const openMenu = capture.data.openMenu
+      const feedbackSelected = capture.data.feedbackSelected
+
+      lines.push(
+        `- ${capture.viewport.width}x${capture.viewport.height}: preview=${
+          top.preview.root ? 'yes' : 'missing'
+        }; actions=${
+          top.pageActions.copy ? 'copy' : 'missing'
+        }/open=${openMenu.pageActions.openExpanded}; feedback=${
+          feedbackSelected.feedback.thanks ? 'selected' : 'idle'
+        }; pagerLinks=${top.pager.links.length}`,
       )
       continue
     }

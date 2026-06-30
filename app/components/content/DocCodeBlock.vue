@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { Check, Copy } from '@lucide/vue'
-import { computed, useSlots, useTemplateRef } from 'vue'
+import { computed, nextTick, onMounted, onUpdated, useSlots, useTemplateRef } from 'vue'
 import { writeDocsClipboardText } from '~/utils/docs-clipboard'
 
 const bodyRef = useTemplateRef<HTMLElement>('body')
 const slots = useSlots()
+const codeWordNotationPattern =
+  /^(?:\/\/|#|<!--|\/\*)?\s*\[!code word:((?:\\.|[^:\]])+)(?::(\d+))?\]\s*(?:-->|\*\/)?$/
+const escapedCharacterPattern = /\\(.)/g
 
 const codeBlockIcons = {
   default: {
@@ -114,6 +117,107 @@ function readRenderedCode() {
 async function copyCode() {
   await writeDocsClipboardText(props.code || readRenderedCode())
 }
+
+function highlightTextNode(textNode: Text, word: string) {
+  const value = textNode.nodeValue ?? ''
+  const fragment = document.createDocumentFragment()
+  let index = 0
+  let matchIndex = value.indexOf(word, index)
+
+  if (matchIndex === -1) {
+    return
+  }
+
+  while (matchIndex !== -1) {
+    if (matchIndex > index) {
+      fragment.append(value.slice(index, matchIndex))
+    }
+
+    const mark = document.createElement('span')
+    mark.className = 'highlighted-word'
+    mark.textContent = word
+    fragment.append(mark)
+    index = matchIndex + word.length
+    matchIndex = value.indexOf(word, index)
+  }
+
+  if (index < value.length) {
+    fragment.append(value.slice(index))
+  }
+
+  textNode.replaceWith(fragment)
+}
+
+function highlightWordInLine(line: Element, word: string) {
+  const walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT)
+  const nodes: Text[] = []
+  let current = walker.nextNode()
+
+  while (current) {
+    if (
+      current instanceof Text &&
+      !current.parentElement?.closest('.highlighted-word')
+    ) {
+      nodes.push(current)
+    }
+
+    current = walker.nextNode()
+  }
+
+  for (const node of nodes) {
+    highlightTextNode(node, word)
+  }
+}
+
+function applyWordHighlightFallback() {
+  const container = bodyRef.value
+  if (!container) {
+    return
+  }
+
+  const lines = Array.from(container.querySelectorAll<HTMLElement>('.line'))
+  const directives: Array<{ index: number; word: string; range: number }> = []
+
+  lines.forEach((line, index) => {
+    const match = line.textContent?.trim().match(codeWordNotationPattern)
+
+    const word = match?.[1]
+
+    if (!word) {
+      return
+    }
+
+    directives.push({
+      index,
+      word: word.replace(escapedCharacterPattern, '$1'),
+      range: match[2] ? Number(match[2]) : Number.POSITIVE_INFINITY,
+    })
+  })
+
+  for (const directive of directives) {
+    const end = Math.min(lines.length, directive.index + 1 + directive.range)
+
+    for (let index = directive.index + 1; index < end; index++) {
+      const line = lines[index]
+
+      if (line) {
+        highlightWordInLine(line, directive.word)
+      }
+    }
+  }
+
+  for (const directive of [...directives].reverse()) {
+    lines[directive.index]?.remove()
+  }
+}
+
+async function syncCodeBlockDom() {
+  await nextTick()
+  applyWordHighlightFallback()
+}
+
+onMounted(syncCodeBlockDom)
+onUpdated(syncCodeBlockDom)
 </script>
 
 <template>
@@ -140,12 +244,6 @@ async function copyCode() {
         <figcaption v-if="displayTitle" class="fd-doc-code-block-title">
           {{ displayTitle }}
         </figcaption>
-        <span v-if="language" class="fd-doc-code-block-language">
-          {{ language }}
-        </span>
-        <span v-if="meta" class="fd-doc-code-block-language">
-          {{ meta }}
-        </span>
       </div>
       <div
         v-if="$slots.actions || allowCopy"
@@ -159,13 +257,13 @@ async function copyCode() {
           label="Copy Text"
           copied-label="Copied Text"
           failed-label="Copy failed"
-          variant="outline"
-          size="icon-sm"
+          variant="ghost"
+          size="icon-xs"
           class="fd-doc-code-copy"
         >
           <template #default="{ state }">
-            <Check v-if="state === 'copied'" :size="15" aria-hidden="true" />
-            <Copy v-else :size="15" aria-hidden="true" />
+            <Check v-if="state === 'copied'" :size="16" aria-hidden="true" />
+            <Copy v-else :size="16" aria-hidden="true" />
           </template>
         </DocsCopyButton>
       </div>
@@ -180,13 +278,13 @@ async function copyCode() {
         label="Copy Text"
         copied-label="Copied Text"
         failed-label="Copy failed"
-        variant="outline"
-        size="icon-sm"
+        variant="ghost"
+        size="icon-xs"
         class="fd-doc-code-copy"
       >
         <template #default="{ state }">
-          <Check v-if="state === 'copied'" :size="15" aria-hidden="true" />
-          <Copy v-else :size="15" aria-hidden="true" />
+          <Check v-if="state === 'copied'" :size="16" aria-hidden="true" />
+          <Copy v-else :size="16" aria-hidden="true" />
         </template>
       </DocsCopyButton>
     </div>
