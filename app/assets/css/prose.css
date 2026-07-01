@@ -56,6 +56,14 @@
   line-height: 1.5;
 }
 
+.docs-heading {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  gap: 0.25rem;
+  scroll-margin-top: 7rem;
+}
+
 .docs-heading-anchor {
   color: inherit;
   text-decoration: none;
@@ -69,6 +77,21 @@
   border-radius: var(--docs-radius-sm);
   outline: 2px solid var(--docs-color-ring);
   outline-offset: 4px;
+}
+
+.docs-heading-copy {
+  flex: 0 0 auto;
+  color: var(--docs-color-muted-foreground);
+  opacity: 0;
+  transition:
+    color var(--docs-motion-fast),
+    background-color var(--docs-motion-fast),
+    opacity var(--docs-motion-fast);
+}
+
+.docs-heading:hover .docs-heading-copy,
+.docs-heading:focus-within .docs-heading-copy {
+  opacity: 1;
 }
 
 .docs-page-body h2 + *,

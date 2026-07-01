@@ -1,4 +1,4 @@
 export const docsShellSuite = {
   name: 'docs-shell',
-  profiles: ['toc', 'sidebar'],
+  profiles: ['toc', 'toc-responsive', 'sidebar'],
 }

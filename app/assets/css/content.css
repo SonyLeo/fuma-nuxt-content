@@ -89,36 +89,35 @@
 }
 
 .fd-card-grid {
+  container-type: inline-size;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--docs-space-4);
-  margin: 1.4rem 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
 }
 
 .fd-doc-card {
   display: block;
   min-height: 100%;
-  padding: 1rem 1rem 1.05rem;
+  padding: 1rem;
   border: 1px solid var(--docs-color-border);
-  border-radius: var(--docs-card-radius);
+  border-radius: 0.75rem;
   background: var(--docs-color-card);
   color: var(--docs-color-card-foreground);
   text-decoration: none;
   box-shadow: none;
   transition:
-    transform var(--docs-motion-base),
-    border-color var(--docs-motion-base),
-    box-shadow var(--docs-motion-base);
+    background-color var(--docs-motion-fast),
+    border-color var(--docs-motion-fast),
+    color var(--docs-motion-fast);
 }
 
-.fd-doc-card:hover {
-  border-color: color-mix(
+a.fd-doc-card:hover {
+  background: color-mix(
     in srgb,
-    var(--docs-color-primary) 26%,
-    var(--docs-color-border)
+    var(--docs-color-accent) 80%,
+    var(--docs-color-card)
   );
-  box-shadow: none;
-  transform: none;
 }
 
 .fd-doc-card:focus-visible {
@@ -126,35 +125,68 @@
   outline-offset: 3px;
 }
 
+.fd-doc-card-icon {
+  display: grid;
+  width: fit-content;
+  margin-bottom: 0.5rem;
+  place-items: center;
+  padding: 0.375rem;
+  border: 1px solid var(--docs-color-border);
+  border-radius: 0.5rem;
+  background: var(--docs-color-muted);
+  color: var(--docs-color-muted-foreground);
+  box-shadow: var(--docs-shadow-sm);
+}
+
+.fd-doc-card-icon .docs-nav-icon,
+.fd-doc-card-icon .docs-nav-icon-fallback {
+  width: 1rem;
+  height: 1rem;
+}
+
 .fd-doc-card-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: var(--docs-space-3);
+  gap: 0.75rem;
+  min-width: 0;
 }
 
 .fd-doc-card-header h3 {
   margin: 0;
   color: var(--docs-color-card-foreground);
-  font-size: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
   overflow-wrap: anywhere;
 }
 
-.fd-doc-card p,
+.fd-doc-card-description,
 .fd-doc-card-slot {
-  margin: 0.55rem 0 0;
+  margin: 0.25rem 0 0;
   color: var(--docs-color-muted-foreground);
-  line-height: 1.7;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.fd-doc-card-slot:empty {
+  display: none;
 }
 
 .fd-doc-card-badge {
   flex-shrink: 0;
-  padding: 0.22rem 0.55rem;
+  padding: 0.18rem 0.45rem;
   border-radius: var(--docs-radius-pill);
   background: var(--docs-color-accent);
   color: var(--docs-color-accent-foreground);
   font-size: 0.72rem;
   font-weight: 700;
+}
+
+@container (max-width: 32rem) {
+  .fd-card-grid > .fd-doc-card {
+    grid-column: 1 / -1;
+  }
 }
 
 .fd-doc-code-block {
@@ -694,6 +726,10 @@ code.shiki:not(.not-fumadocs-code *) span {
   margin: 0;
 }
 
+.docs-page-body .fd-doc-preview-source .fd-doc-code-block {
+  margin: 0;
+}
+
 .fd-doc-install-command .fd-doc-code-block {
   margin: 0;
   background: var(--docs-color-card);
@@ -827,23 +863,25 @@ code.shiki:not(.not-fumadocs-code *) span {
 
 .fd-steps {
   margin: 1.4rem 0;
+  counter-reset: step;
 }
 
 .fd-steps ol {
   margin: 0;
   padding: 0;
   list-style: none;
-  counter-reset: step;
 }
 
-.fd-steps li {
+.fd-steps li,
+.fd-step {
   position: relative;
   margin: 0;
   padding: 0 0 1.25rem 3rem;
   counter-increment: step;
 }
 
-.fd-steps li:not(:last-child)::after {
+.fd-steps li:not(:last-child)::after,
+.fd-step:not(:last-child)::after {
   position: absolute;
   top: 2.25rem;
   bottom: 0.25rem;
@@ -853,7 +891,8 @@ code.shiki:not(.not-fumadocs-code *) span {
   content: '';
 }
 
-.fd-steps li::before {
+.fd-steps li::before,
+.fd-step::before {
   position: absolute;
   top: 0.05rem;
   left: 0;
@@ -868,11 +907,13 @@ code.shiki:not(.not-fumadocs-code *) span {
   content: counter(step);
 }
 
-.fd-steps li > p:first-child {
+.fd-steps li > p:first-child,
+.fd-step > :first-child {
   margin-top: 0;
 }
 
-.fd-steps li > p:last-child {
+.fd-steps li > p:last-child,
+.fd-step > :last-child {
   margin-bottom: 0;
 }
 

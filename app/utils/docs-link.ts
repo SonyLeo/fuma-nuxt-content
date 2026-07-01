@@ -46,6 +46,16 @@ function hasDocsFileExtension(value: string) {
   return DOC_FILE_EXTENSION_RE.test(pathname)
 }
 
+function mergeExternalRel(rel?: string) {
+  return [
+    ...new Set([
+      ...(rel?.split(/\s+/).filter(Boolean) ?? []),
+      'noreferrer',
+      'noopener',
+    ]),
+  ].join(' ')
+}
+
 export function isExternalDocsHref(href: string) {
   return /^[a-z][a-z\d+.-]*:/i.test(href) || href.startsWith('//')
 }
@@ -114,7 +124,7 @@ export function resolveDocsLink(
       external: true,
       hashOnly: false,
       target: options.target ?? '_blank',
-      rel: options.rel ?? 'noreferrer noopener',
+      rel: mergeExternalRel(options.rel),
     }
   }
 

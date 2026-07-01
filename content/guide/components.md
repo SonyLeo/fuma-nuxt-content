@@ -69,9 +69,15 @@ viewports without changing the component height model.
 ## Cards
 
 ::doc-card-grid
-::doc-card{title="Getting Started" href="/guide/getting-started" description="验证最小链路和内容渲染。"}
+::doc-card{title="Getting Started" href="/guide/getting-started" description="验证最小链路和内容渲染。" icon="book"}
 ::
-::doc-card{title="Components" href="/guide/components" description="查看 docs content components 的迁移状态。" badge="MVP"}
+::doc-card{title="Components" href="/guide/components" description="查看 docs content components 的迁移状态。" badge="MVP" icon="components"}
+::
+::doc-card{title="External Reference" href="https://www.fumadocs.dev/docs/ui/components" description="Open the upstream component reference in a new tab." external=true icon="github"}
+::
+::doc-card{title="A very long card title that verifies wrapping without breaking the grid" icon="palette"}
+This card intentionally uses the default slot so the profile can verify body
+content, long wrapping text, and non-link card behavior.
 ::
 ::
 
@@ -180,10 +186,42 @@ indentation instead of only top-level links.
 </ol>
 ::
 
+::doc-steps
+::doc-step
+Install dependencies with `pnpm install` before running the local docs server.
+::
+
+::doc-step
+Open the [components page](/guide/components) and verify the shell, body
+components, and page tail all render together.
+::
+
+::doc-step
+This intentionally longer step verifies wrapping, marker alignment, and rail
+height when a step body spans more than one line on narrow viewports.
+::
+::
+
+## Prose defaults
+
+Default prose links include an [internal docs link](/guide/getting-started), an
+[external docs link](https://www.fumadocs.dev), and `inline code` in the same
+paragraph.
+
+| Name | Type | Notes |
+| --- | --- | --- |
+| title | string | Used by headings and page metadata. |
+| link | URL | Verifies table overflow and inline links. |
+
+![TinyRobot docs favicon](/favicon.ico)
+
 ## Preview
 
 ::doc-preview{description="这里验证 markdown 中的交互组件仍然可用。" source-title="PreviewCounter.vue" source-language="vue" source-code="<PreviewCounter />"}
 #preview
 ::preview-counter
 ::
+::
+
+::doc-install-card{title="Install Preview" description="Copy the command into a local docs workspace." command="pnpm dlx fuma-nuxt-content add preview"}
 ::

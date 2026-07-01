@@ -1,43 +1,63 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-
 const props = withDefaults(
   defineProps<{
     title: string
     href?: string
     description?: string
     badge?: string
+    icon?: string
+    external?: boolean | 'true' | 'false'
   }>(),
   {
     href: '',
     description: '',
     badge: '',
+    icon: '',
+    external: false,
   },
 )
 
-const componentTag = computed(() => {
-  if (!props.href) {
-    return 'div'
-  }
-
-  return props.href.startsWith('/') ? 'NuxtLink' : 'a'
+const isExternal = computed(() => {
+  return props.external === true || props.external === 'true'
 })
 </script>
 
 <template>
-  <component
-    :is="componentTag"
+  <DocsLink
+    v-if="href"
     class="fd-doc-card"
-    :to="componentTag === 'NuxtLink' ? href || undefined : undefined"
-    :href="componentTag === 'a' ? href || undefined : undefined"
+    data-card
+    :href="href"
+    :external="isExternal"
   >
-    <div class="fd-doc-card-header">
+    <span v-if="icon" class="fd-doc-card-icon">
+      <DocsNavIcon :name="icon" />
+    </span>
+    <span class="fd-doc-card-header">
       <h3>{{ title }}</h3>
       <span v-if="badge" class="fd-doc-card-badge">{{ badge }}</span>
-    </div>
-    <p v-if="description">{{ description }}</p>
-    <div v-else class="fd-doc-card-slot">
+    </span>
+    <p v-if="description" class="fd-doc-card-description">
+      {{ description }}
+    </p>
+    <div class="fd-doc-card-slot">
       <slot />
     </div>
-  </component>
+  </DocsLink>
+
+  <div v-else class="fd-doc-card" data-card>
+    <span v-if="icon" class="fd-doc-card-icon">
+      <DocsNavIcon :name="icon" />
+    </span>
+    <span class="fd-doc-card-header">
+      <h3>{{ title }}</h3>
+      <span v-if="badge" class="fd-doc-card-badge">{{ badge }}</span>
+    </span>
+    <p v-if="description" class="fd-doc-card-description">
+      {{ description }}
+    </p>
+    <div class="fd-doc-card-slot">
+      <slot />
+    </div>
+  </div>
 </template>

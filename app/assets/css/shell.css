@@ -1359,6 +1359,11 @@
     color var(--docs-motion-fast);
 }
 
+.docs-feedback-button.ui-button[data-size='sm'] {
+  min-height: 2.25rem;
+  padding: 0.5rem 0.75rem;
+}
+
 .docs-feedback-button:hover,
 .docs-feedback-button[data-pressed='true'] {
   background: var(--docs-color-accent);
@@ -2352,6 +2357,12 @@
     max-height: inherit;
     padding: 0.75rem 0 0;
     overflow: auto;
+  }
+}
+
+@media (max-width: 959px) {
+  .docs-toc-popover {
+    top: var(--docs-header-height);
   }
 }
 

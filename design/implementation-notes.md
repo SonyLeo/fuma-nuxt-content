@@ -1103,3 +1103,275 @@ Page actions 契约卡验证：
   Error`，dump 显示标题为 Nuxt 500 而不是组件 DOM 缺失。重跑通过，判断为
   dev-server rebuild/HMR 期间的 server-health 波动。长回归建议加
   `--retries=1`，并在失败 dump 中先区分 server-health 与 UI mismatch。
+
+### Stage 7.8 Cards / CardGrid second-pass parity
+
+本轮按新流程完成 Cards / CardGrid 二次对齐：
+
+- `DocCard` 补齐 Fumadocs-like `icon`、`external`、`data-card` 合同，并改为
+  通过 `DocsLink` 消费已有 docs link protocol。
+- 保留本地 `badge` 作为扩展边界，不把它当作 Fumadocs 必需合同。
+- `DocCardGrid` / card CSS 对齐到 2 列 grid、12px gap、12px radius、16px
+  padding、14px title/body、icon chip 和移动端 full-span。
+- fixture 覆盖 internal/current-page/external/non-link/slot body/badge/icon/
+  long-text 状态。
+- 新增 `cards` profile，并加入 `content-components` suite。
+
+验证：
+
+- `node scripts/parity/run.mjs --profile=cards --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9320 --settleMs=3000 --dump`
+  通过，`16/16`。
+- `pnpm typecheck` 通过。
+- `git diff --check` 通过。
+
+流程经验：
+
+- Card 这类看似简单的组件也必须采集 authoring contract。只看卡片外观会漏掉
+  `data-card`、external link、icon chip、slot body 和 non-link root 这些未来
+  很容易回退的细节。
+
+### Stage 7.8 Steps / Step second-pass parity
+
+本轮按新流程完成 Steps / Step 二次对齐：
+
+- `DocSteps` 保留原有 list-based authoring 兼容性。
+- 新增 `DocStep`，补齐 Fumadocs `Steps` / `Step` 的显式组件协议。
+- steps CSS 同时覆盖 `.fd-steps li` 与 `.fd-step`，共享 counter、marker、
+  rail、padding 和 prose margin reset。
+- fixture 覆盖旧 `ol/li`、新 `DocStep`、inline code、内部链接和窄屏长文本
+  wrapping。
+- 新增 `steps` profile，并加入 `content-components` suite。
+
+验证：
+
+- `node scripts/parity/run.mjs --profile=steps --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9321 --settleMs=3000 --dump`
+  通过，`16/16`。
+- `pnpm typecheck` 通过。
+- `git diff --check` 通过。
+- typecheck 后已重启托管 dev server，`/guide/components` 健康检查通过。
+
+流程经验：
+
+- profile 必须区分组件协议和 fixture 写法。旧 `li` 路径可以是纯文本，
+  因此不能强制检查 `firstElementChild`；显式 `DocStep` 路径才检查
+  first-child margin reset。
+- 对 CSS token 的 computed value 要分层断言：marker `32px`、rail `1px`、
+  padding `48px` 是结构硬指标；pill radius 这类 token 展开值可用语义阈值，
+  避免 `999px` / `9999px` 差异制造假失败。
+
+### Stage 7.8 Heading second-pass parity
+
+本轮按新流程完成 Heading anchor 二次对齐：
+
+- `DocHeading` 保持 `as` / `id` / default slot 合同，改为 Fumadocs-like
+  “标题文本 anchor + 独立 copy anchor button”结构。
+- 标题文本 anchor 增加 `data-card`，避免被通用 prose link underline 规则覆盖。
+- copy 行为复用 `DocsCopyButton`、`useCopyState()` 和
+  `writeDocsClipboardText()`，没有新增 feature-local copied timer。
+- `prose.css` 增加 heading flex group、`112px` scroll margin、copy button
+  hover/focus-within reveal。
+- 新增 `heading` profile，并加入 `content-components` suite。
+
+验证：
+
+- `node scripts/parity/run.mjs --profile=heading --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9322 --settleMs=3000 --dump`
+  通过，`16/16`。
+- `pnpm typecheck` 通过。
+- `git diff --check` 通过。
+- typecheck 后已重启托管 dev server，`/guide/components` 健康检查通过。
+
+流程经验：
+
+- 涉及 URL/hash 的 profile 不应直接用 raw suffix 对比。中文 heading id
+  会被浏览器序列化为 percent-encoded hash，稳定断言应解码 hash 后与源
+  `id` 比较。
+- copy 类交互的契约卡要同时验证 DOM ownership、按钮 label/state、实际 copy
+  payload，以及是否复用共享 copy primitive。
+
+### Stage 7.8 Prose defaults second-pass parity
+
+本轮按新流程完成默认 Markdown / prose 映射二次对齐：
+
+- 在 `content/guide/components.md` 增加 compact fixture，覆盖 internal link、
+  external link、inline code、Markdown table 和 Markdown image。
+- 新增 `prose-defaults` profile，并加入 `content-components` suite。
+- `resolveDocsLink()` 的外链 rel 逻辑改为 merge：保留输入 rel（例如
+  `nofollow`），同时补齐 `noreferrer noopener`。
+- profile 覆盖 link target/rel、inline code class/style、table overflow
+  wrapper、image lazy/async/alt/caption，以及 heading rhythm 的组合场景。
+- ImageZoom 仍保留为单独边界，不纳入本轮基础 prose defaults。
+
+验证：
+
+- `node scripts/parity/run.mjs --profile=prose-defaults --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9323 --settleMs=3000 --dump`
+  通过，`16/16`。
+- `pnpm typecheck` 通过。
+- `git diff --check` 通过。
+- typecheck 后已重启托管 dev server，`/guide/components` 健康检查通过。
+
+流程经验：
+
+- Markdown 解析会引入组件源码里看不到的 wrapper。本轮 image 实际 DOM 是
+  `<p><figure class="fd-doc-image">...`，因此契约卡应该采集 section 子树
+  DOM，而不是只查 heading 后的顶层兄弟节点。
+- 外链断言必须同时覆盖安全 token 和上游 token 保留。`nofollow` 这类输入值
+  不能被 `noopener`/`noreferrer` 修复覆盖掉。
+
+### Stage 7.8 Preview / InstallCard second-pass parity
+
+本轮按新流程完成 Preview / InstallCard 二次对齐：
+
+- 在 `content/guide/components.md` 为 `DocInstallCard` 增加 fixture，使主
+  content-components suite 能覆盖 preview 与 install card。
+- 新增 `preview` profile，并加入 `content-components` suite。
+- profile 覆盖 preview shell、canvas region、description、source code block、
+  source copy action、install title/description/command、install code block 和
+  三视口宽度。
+- 修复 preview source 内嵌 code block margin 被通用
+  `.docs-page-body .fd-doc-code-block` 覆盖的问题，补充
+  `.docs-page-body .fd-doc-preview-source .fd-doc-code-block { margin: 0; }`。
+
+验证：
+
+- `node scripts/parity/run.mjs --profile=preview --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9324 --settleMs=3000 --dump`
+  通过，`16/16`。
+- `pnpm typecheck` 通过。
+- `git diff --check` 通过。
+- typecheck 后已重启托管 dev server，`/guide/components` 健康检查通过。
+
+流程经验：
+
+- 对嵌入型组件要采集 computed cascade，而不只检查 DOM 存在。本轮 profile
+  抓到 `.fd-doc-preview-source .fd-doc-code-block` 与后置通用 prose code block
+  规则 specificity 打平的问题；后置规则胜出导致 source code block 重新出现
+  `16px 0` margin。
+
+### Stage 7.8 Feedback / Pager second-pass parity
+
+本轮按新流程完成 Feedback / Pager 二次对齐：
+
+- 新增 `feedback` profile，覆盖 page metadata、prompt、按钮、pressed state、
+  thanks live region 和三视口响应式 wrapping。
+- 新增 `pager` profile，覆盖 single-side pager、链接语义、方向 class、title row、
+  icon、truncation、移动端单列。
+- 新增 `page-tail` suite，包含 `feedback` 和 `pager`。
+- 修复 feedback button sizing cascade：`.docs-feedback-button` 的 pill 尺寸会被
+  generic `.ui-button[data-size='sm']` 覆盖，因此补充
+  `.docs-feedback-button.ui-button[data-size='sm']`。
+- 当前导航 fixture 中 `/guide/components` 是 next-only pager，
+  `/guide/component-detail` 是 previous-only pager；profile 支持单侧/双侧合同，
+  本轮分别验证两个单侧方向。
+
+验证：
+
+- `node scripts/parity/run.mjs --profile=feedback --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9325 --settleMs=3500 --dump`
+  通过，`16/16`。
+- `node scripts/parity/run.mjs --profile=pager --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9326 --settleMs=3500 --dump`
+  通过，`16/16`。
+- `node scripts/parity/run.mjs --profile=pager --url=http://127.0.0.1:8888/guide/component-detail --viewports=1440x1000,994x935,390x844 --chromePort=9327 --settleMs=3500 --dump`
+  通过，`16/16`。
+- `node scripts/parity/run.mjs --suite=page-tail --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9328 --settleMs=3500 --dump`
+  通过。
+- `pnpm typecheck` 通过。
+- `git diff --check` 通过。
+
+流程经验：
+
+- Page-tail profile 要尊重真实导航数据。没有双侧 pager fixture 时，不应强行
+  要求当前页面同时有 previous/next；可以用两个 URL 分别锁 next-only 和
+  previous-only，再等出现双侧 fixture 时补充严格双列检查。
+- 交互 profile 建议在 click 前等一帧，并 dispatch bubbling `MouseEvent`，
+  再等待 Vue state commit。直接调用 `.click()` 在 suite 串跑时更容易出现单
+  viewport 假失败。
+
+### Queued: TOC responsive shell parity
+
+下一批优先处理右侧 TOC 响应式：
+
+- 先读 Fumadocs TOC / docs layout 源码，确认 breakpoints、desktop sticky TOC、
+  constrained-width 行为、mobile/popover 替代方案。
+- 本地采集 `DocsToc`、`DocsTocPopover`、page frame、left sidebar、content
+  column 的 DOM、computed style、bounding box、active item、scroll progress、
+  open/focus/keyboard state。
+- 视口矩阵至少覆盖 `2048x1152`、`1440x1000`、`1280x800`、`1180x820`、
+  `1024x768`、`994x935`、`834x1112`、`768x1024`、`390x844`。
+- profile 要增加 shell collision checks：TOC 不应覆盖正文、左侧目录、顶部
+  header、page actions 或移动导航。
+
+### Stage 7.8 batch regression
+
+本轮 Cards / Steps / Heading / Prose Defaults / Preview / Feedback / Pager 批次
+已完成回归：
+
+- `content-components` suite 通过，覆盖本批新增 body primitives 以及既有
+  Callout / Tabs / Accordion / Files / InlineTOC / TypeTable。
+- `page-tail` suite 通过，覆盖 Feedback / Pager。
+- 扩展后的 `full-regression` 通过，新增纳入 `cards`、`steps`、`heading`、
+  `prose-defaults`、`preview`、`feedback`、`pager`。
+- `pnpm typecheck` 通过。
+- `pnpm validate:links` 通过：25 pages，11 links。
+- `git diff --check` 通过。
+- typecheck 后已重启托管 dev server，`/guide/components` 健康检查通过。
+
+回归经验：
+
+- full-regression 应及时纳入新增 profile，否则“全量通过”会遗漏刚沉淀的合同。
+- 长 profile / suite 运行前后保持 dev server 健康检查，能减少 Nuxt rebuild/HMR
+  中间态对多视口捕获的干扰。
+
+### Stage 7.8 TOC responsive shell parity
+
+本轮按新流程完成右侧 TOC 响应式壳层对齐：
+
+- 对照 Fumadocs docs page / TOC 源码，确认其核心响应式 contract：
+  `xl` 以上展示 desktop sticky TOC，`xl` 以下隐藏 desktop TOC，并由 sticky
+  `toc-popover` 行承接目录入口。
+- 新增 `toc-responsive` profile，独立于基础 `toc` profile：
+  - `toc` 继续负责 TOC item、active/current、popover 基础开合等语义。
+  - `toc-responsive` 专门负责 shell 几何、断点、sticky、碰撞、移动导航共存和
+    常见分辨率矩阵。
+- 新 profile 采集：
+  - `#nd-docs-layout`
+  - `.docs-shell-content`
+  - `.docs-page-frame`
+  - `#nd-page`
+  - `#nd-sidebar`
+  - `#nd-toc`
+  - `.docs-toc-popover`
+  - `.docs-mobile-nav`
+  - `.docs-header`
+- 首轮验证发现：
+  - 既有 `toc` profile 已通过，但没有检查移动 header 与 sticky popover 的
+    位置关系。
+  - 移动端滚动后 `.docs-toc-popover` 的 computed `top` 仍是 `0px`，trigger
+    会落在 header 区域下方/背后。
+- 已修复：
+  - 在 `max-width: 959px` 下将 `.docs-toc-popover` 的 sticky top 改为
+    `var(--docs-header-height)`。
+  - 960-1279 无移动 header 的区间继续保持 `top: var(--fd-banner-height)`。
+- 已纳入：
+  - `docs-shell` suite
+  - `full-regression` suite
+
+验证：
+
+- `node scripts/parity/run.mjs --profile=toc-responsive --url=http://127.0.0.1:8888/guide/component-detail --viewports=2048x1152,1440x1000,1280x800,1180x820,1024x768,994x935,834x1112,768x1024,390x844 --chromePort=9341 --settleMs=2200 --dump`
+  通过，`100/100`。
+- `node scripts/parity/run.mjs --suite=docs-shell --url=http://127.0.0.1:8888/guide/component-detail --viewports=2048x1152,1440x1000,1280x800,1180x820,1024x768,994x935,834x1112,768x1024,390x844 --chromePort=9342 --settleMs=2600 --retries=1 --dump`
+  通过，`toc 58/58`、`toc-responsive 100/100`、`sidebar 85/85`。
+- `node scripts/parity/run.mjs --suite=full-regression --viewports=1440x1000,994x935,390x844 --chromePort=9343 --settleMs=3200 --retries=1 --dump`
+  通过，包含 `toc-responsive 36/36`。
+- `pnpm typecheck` 通过。
+- `pnpm validate:links` 通过：25 pages，11 links。
+- `git diff --check` 通过。
+- typecheck 后已重启托管 dev server，`/guide/component-detail` 健康检查通过。
+
+流程经验：
+
+- 对响应式 shell 问题，不能只验证目标组件是否存在。契约卡必须同时采集
+  shell/content/page/sidebar/TOC/popover/header 的 DOM、computed style 和
+  bounding box。
+- 组件 profile 与响应式 shell profile 应拆分。否则旧 profile 会无限增长，
+  而新增断言也很难表达“这个 profile 到底保护什么”。
+- computed CSS 要按浏览器解析后的值断言。例如 `50vh` 会变成像素值，应按
+  `viewport.height * 0.5` 做容差比较。

@@ -82,13 +82,19 @@ fixtures.
 | Fumadocs surface | Local equivalent | Profile / suite | Current notes | Next action |
 | --- | --- | --- | --- | --- |
 | `CodeBlock`, `Pre`, `CodeBlockTabs`, `CodeBlockTab` | `DocCodeBlock`, `DocCodeTabs`, `DocTab`, `ProsePre` | `code-block`, `code` | Strongest current surface. It already covers fenced-code mapping, title meta, copy action, code tabs, language icons, highlight markers, line numbers, and viewport accessibility. | Keep as regression baseline. Extend only when new code paths are added. |
-| `Callout` | `DocCallout` | `callout`, `content-components` | Visual shell and tones exist. Fumadocs also has `CalloutContainer`, `CalloutTitle`, `CalloutDescription`, `icon`, `type`, `warn -> warning`, and `tip -> info` protocol. | Second-pass protocol card before more CSS tuning. |
-| `Tabs`, `Tab` | `DocTabs`, `DocTab`, `UiTabs*` | `tabs`, `content-components` | Basic active state and layout exist. Fumadocs simple mode supports `items`, `defaultIndex`, `label`, escaped values, and keep-mounted panels. | Verify simple-mode parity and code-tab merging. |
-| `Accordions`, `Accordion` | `DocAccordions`, `DocAccordion` | `accordion`, `content-components` | Hash-open and copy link behavior exist. | Verify `hiddenUntilFound`, wrapper hierarchy, header id ownership, and keyboard state. |
-| `Files`, `File`, `Folder` | `DocFiles`, `DocFile`, `DocFolder` | `files`, `content-components` | Basic shell, file row, folder row, and nested content exist. | Lock nested border/indent, disabled behavior, and hover rhythm. |
-| `InlineTOC` | `DocInlineToc` | `inline-toc`, `content-components` | Collapsible inline table of contents exists. | Verify depth indentation and active-state behavior across desktop/mobile. |
+| `Card`, `Cards` | `DocCard`, `DocCardGrid` | `cards`, `content-components` | Second-pass contract now covers `data-card`, link/non-link roots, icon, external links, slot body, local badge extension, grid columns, and mobile full-span behavior. | Keep as regression baseline. |
+| `Steps`, `Step` | `DocSteps`, `DocStep` | `steps`, `content-components` | Second-pass contract now covers list-based compatibility and explicit step authoring, marker/counter/rail geometry, prose reset, inline link/code content, and responsive wrapping. | Keep as regression baseline. Consider remark-style transform only if authoring ergonomics requires it later. |
+| `Heading` | `DocHeading`, `ProseH1-H6` | `heading`, `content-components` | Second-pass contract now covers text anchor, independent copy anchor button, copied state, hash URL copying, flex rhythm, scroll margin, and prose/TOC compatibility. | Keep as regression baseline. |
+| Default MDX/prose mapping | `ProseA`, `ProseCode`, `ProseImg`, `ProseTable`, `ProseH1-H6` | `prose-defaults`, `content-components` | Second-pass contract now covers internal/external links, external rel safety merge, inline code, table overflow wrapper, Markdown image/caption, and heading rhythm. | Keep as regression baseline. ImageZoom remains a separate boundary. |
+| `Preview`, Install card | `DocPreview`, `DocInstallCard` | `preview`, `content-components` | Local docs primitives now cover preview shell/canvas/description/source, source copy action, install card title/description/command, code-block ownership, and responsive width. | Keep as local docs-components regression baseline. |
+| Feedback, Pager | `DocsFeedback`, `DocsPager` | `feedback`, `pager`, `page-tail` | Page-tail contract now covers feedback selected/thanks state, live region, button sizing, pager next-only and previous-only states, text truncation, and mobile one-column behavior. | Keep as page-tail regression baseline. |
+| `Callout` | `DocCallout`, `DocCalloutContainer`, `DocCalloutTitle`, `DocCalloutDescription` | `callout`, `content-components` | Second-pass contract covers `type`, legacy `tone`, aliases, low-level composition, tone matrix, no-title branch, icon/rail layout, and responsive behavior. | Keep as regression baseline. |
+| `Tabs`, `Tab` | `DocTabs`, `DocTab`, `DocCodeTabs`, `UiTabs*` | `tabs`, `content-components` | Second-pass contract covers manual mode, simple `items/defaultIndex/label` mode, escaped values, mounted inactive panels, CodeTabs, and responsive overflow. | Keep as regression baseline. |
+| `Accordions`, `Accordion` | `DocAccordions`, `DocAccordion` | `accordion`, `content-components` | Second-pass contract covers root type, default open state, stable item ids, `hidden="until-found"`, region semantics, copy link, hash behavior, and chevron state. | Keep as regression baseline. |
+| `Files`, `File`, `Folder` | `DocFiles`, `DocFile`, `DocFolder` | `files`, `content-components` | Second-pass contract covers tree shell density, file/folder rows, nested border and indent, disabled folder state, closed folder opening, hover rhythm, and long filename truncation. | Keep as regression baseline. |
+| `InlineTOC` | `DocInlineToc` | `inline-toc`, `content-components` | Second-pass contract covers shell, trigger, active link state, depth indentation, default-open/default-closed samples, and responsive behavior. | Keep as regression baseline. |
 | `TypeTable` | `DocTypeTable` | `type-table`, `content-components` | Manual rows exist with collapsible details, hash-open, type/default/parameters/returns. | Keep manual component; classify auto-generation separately. |
-| `TOC` / docs page TOC slots | `DocsToc`, `DocsTocPopover`, `DocsTocList` | `toc`, `docs-shell`, `full-regression` | Already treated as shell parity, not content primitive parity. | Keep in shell regression. |
+| `TOC` / docs page TOC slots | `DocsToc`, `DocsTocPopover`, `DocsTocList` | `toc`, `toc-responsive`, `docs-shell`, `full-regression` | Base TOC profile covers desktop/current/link behavior. Responsive profile now covers shell bounds, desktop TOC below `xl`, sticky popover, mobile header clearance, popover close paths, mobile nav coexistence, and horizontal overflow. | Keep in shell regression. |
 | Docs sidebar | `DocsSidebar`, `DocsSidebarTree`, `DocsSidebarItem`, mobile nav | `sidebar`, `docs-shell`, `full-regression` | Already treated as shell parity. | Keep in shell regression. |
 | `MarkdownCopyButton`, `ViewOptionsPopover` | `DocsPageActions` | `page-actions`, `full-regression` | `Copy Markdown` and `Open` menu are aligned for current actions. `View as Markdown` still needs a per-page markdown URL. | Add markdown URL contract before adding menu item. |
 
@@ -96,17 +102,7 @@ fixtures.
 
 | Fumadocs surface | Local equivalent | Gap | Recommended profile |
 | --- | --- | --- | --- |
-| `Card`, `Cards` | `DocCard`, `DocCardGrid` | Local implementation is simpler. Fumadocs supports `icon`, `title`, `description`, `href`, `external`, `data-card`, hover color, and responsive full-span behavior. | Add `cards` profile. |
-| `Steps`, `Step` | `DocSteps` | Local wrapper exists, but there is no `DocStep` component or verified remark-style step transformation. Current CSS appears to style list items inside `.fd-steps`. | Add `steps` profile and decide list-based vs explicit step component contract. |
-| `Heading` | `DocHeading`, `ProseH1-H6` | Local headings wrap text in an anchor. Fumadocs also shows a hover-only copy anchor button with copied state. | Add `heading` profile. |
-| Default link mapping | `ProseA`, `DocsLink` | Needs a prose-level contract for internal/external links, target behavior, icon rhythm, and focus state. | Add `prose-defaults` profile or fold into `prose` suite. |
 | Default image mapping | `ProseImg` | Local image is plain `figure/img/figcaption`. Fumadocs can use ImageZoom and image options from remark processing. | Add `image` profile after ImageZoom decision. |
-| Default table mapping | `ProseTable` | Local wrapper exists. Needs scroll container, overflow behavior, border rhythm, and mobile behavior verification. | Add `prose-table` or `prose-defaults` profile. |
-| Inline code | `ProseCode` | Exists, but not separately contracted against Fumadocs prose behavior. | Include in `prose-defaults`. |
-| `Preview` | `DocPreview` | Local component exists but is not a Fumadocs base-ui primitive. Still important for local docs pages. | Add `preview` profile. |
-| Install card | `DocInstallCard` | Local product-adjacent utility exists. Not a Fumadocs base-ui primitive. | Keep with `preview` or a local docs-components suite. |
-| Feedback | `DocsFeedback` | Local component exists. Needs divider rhythm, active/thanks state, accessibility, and mobile checks. | Add `feedback` profile or expand page-tail suite. |
-| Pager | `DocsPager` | Local component exists. Needs previous/next layout, border-first lightweight styling, wrapping, and mobile one-column behavior. | Add `pager` profile or page-tail suite. |
 | `EditOnGitHub`, `PageLastUpdate` | Page header/actions/footer data | Some behavior is represented through page actions and metadata, but there is no direct parity card. | Decide whether to model directly or keep as product-layer page metadata. |
 
 ## Missing / Decision Required
@@ -123,9 +119,9 @@ fixtures.
 | Search dialog variants | `DocsSearch*` exists locally. | Product / shell. | Search is outside current foundation component parity unless explicitly scoped. |
 | Math / KaTeX / Twoslash / OpenAPI / AsyncAPI / Mermaid | Not part of current local foundation parity. | Advanced docs features. | Keep out of component parity batches unless product requirements pull them in. |
 
-## Recommended Batches
+## Batch Status And Next Queue
 
-### Batch 1: Cards + Steps + Heading
+### Completed Batch 1: Cards + Steps + Heading
 
 Goal: reduce the most visible prose-body mismatch left after code blocks and
 content primitives.
@@ -143,13 +139,12 @@ Targets:
 
 Verification:
 
-- add `cards`, `steps`, and `heading` profiles
-- add or update fixtures so icon cards, link cards, steps, and heading copy
-  states are visible
-- run the focused profiles first, then `content-components` or
-  `full-regression`
+- added `cards`, `steps`, and `heading` profiles
+- updated fixtures so icon cards, link cards, steps, and heading copy states
+  are visible
+- verified focused profiles and `content-components` / `full-regression`
 
-### Batch 2: Prose Defaults
+### Completed Batch 2: Prose Defaults
 
 Goal: ensure ordinary Markdown output has Fumadocs-like rhythm before adding
 more product features.
@@ -165,11 +160,11 @@ Targets:
 
 Verification:
 
-- add `prose-defaults` profile
-- cover link, inline code, image caption, table overflow, and fenced-code
+- added `prose-defaults` profile
+- covered link, inline code, image caption, table overflow, and fenced-code
   fallback behavior
 
-### Batch 3: Preview + Page Tail
+### Completed Batch 3: Preview + Page Tail
 
 Goal: align local page-adjacent docs UX after the core body components are
 stable.
@@ -185,12 +180,33 @@ Targets:
 
 Verification:
 
-- add `preview`, `feedback`, and `pager` profiles, or a narrow `page-tail`
-  suite
-- keep `page-actions` separate because its Open menu and copy state already
+- added `preview`, `feedback`, and `pager` profiles
+- added narrow `page-tail` suite
+- kept `page-actions` separate because its Open menu and copy state already
   have their own contract
 
-### Batch 4: ImageZoom / Banner Decision
+### Completed Add-on: TOC Responsive Shell Parity
+
+Goal: close the known right-side TOC responsive gap after body and page-tail
+primitives were stable.
+
+Targets:
+
+- `DocsToc.vue`
+- `DocsTocPopover.vue`
+- `DocsTocList.vue`
+- `DocsLayoutShell.vue`
+- `DocsPage.vue`
+- `app/assets/css/shell.css`
+
+Verification:
+
+- added `toc-responsive` profile
+- added shell/content/page/sidebar/TOC/popover/mobile-nav geometry capture
+- verified desktop, constrained-width, tablet-ish, and mobile viewport matrix
+- added `toc-responsive` to `docs-shell` and `full-regression`
+
+### Future Batch 4: ImageZoom / Banner Decision
 
 Goal: decide whether these are foundation P1 components or product-layer
 features.
@@ -208,7 +224,7 @@ Verification:
 - include desktop and mobile behavior
 - include interaction state: zoom open/close, banner dismiss/reappear rules
 
-### Batch 5: Advanced / Product Backlog
+### Future Batch 5: Advanced / Product Backlog
 
 Goal: avoid blocking foundation parity on non-essential capabilities while
 keeping the backlog visible.
@@ -250,6 +266,406 @@ Before editing a component in future batches, capture a compact contract card:
   pass
 
 ## Completed Contract Cards
+
+### Cards / CardGrid
+
+Status: second-pass parity complete for the current foundation contract.
+
+Fumadocs source:
+
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\card.tsx`
+
+Local files:
+
+- `app/components/content/DocCard.vue`
+- `app/components/content/DocCardGrid.vue`
+- `app/assets/css/content.css`
+- `content/guide/components.md`
+- `scripts/parity/profiles/cards.mjs`
+
+Contract captured:
+
+- root protocol: `data-card`, link vs non-link root, internal/external hrefs,
+  `target="_blank"` and `rel` for external links
+- content protocol: `icon`, `title`, `description`, default slot, and local
+  `badge` extension boundary
+- visual rhythm: 2-column grid, `12px` gap, `12px` radius, `16px` padding,
+  14px title and body text, icon chip, hoverable link cards
+- responsive behavior: cards stay two-column at desktop and medium widths, then
+  span the full grid on mobile container widths
+- fixture states: internal card, current-page card with badge, external card,
+  non-link slot card, long title/body wrapping
+
+Verification:
+
+```bash
+node scripts/parity/run.mjs --profile=cards --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9320 --settleMs=3000 --dump
+pnpm typecheck
+git diff --check
+```
+
+Result:
+
+- `cards` profile passed `16/16`
+- `pnpm typecheck` passed
+- `git diff --check` passed
+
+Process lesson:
+
+- Fumadocs Card has an authoring contract (`icon`, `external`, `data-card`)
+  that is easy to miss if only checking the visible card shell. The fixture must
+  include link, external, non-link, slot-body, and long-text examples before the
+  profile can protect the component.
+
+### Steps / Step
+
+Status: second-pass parity complete for the current foundation contract.
+
+Fumadocs source:
+
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\steps.tsx`
+
+Local files:
+
+- `app/components/content/DocSteps.vue`
+- `app/components/content/DocStep.vue`
+- `app/assets/css/content.css`
+- `content/guide/components.md`
+- `scripts/parity/profiles/steps.mjs`
+
+Contract captured:
+
+- wrapper protocol: `.fd-steps` container and explicit `.fd-step` child
+- compatibility protocol: old list-based `.fd-steps li` authoring still works
+- visual rhythm: `48px` left padding, `32px` marker, `1px` connecting rail,
+  counter increment, pill marker, and final-step rail omission
+- content behavior: explicit steps reset first/last child margins and preserve
+  inline link/code rendering
+- fixture states: list-based steps, explicit steps, inline code, internal link,
+  and long wrapping text across desktop, medium, and mobile widths
+
+Verification:
+
+```bash
+node scripts/parity/run.mjs --profile=steps --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9321 --settleMs=3000 --dump
+pnpm typecheck
+git diff --check
+```
+
+Result:
+
+- `steps` profile passed `16/16`
+- `pnpm typecheck` passed
+- `git diff --check` passed
+
+Process lesson:
+
+- Profile assertions must separate component protocol from fixture shape. In
+  this pass, list-based steps intentionally included plain-text `li` items, so
+  the profile checks text presence for that path and first-child margin reset
+  only for explicit `DocStep` items.
+- For CSS token values such as pill radius, prefer stable semantic thresholds
+  when the exact computed expansion can vary (`999px` vs `9999px`), while
+  keeping structural metrics like marker width and rail width strict.
+
+### Heading
+
+Status: second-pass parity complete for the current foundation contract.
+
+Fumadocs source:
+
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\heading.tsx`
+
+Local files:
+
+- `app/components/content/DocHeading.vue`
+- `app/components/content/ProseH1.vue`
+- `app/components/content/ProseH2.vue`
+- `app/components/content/ProseH3.vue`
+- `app/components/content/ProseH4.vue`
+- `app/components/content/ProseH5.vue`
+- `app/components/content/ProseH6.vue`
+- `app/assets/css/prose.css`
+- `scripts/parity/profiles/heading.mjs`
+
+Contract captured:
+
+- root protocol: heading tag keeps the `id` and `.docs-heading` class
+- anchor protocol: visible heading text links to `#id` and uses `data-card`
+  to opt out of generic prose link underline rules
+- copy protocol: independent compact `DocsCopyButton`, `icon-xs`, ghost
+  variant, `Copy Anchor Link` / `Copied Anchor Link` labels, shared copy state
+- clipboard behavior: copied URL preserves the current page URL and sets the
+  hash to the heading id
+- visual rhythm: flex row, wrapped layout, `4px` gap, centered items, `112px`
+  scroll margin, hidden copy button until hover/focus-within
+
+Verification:
+
+```bash
+node scripts/parity/run.mjs --profile=heading --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9322 --settleMs=3000 --dump
+pnpm typecheck
+git diff --check
+```
+
+Result:
+
+- `heading` profile passed `16/16`
+- `pnpm typecheck` passed
+- `git diff --check` passed
+
+Process lesson:
+
+- Hash-copy profiles must compare against browser-serialized URLs. Non-ASCII
+  heading ids are percent-encoded in `location.hash`, so the stable assertion is
+  decoded hash equals source `id`, not raw string suffix.
+- Heading parity is a good place to verify shared primitive reuse: copy state
+  should come from `DocsCopyButton` / `useCopyState`, not another local copied
+  timer.
+
+### Prose Defaults
+
+Status: second-pass parity complete for the current foundation contract.
+
+Fumadocs source:
+
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\mdx.tsx`
+
+Local files:
+
+- `app/components/content/ProseA.vue`
+- `app/components/content/ProseCode.vue`
+- `app/components/content/ProseImg.vue`
+- `app/components/content/ProseTable.vue`
+- `app/components/content/DocHeading.vue`
+- `app/components/docs/DocsLink.vue`
+- `app/utils/docs-link.ts`
+- `app/assets/css/prose.css`
+- `content/guide/components.md`
+- `scripts/parity/profiles/prose-defaults.mjs`
+
+Contract captured:
+
+- link mapping: internal docs links stay same-tab, external links open in a new
+  tab and merge incoming rel values with `noreferrer noopener`
+- inline code: `ProseCode` emits `.fd-doc-inline-code` with inline display,
+  mono font, border, background, and compact radius
+- table mapping: `ProseTable` owns `.fd-doc-table` overflow wrapper and resets
+  nested table margin/border
+- image mapping: `ProseImg` emits `.fd-doc-image`, lazy async image, alt text,
+  and figcaption
+- heading rhythm is covered through the `heading` profile and reused here as
+  part of the prose defaults fixture
+
+Verification:
+
+```bash
+node scripts/parity/run.mjs --profile=prose-defaults --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9323 --settleMs=3000 --dump
+pnpm typecheck
+git diff --check
+```
+
+Result:
+
+- `prose-defaults` profile passed `16/16`
+- `pnpm typecheck` passed
+- `git diff --check` passed
+
+Process lesson:
+
+- Markdown-generated structures can add wrappers that do not appear in the
+  component source. In this pass, image output was
+  `<p><figure class="fd-doc-image">...`, so section-level profiles should query
+  the relevant subtree instead of assuming every component is a top-level
+  sibling.
+- Link profiles should preserve and verify upstream rel values such as
+  `nofollow` while also enforcing security tokens for external targets.
+
+### Preview / InstallCard
+
+Status: second-pass parity complete for the current local docs-components
+contract.
+
+Fumadocs source:
+
+- No direct `base-ui` primitive. This card is a local docs foundation contract.
+
+Local files:
+
+- `app/components/content/DocPreview.vue`
+- `app/components/content/DocInstallCard.vue`
+- `app/components/content/DocCodeBlock.vue`
+- `app/assets/css/content.css`
+- `content/guide/components.md`
+- `scripts/parity/profiles/preview.mjs`
+
+Contract captured:
+
+- preview shell: `.fd-doc-preview`, variant class, 12px radius, 1px border,
+  hidden overflow
+- preview canvas: region semantics, `aria-label`, grid centering, minimum
+  height, preview slot content
+- preview details: description row, source row, nested `DocCodeBlock`, source
+  copy action, source code block margin/border reset
+- install card: title, description, command area, nested bash `DocCodeBlock`,
+  copy action, card padding/radius/border
+- responsive behavior: install card width stays inside the same article column
+  across desktop, medium, and mobile widths
+
+Verification:
+
+```bash
+node scripts/parity/run.mjs --profile=preview --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9324 --settleMs=3000 --dump
+pnpm typecheck
+git diff --check
+```
+
+Result:
+
+- `preview` profile passed `16/16`
+- `pnpm typecheck` passed
+- `git diff --check` passed
+
+Process lesson:
+
+- Component-local reset rules can lose to later generic prose rules when
+  specificity ties. The preview source code block needed
+  `.docs-page-body .fd-doc-preview-source .fd-doc-code-block` to preserve its
+  zero-margin embedded layout.
+
+### Feedback / Pager
+
+Status: second-pass parity complete for the current page-tail contract.
+
+Fumadocs source:
+
+- Page-tail behavior is local foundation work in this Nuxt implementation.
+  Fumadocs page footer rhythm remains the reference for placement and density.
+
+Local files:
+
+- `app/components/docs/DocsFeedback.vue`
+- `app/components/docs/DocsPager.vue`
+- `app/components/docs/DocsPageFooter.vue`
+- `app/assets/css/shell.css`
+- `scripts/parity/profiles/feedback.mjs`
+- `scripts/parity/profiles/pager.mjs`
+- `scripts/parity/suites/page-tail.mjs`
+
+Contract captured:
+
+- feedback shell: page metadata attributes, prompt, two outline buttons,
+  responsive wrapping, top/bottom dividers
+- feedback interaction: positive click sets pressed state, fills icon, and
+  renders polite thanks state
+- pager shell: one-column single-side state and two-column both-side contract
+  when such a fixture exists
+- pager links: previous/next direction classes, icon placement, no underline,
+  compact card sizing, title/description truncation, mobile one-column behavior
+- fixture coverage: `/guide/components` verifies next-only pager;
+  `/guide/component-detail` verifies previous-only pager
+
+Verification:
+
+```bash
+node scripts/parity/run.mjs --profile=feedback --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9325 --settleMs=3500 --dump
+node scripts/parity/run.mjs --profile=pager --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9326 --settleMs=3500 --dump
+node scripts/parity/run.mjs --profile=pager --url=http://127.0.0.1:8888/guide/component-detail --viewports=1440x1000,994x935,390x844 --chromePort=9327 --settleMs=3500 --dump
+node scripts/parity/run.mjs --suite=page-tail --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9328 --settleMs=3500 --dump
+pnpm typecheck
+git diff --check
+```
+
+Result:
+
+- `feedback` profile passed `16/16`
+- `pager` profile passed `16/16` for next-only and previous-only fixtures
+- `page-tail` suite passed
+- `pnpm typecheck` passed
+- `git diff --check` passed
+
+Process lesson:
+
+- Page-tail profiles should model available fixture states honestly. Current
+  navigation data has next-only and previous-only pages, so the profile supports
+  single-side pager states and separately verifies both directions.
+- Interaction profiles are less flaky when they dispatch a bubbling
+  `MouseEvent` after an animation frame and wait long enough for Vue state to
+  commit.
+
+### TOC Responsive Shell Parity
+
+Status: complete for the current responsive shell contract.
+
+Reason:
+
+- The right-side TOC works at full desktop and some narrow widths, but some
+  constrained widths still have incorrect display or interaction behavior.
+
+Contract to capture:
+
+- Fumadocs TOC source ownership, breakpoint policy, sticky/fixed behavior, and
+  mobile replacement pattern
+- local `DocsToc`, `DocsTocPopover`, page frame, left sidebar, and content
+  column interaction across desktop, laptop, tablet, and mobile widths
+- active heading state, scroll progress, popover/open state, keyboard/focus
+  behavior, and overflow behavior
+- collision checks so TOC does not overlap content, left sidebar, header, page
+  actions, or mobile navigation
+
+Initial viewport matrix:
+
+- `2048x1152`
+- `1440x1000`
+- `1280x800`
+- `1180x820`
+- `1024x768`
+- `994x935`
+- `834x1112`
+- `768x1024`
+- `390x844`
+
+Completed:
+
+- Split `toc-responsive` from the existing base `toc` profile.
+- Added shell/content/page/sidebar/TOC/popover/mobile-nav geometry capture.
+- Added desktop, constrained width, tablet-ish, and mobile viewport matrix.
+- Added checks for desktop TOC visibility at `>=1280px`, TOC popover below
+  `1280px`, page-frame `toc-popover` row ownership, no page/TOC overlap,
+  no horizontal document overflow, mobile sidebar replacement, mobile nav open,
+  Escape/outside/link close paths, and sticky popover clearance under the
+  mobile header.
+- Fixed mobile sticky top so the TOC popover clears `.docs-header` instead of
+  sitting at viewport top under the header.
+
+Verification:
+
+```bash
+node scripts/parity/run.mjs --profile=toc-responsive --url=http://127.0.0.1:8888/guide/component-detail --viewports=2048x1152,1440x1000,1280x800,1180x820,1024x768,994x935,834x1112,768x1024,390x844 --chromePort=9341 --settleMs=2200 --dump
+node scripts/parity/run.mjs --suite=docs-shell --url=http://127.0.0.1:8888/guide/component-detail --viewports=2048x1152,1440x1000,1280x800,1180x820,1024x768,994x935,834x1112,768x1024,390x844 --chromePort=9342 --settleMs=2600 --retries=1 --dump
+node scripts/parity/run.mjs --suite=full-regression --viewports=1440x1000,994x935,390x844 --chromePort=9343 --settleMs=3200 --retries=1 --dump
+pnpm typecheck
+pnpm validate:links
+git diff --check
+```
+
+Result:
+
+- `toc-responsive` profile passed `100/100`.
+- `docs-shell` suite passed with `toc 58/58`, `toc-responsive 100/100`,
+  and `sidebar 85/85`.
+- `full-regression` passed, including `toc-responsive 36/36` in the standard
+  regression viewport set.
+- `pnpm typecheck`, `pnpm validate:links`, and `git diff --check` passed.
+
+Process lesson:
+
+- Base behavior profiles should stay narrow. The original `toc` profile was
+  useful for TOC semantics, but responsive shell parity needs its own card with
+  layout collision and sticky interaction assertions.
+- Raw CSS strings are not always stable profile targets. Browser-computed
+  `50vh` becomes a pixel value, so profile assertions should compare the
+  resolved metric to the viewport-derived expectation.
 
 ### Callout
 
@@ -614,16 +1030,18 @@ node scripts/parity/run.mjs --profile=<profile> --viewports=1440x1000,994x935 --
 Do not pass `--url` to `full-regression`; the runner rejects that combination
 to prevent partial-regression false confidence.
 
-## Open TODO
+## Future TODO
 
-- [ ] Add profile for Cards.
-- [ ] Add profile for Steps and decide whether to add `DocStep`.
-- [ ] Add profile for Heading anchor copy behavior.
-- [ ] Add prose defaults profile for links, inline code, images, and tables.
-- [ ] Add Preview profile.
-- [ ] Add Feedback and Pager profiles or a page-tail suite.
+- [x] Add profile for Cards.
+- [x] Add profile for Steps and decide whether to add `DocStep`.
+- [x] Add profile for Heading anchor copy behavior.
+- [x] Add prose defaults profile for links, inline code, images, and tables.
+- [x] Add Preview profile.
+- [x] Add Feedback and Pager profiles or a page-tail suite.
+- [x] Add TOC responsive profile coverage for right TOC, TOC popover, shell
+      collisions, and common constrained-width layouts.
 - [ ] Decide ImageZoom foundation/product classification.
 - [ ] Decide Banner foundation/product classification.
 - [ ] Replace placeholder-only Banner fixture if Banner enters foundation.
-- [ ] Keep `GitHubInfo`, `DynamicCodeBlock`, `AutoTypeTable`, `GraphView`, and
+- [x] Keep `GitHubInfo`, `DynamicCodeBlock`, `AutoTypeTable`, `GraphView`, and
       advanced docs features out of foundation batches until explicitly scoped.

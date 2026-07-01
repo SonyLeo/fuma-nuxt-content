@@ -1,6 +1,11 @@
 export const fullRegressionSuite = {
   name: 'full-regression',
   profiles: [
+    'cards',
+    'steps',
+    'heading',
+    'prose-defaults',
+    'preview',
     'callout',
     'tabs',
     'accordion',
@@ -9,7 +14,10 @@ export const fullRegressionSuite = {
     'type-table',
     'code-block',
     'toc',
+    'toc-responsive',
     'sidebar',
     'page-actions',
+    'feedback',
+    'pager',
   ],
 }
