@@ -49,6 +49,11 @@ sectionLabel: Plan
   - 对齐 `fumadocs / assistant-ui / fumapress / VitePress prototype` 的设计依据
   - 作为基础协议和历史分析资料保留
 
+- `design/fumadocs-component-parity-inventory.md`
+  - Fumadocs 基础组件 parity 清单
+  - 当前本地实现 / profile 覆盖 / 缺失组件分类
+  - 后续按批次对齐的执行入口
+
 - `design/implementation-notes.md`
   - 只记录最新结论
   - 只记录当前状态
@@ -686,6 +691,22 @@ Stage 7.5：Fumadocs-Aligned UI Primitives Gate 已完成第一轮。
 5. 实现 `UiScrollArea`。
 6. 迁移现有 docs/content/product 消费者。
 7. 完成 primitive boundary、CSS token、类型、构建和链接校验。
+
+Stage 7.7：Fumadocs component parity 当前批次已完成。
+
+已完成并进入回归：
+
+- Callout
+- Tabs / CodeTabs
+- Accordion
+- Files
+- InlineTOC
+- TypeTable
+- PageActions / Feedback / Pager 当前合同
+
+后续基础组件 parity 按
+`design/fumadocs-component-parity-inventory.md` 分批推进，下一批建议从
+Cards / Steps / Heading 开始。
 
 下一步可以进入 Stage 8：产品层高级能力。
 

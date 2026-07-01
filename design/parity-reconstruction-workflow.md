@@ -892,3 +892,65 @@ For parity work, do not start ad hoc dev servers. Use `pnpm dev:restart` before
 runtime profiles and `pnpm dev:stop` after the work if the server is no longer
 needed. If `dev:health` fails, classify the issue as `server-health` before
 debugging UI code.
+
+## MVP 1.8: Component Contract Cards
+
+Stage 7.7 extended the parity workflow from shell surfaces into content
+components and page-adjacent components.
+
+Validated surfaces:
+
+- `callout`
+- `tabs`
+- `accordion`
+- `files`
+- `inline-toc`
+- `type-table`
+- `page-actions`
+
+Reusable contract-card fields:
+
+- Fumadocs source ownership and exported component names.
+- Local Vue files, wrapper components, CSS ownership, and fixture route.
+- DOM skeleton, wrapper hierarchy, roles, `aria-*`, `data-*`, and ids.
+- State matrix: active/inactive, open/closed, disabled, copied/failed,
+  hash-open, feedback selected, and popover opened.
+- Responsive matrix across desktop, medium, and mobile viewports.
+- Computed style and geometry for root rhythm, icon sizing, rail/stretch,
+  border/radius, text size/line-height, overflow, and menu positioning.
+- Interaction semantics: click targets, hash mutation, popover focus, and
+  collapsible/panel visibility.
+- Boundary notes for advanced or product-backed features such as
+  `AutoTypeTable` and `View as Markdown`.
+
+### Validated Commands
+
+```bash
+node scripts/parity/run.mjs --suite=content-components --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9317 --settleMs=3000 --dump
+node scripts/parity/run.mjs --suite=page-actions --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9313 --settleMs=2500
+node scripts/parity/run.mjs --suite=full-regression --viewports=1440x1000,994x935,390x844 --chromePort=9319 --settleMs=3000 --retries=1 --dump
+pnpm typecheck
+git diff --check
+```
+
+### Reusable Lessons
+
+- Shape the fixture before asserting a state. A profile cannot prove nested
+  indentation, default-closed state, disabled state, or rich details unless the
+  fixture actually renders them.
+- Use direct ownership selectors for nested component families. Tabs and code
+  tabs must not inspect each other's triggers and panels through broad
+  descendant selectors.
+- For deep MDC trees, inline leaf syntax is more stable than block syntax for
+  simple leaves such as file rows.
+- Profiles that mutate `location.hash` must clear it before and after capture,
+  because multi-viewport runs can otherwise inherit unintended open state.
+- Interactive profiles should wait for the semantic target state they assert,
+  such as `aria-expanded="true"` or a rendered thanks message. Fixed sleeps can
+  create first-viewport false failures.
+- Long dev-server regressions may use `--retries=1`, but only after inspecting
+  the first failure. If the dump shows a Nuxt error page or missing app shell,
+  classify it as `server-health` before changing UI code.
+- Separate UI parity from product/generator enhancements. Manual TypeTable
+  parity does not imply `AutoTypeTable`; Open menu parity does not imply
+  per-page markdown URL export.

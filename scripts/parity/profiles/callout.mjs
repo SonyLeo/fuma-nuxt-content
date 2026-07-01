@@ -118,6 +118,10 @@ export const calloutProfile = {
 
           return {
             index,
+            calloutType: root.getAttribute('data-callout-type'),
+            classList: [...root.classList],
+            hasTitle: Boolean(title),
+            hasBody: Boolean(body),
             domTree: tree(root),
             root: pick(root),
             bar: pick(bar),
@@ -155,8 +159,42 @@ export const calloutProfile = {
 
       addCheck(report, {
         label: `${width}px callouts present`,
-        pass: callouts.length >= 2,
+        pass: callouts.length >= 9,
         message: `callouts=${callouts.length}`,
+      })
+
+      const expectedTypes = [
+        'info',
+        'warning',
+        'warning',
+        'info',
+        'success',
+        'error',
+        'idea',
+        'info',
+        'success',
+      ]
+      const actualTypes = callouts.map((item) => item.calloutType)
+      addCheck(report, {
+        label: `${width}px callout type and alias contract`,
+        pass:
+          actualTypes.length >= expectedTypes.length &&
+          expectedTypes.every((type, index) => actualTypes[index] === type),
+        message: `types=${actualTypes.join(',')}`,
+      })
+
+      addCheck(report, {
+        label: `${width}px callout container/title/description protocol`,
+        pass:
+          callouts.length >= 9 &&
+          callouts[8]?.calloutType === 'success' &&
+          callouts[8]?.hasTitle &&
+          callouts[8]?.hasBody &&
+          callouts[8]?.title?.text.includes('Container API'),
+        message:
+          callouts.length < 9
+            ? 'missing container sample'
+            : `type=${callouts[8]?.calloutType},title=${callouts[8]?.title?.text},body=${callouts[8]?.body?.text}`,
       })
 
       addCheck(report, {
@@ -209,8 +247,9 @@ export const calloutProfile = {
           callouts.length > 0 &&
           callouts.every(
             (item) =>
-              item.title?.style.margin === '0px' &&
-              item.title?.style.fontWeight !== '700',
+              !item.hasTitle ||
+              (item.title?.style.margin === '0px' &&
+                item.title?.style.fontWeight !== '700'),
           ),
         message:
           callouts.length === 0
@@ -221,6 +260,20 @@ export const calloutProfile = {
                     `${item.index}:titleMargin=${item.title?.style.margin},titleWeight=${item.title?.style.fontWeight}`,
                 )
                 .join('; '),
+      })
+
+      addCheck(report, {
+        label: `${width}px callout supports no-title body`,
+        pass:
+          callouts.some(
+            (item) =>
+              !item.hasTitle &&
+              item.hasBody &&
+              item.body?.text.includes('intentionally has no title'),
+          ),
+        message: callouts
+          .map((item) => `${item.index}:title=${item.hasTitle},body=${item.hasBody}`)
+          .join('; '),
       })
 
       addCheck(report, {
@@ -251,7 +304,7 @@ export const calloutProfile = {
     const metrics = callouts
       .map(
         (item) =>
-          `${item.index}:rootH=${item.root?.rect.height},barH=${item.bar?.rect.height},titleMargin=${item.title?.style.margin}`,
+          `${item.index}:${item.calloutType},rootH=${item.root?.rect.height},barH=${item.bar?.rect.height},title=${item.hasTitle}`,
       )
       .join('; ')
 

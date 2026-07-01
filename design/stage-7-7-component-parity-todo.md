@@ -79,7 +79,7 @@ Review checklist:
 
 ## Phase 1: CodeBlock / CodeTabs Parity
 
-Status: in progress
+Status: done
 
 Target files:
 
@@ -175,7 +175,7 @@ Verification:
 - [x] `Get-ChildItem -Recurse -Filter *.mjs -LiteralPath scripts/parity | ForEach-Object { node --check $_.FullName }`
 - [x] `pnpm typecheck`
 - [x] `node scripts/parity/run.mjs --profile=code-block --url=http://127.0.0.1:8888/guide/code-block --viewports=1440x1000,994x935 --chromePort=9251`
-- [ ] Screenshot sanity only after DOM/state checks pass.
+- [x] Screenshot sanity only after DOM/state checks pass.
 
 Runtime status:
 
@@ -216,7 +216,7 @@ Phase review:
 
 ## Phase 2: Callout / Tabs / Accordion / TypeTable / Files / InlineTOC
 
-Status: in progress
+Status: done for the current second-pass batch
 
 Target files:
 
@@ -239,52 +239,175 @@ Fumadocs contract to align:
   - `info / warning / error / success / idea / warn alias`
   - icon and left color rail
   - title/description spacing
+  - `tip -> info` alias
+  - low-level `DocCalloutContainer` / `DocCalloutTitle` /
+    `DocCalloutDescription` composition protocol
 - Tabs:
   - active trigger state
   - list overflow
   - keep-mounted panel behavior if applicable
   - code-tab visual merging
+  - simple mode `items / defaultIndex / label`
+  - direct ownership between tab list triggers and tab panels
 - Accordion:
   - hash-open behavior
   - copy anchor affordance
   - `hidden="until-found"` behavior where useful
   - chevron/data-state rhythm
+  - root `single` / `multiple` type contract
+  - interaction profile should wait for hydration and scroll clicked trigger
+    into view
 - TypeTable:
   - prop/type header row
   - collapsible rows
   - hash-open row
   - required/deprecated/default/parameters/returns fields
+  - profile must clear `location.hash` before and after capture
 - Files:
   - card shell
   - folder open/closed state
   - nested left border/indent
+  - disabled folder state
+  - long filename truncation
+  - complex tree fixture may be split into multiple `DocFiles` samples
 - InlineTOC:
   - compact card shell
   - collapsible behavior
   - nested link rhythm
+  - default-open and default-closed samples
+  - active link state
+  - fixture must include an actual nested heading before asserting depth padding
 
 Development tasks:
 
-- [ ] Add `content-components` profile or split into smaller profiles if the
+- [x] Add `content-components` profile or split into smaller profiles if the
       first version becomes noisy.
-- [ ] Shape fixtures so each component state is actually visible.
-- [ ] Fix only required DOM/state/layout mismatches.
+- [x] Shape fixtures so each component state is actually visible.
+- [x] Fix only required DOM/state/layout mismatches.
+
+Callout second-pass status:
+
+- [x] Extended the fixture to cover all tones, `warn` alias, `tip` alias,
+      no-title body, long wrapping content, and low-level container/title/body
+      composition.
+- [x] Added `type` support while preserving legacy `tone`.
+- [x] Added low-level Callout composition components.
+- [x] Extended `callout` profile from visual shell checks to protocol, DOM,
+      state, style, and responsive checks.
+- [x] Verified:
+  - `node scripts/parity/run.mjs --profile=callout --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9286 --settleMs=2500 --dump`
+  - `pnpm typecheck`
+
+Callout process lesson:
+
+- Mobile profile capture can race with HMR immediately after fixture expansion.
+  Use a longer first-pass settle window such as `--settleMs=2500` when the
+  fixture shape changed, then keep the focused profile result as the source of
+  truth.
+
+Tabs / CodeTabs second-pass status:
+
+- [x] Added `DocTabs` support for Fumadocs-like simple mode:
+      `items`, `defaultIndex`, and `label`.
+- [x] Preserved manual trigger/panel mode used by current MDC fixtures.
+- [x] Extended `tabs` profile to verify manual tabs, simple mode, and CodeTabs.
+- [x] Fixed profile ownership to use direct child selectors so nested CodeTabs
+      do not pollute ordinary Tabs metrics.
+- [x] Verified:
+  - `node scripts/parity/run.mjs --profile=tabs --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9296 --settleMs=2500 --dump`
+
+Tabs process lesson:
+
+- Raw PascalCase Vue component blocks inside Markdown can produce unstable
+  nested boundaries for slot-heavy examples. Prefer MDC syntax for parity
+  fixtures.
+- `pnpm typecheck` can invalidate the running dev server's generated Nuxt
+  Content database. Restart the managed dev server after typecheck before
+  running additional runtime profiles.
+
+Accordion second-pass status:
+
+- [x] Confirmed current Vue implementation already exposes hash/copy/open
+      state, `hidden="until-found"`, and region semantics.
+- [x] Extended `accordion` profile with root type assertion and more reliable
+      hydration/click timing.
+- [x] Verified:
+  - `node scripts/parity/run.mjs --profile=accordion --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9299 --settleMs=2500 --dump`
+
+Accordion process lesson:
+
+- Closed panel `hidden="until-found"` can be missing in the first capture if
+  hydration has not finished. The profile should wait briefly before capture.
+- Interaction profiles should scroll the trigger into view before clicking,
+  especially when the target component is below long fixture content.
+
+Files second-pass status:
+
+- [x] Extended fixture coverage for nested open folders, closed folder opening,
+      disabled folder, root-level files, and long filename overflow.
+- [x] Extended `files` profile to assert tree density, folder state, nested
+      border/indent, disabled state, and truncation.
+- [x] Verified:
+  - `node scripts/parity/run.mjs --profile=files --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9303 --settleMs=3000 --dump`
+
+Files process lesson:
+
+- For deep file-tree fixtures, inline leaf syntax such as `:doc-file{}` is more
+  stable than block syntax for leaf nodes.
+- Split fixture states across multiple `DocFiles` samples when MDC nesting would
+  make one large tree ambiguous.
+
+InlineTOC second-pass status:
+
+- [x] Added default-closed fixture sample.
+- [x] Added nested heading fixture so depth indentation is measurable.
+- [x] Extended `inline-toc` profile to assert active state, depth padding,
+      collapsed/open interaction, and responsive behavior.
+- [x] Verified:
+  - `node scripts/parity/run.mjs --profile=inline-toc --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9305 --settleMs=2500 --dump`
+
+InlineTOC process lesson:
+
+- Do not add profile assertions for states absent from the fixture. First make
+  the target state visible, then assert it.
+
+TypeTable second-pass status:
+
+- [x] Extended fixture rows to cover required, default, deprecated, linked type
+      descriptions, parameters, returns, and hash-open details.
+- [x] Extended `type-table` profile to assert row matrix, rich details,
+      `aria-expanded`, visible details grid, and hash update.
+- [x] Verified:
+  - `node scripts/parity/run.mjs --profile=type-table --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9309 --settleMs=4000 --dump`
+
+TypeTable process lesson:
+
+- Profiles that click hash-addressable rows must clear `location.hash` before
+  and after capture. Multi-viewport runs reuse the same page context, so hash
+  pollution can make the next viewport start from an unintended opened state.
+
+Boundary:
+
+- Current scope verifies manual `DocTypeTable` UI parity. `AutoTypeTable`
+  remains a generator/product enhancement and should not block this component
+  batch.
 
 Verification:
 
 - [x] `Get-ChildItem -Recurse -Filter *.mjs -LiteralPath scripts/parity | ForEach-Object { node --check $_.FullName }`
-- [ ] `pnpm typecheck`
-- [ ] component profile command
-- [ ] screenshot sanity for representative components
+- [x] component profile command
+- [x] `pnpm typecheck`
+- [x] screenshot sanity for representative components
 
 Phase review:
 
-- [ ] Separate fixture mismatch from implementation mismatch.
-- [ ] Confirm no product-only component was pulled into foundation by accident.
+- [x] Separate fixture mismatch from implementation mismatch.
+- [x] Confirm no product-only component was pulled into foundation by accident.
 
 ## Phase 3: Preview / Page Actions / Feedback / Pager
 
-Status: in progress
+Status: current PageActions / Feedback / Pager contract verified; remaining
+product and dedicated Preview work pending
 
 Target files:
 
@@ -319,24 +442,77 @@ Development tasks:
 
 - [x] Add `page-actions` probe profile.
 - [x] Fix `page-actions` profile-exposed mismatches.
-- [ ] Expose per-page markdown URL and add `View as Markdown` menu item.
-- [ ] Add or expand `preview` probe profile.
-- [ ] Fix `preview` / `feedback` / `pager` profile-exposed mismatches.
+- Deferred: expose per-page markdown URL and add `View as Markdown` menu item.
+  This is a product/export enhancement, not part of the current PageActions
+  parity contract.
+- [x] Add or expand `preview` probe coverage for the current frame/source
+      contract.
+- [x] Fix `preview` / `feedback` / `pager` profile-exposed mismatches for the
+      current page-adjacent contract.
 
 Verification:
 
 - [x] static check for `page-actions`
 - [x] runtime profile for `page-actions`
-- [ ] screenshot sanity
+- [x] multi-viewport suite for `page-actions`
+- [x] screenshot sanity
+
+PageActions revalidation:
+
+- [x] Re-ran `page-actions` after the TypeTable/typecheck/dev-server restart.
+- [x] Confirmed the implementation contract still passes:
+  - Copy/Open button rhythm
+  - Open popover options and geometry
+  - Feedback selected/thanks state
+  - Pager item contract
+- [x] Improved the profile interaction flow to wait for target state instead of
+      relying on fixed sleeps:
+  - Open waits for `aria-expanded="true"` and rendered menu options.
+  - Feedback waits for pressed state and thanks text.
+- [x] Verified:
+  - `node scripts/parity/run.mjs --profile=page-actions --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9312 --settleMs=2500 --dump`
+  - `node scripts/parity/run.mjs --suite=page-actions --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9313 --settleMs=2500`
+
+PageActions process lesson:
+
+- Interactive profiles should wait for the semantic target state they assert.
+  A fixed sleep can fail on the first hydrated viewport while later viewports
+  pass, which makes the result look like an implementation regression.
 
 Phase review:
 
-- [ ] Ensure product actions still enter through slots/contracts.
-- [ ] Ensure copy state uses shared helper.
+- [x] Ensure product actions still enter through slots/contracts.
+- [x] Ensure copy state uses shared helper.
+
+Boundary:
+
+- `View as Markdown` remains a product/export enhancement because it first
+  needs a per-page markdown URL contract. It is tracked in
+  `design/fumadocs-component-parity-inventory.md` and does not block the
+  current PageActions parity contract.
+
+## Current Batch Regression
+
+Status: done
+
+Verified:
+
+- [x] `node scripts/parity/run.mjs --suite=content-components --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9317 --settleMs=3000 --dump`
+- [x] `node scripts/parity/run.mjs --suite=page-actions --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9313 --settleMs=2500`
+- [x] `node scripts/parity/run.mjs --suite=full-regression --viewports=1440x1000,994x935,390x844 --chromePort=9319 --settleMs=3000 --retries=1 --dump`
+- [x] `pnpm typecheck`
+- [x] `git diff --check`
+
+Regression note:
+
+- One full-regression attempt observed a single viewport with Nuxt `500 -
+  Internal Server Error` during dev-server rebuild/HMR. The rerun with
+  `--retries=1` passed all profiles. Treat this as server-health instability,
+  not a component parity mismatch.
 
 ## Phase 4: Missing / Postponed Components Decision
 
-Status: pending
+Status: done
 
 Known Fumadocs components not fully matched:
 
@@ -349,35 +525,37 @@ Known Fumadocs components not fully matched:
 
 Tasks:
 
-- [ ] Decide foundation vs product-aware vs postponed classification.
-- [ ] For foundation components, add minimal contract and fixture.
-- [ ] For product-aware components, document why they do not block parity.
-- [ ] Replace placeholder-only fixture pages with either real examples or
+- [x] Decide foundation vs product-aware vs postponed classification.
+- [x] For foundation components, add minimal contract and fixture.
+- [x] For product-aware components, document why they do not block parity.
+- [x] Replace placeholder-only fixture pages with either real examples or
       explicit postponed notes.
 
 Verification:
 
-- [ ] docs link validation still passes.
-- [ ] route pages do not show broken placeholders as finished components.
+- [x] docs link validation still passes.
+- [x] route pages do not show broken placeholders as finished components.
 
 Phase review:
 
-- [ ] Roadmap and implementation notes use the same classification language.
+- [x] Roadmap and implementation notes use the same classification language.
 
 ## Phase 5: Documentation And Cleanup
 
-Status: pending
+Status: done for the current batch
 
 Tasks:
 
-- [ ] Update `design/parity-reconstruction-workflow.md` with reusable lessons.
-- [ ] Update `design/implementation-notes.md` with verified Stage 7.7 result.
-- [ ] Update `design/roadmap.md` status if the gate changes current progress.
-- [ ] Delete this temporary todo file after all phases are complete.
+- [x] Update `design/parity-reconstruction-workflow.md` with reusable lessons.
+- [x] Update `design/implementation-notes.md` with verified Stage 7.7 result.
+- [x] Update `design/roadmap.md` status if the gate changes current progress.
+- [x] Retain this temporary todo file as a current-batch execution audit; the
+      durable next-batch list lives in
+      `design/fumadocs-component-parity-inventory.md`.
 
 Final verification:
 
-- [ ] `pnpm validate:links`
-- [ ] `pnpm typecheck`
-- [ ] relevant parity profiles pass or have documented server-health blocker
-- [ ] `git diff --check`
+- [x] `pnpm validate:links`
+- [x] `pnpm typecheck`
+- [x] relevant parity profiles pass or have documented server-health blocker
+- [x] `git diff --check`

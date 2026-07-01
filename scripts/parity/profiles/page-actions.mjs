@@ -14,6 +14,16 @@ export const pageActionsProfile = {
     return `(async () => {
       const selector = ${JSON.stringify(selector)};
       const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      const waitFor = async (predicate, timeout = 1200, interval = 60) => {
+        const startedAt = Date.now();
+
+        while (Date.now() - startedAt < timeout) {
+          if (predicate()) return true;
+          await wait(interval);
+        }
+
+        return predicate();
+      };
       const text = (element) =>
         element?.textContent?.trim().replace(/\\s+/g, ' ') || '';
       const pick = (element) => {
@@ -157,12 +167,35 @@ export const pageActionsProfile = {
 
       const top = collect('top');
 
-      document.querySelector('.docs-page-open-trigger')?.click();
-      await wait(220);
+      const openMenuReady = () =>
+        document
+          .querySelector('.docs-page-open-trigger')
+          ?.getAttribute('aria-expanded') === 'true' &&
+        document.querySelectorAll('.docs-page-open-option').length > 0;
+
+      for (let attempt = 0; attempt < 3 && !openMenuReady(); attempt += 1) {
+        const trigger = document.querySelector('.docs-page-open-trigger');
+        trigger?.scrollIntoView({ block: 'center', inline: 'nearest' });
+        await wait(80);
+        trigger?.click();
+        await waitFor(openMenuReady, 900);
+      }
       const openMenu = collect('open-menu');
 
-      document.querySelector('.docs-feedback-button')?.click();
-      await wait(180);
+      const feedbackReady = () =>
+        [...document.querySelectorAll('.docs-feedback-button')].some(
+          (element) =>
+            element.getAttribute('data-pressed') === 'true' ||
+            element.getAttribute('aria-pressed') === 'true',
+        ) && Boolean(document.querySelector('.docs-feedback-thanks'));
+
+      for (let attempt = 0; attempt < 3 && !feedbackReady(); attempt += 1) {
+        const button = document.querySelector('.docs-feedback-button');
+        button?.scrollIntoView({ block: 'center', inline: 'nearest' });
+        await wait(80);
+        button?.click();
+        await waitFor(feedbackReady, 900);
+      }
       const feedbackSelected = collect('feedback-selected');
 
       return { top, openMenu, feedbackSelected };

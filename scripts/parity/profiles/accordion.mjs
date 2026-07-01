@@ -38,6 +38,7 @@ export const accordionProfile = {
       const accordions = () =>
         [...document.querySelectorAll('.fd-doc-accordions')].map((root, index) => ({
           index,
+          type: root.getAttribute('data-type'),
           root: pick(root),
           items: [...root.querySelectorAll('.fd-doc-accordion-item')].map(
             (element) => {
@@ -59,12 +60,15 @@ export const accordionProfile = {
           ),
         }));
 
+      await wait(300);
       const top = { accordions: accordions(), title: document.title, url: location.href };
       const secondAccordion = document
         .querySelectorAll('.fd-doc-accordion-trigger')
         .item(1);
+      secondAccordion?.scrollIntoView({ block: 'center', inline: 'center' });
+      await wait(80);
       secondAccordion?.click();
-      await wait(220);
+      await wait(360);
       const opened = { accordions: accordions(), title: document.title, url: location.href };
 
       return { top, opened };
@@ -89,11 +93,12 @@ export const accordionProfile = {
         label: `${width}px accordion protocol`,
         pass:
           Boolean(accordion) &&
+          accordion.type === 'single' &&
           accordion.items.length >= 3 &&
           closedAccordion?.panelHidden === 'until-found' &&
           accordion.items.some((item) => item.copy),
         message: accordion
-          ? `items=${accordion.items.length}, closedHidden=${closedAccordion?.panelHidden ?? 'missing'}, copy=${accordion.items.some((item) => item.copy)}`
+          ? `type=${accordion.type},items=${accordion.items.length}, closedHidden=${closedAccordion?.panelHidden ?? 'missing'}, copy=${accordion.items.some((item) => item.copy)}`
           : 'missing',
       })
 

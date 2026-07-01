@@ -949,3 +949,157 @@ Page actions 契约卡验证：
   假失败。需要固定页面时改跑窄 profile 或共享 fixture 的 suite。
 - 后续待办：`View as Markdown` 需要先暴露 per-page markdown URL，再加入 Open
   菜单并补 profile 断言。
+- 本轮 TypeTable 收口后重新验证 PageActions，发现首个 1440 视口偶发失败而后续
+  视口通过。单视口长 settle 可通过，说明是 profile 首次交互窗口过紧，而不是
+  组件实现回退。
+- 已把 `page-actions` profile 的交互从固定 sleep 改为目标状态等待：
+  - Open 等待 `aria-expanded="true"` 和 `.docs-page-open-option` 渲染完成。
+  - Feedback 等待 pressed state 和 thanks text。
+- 复验：
+  - `node scripts/parity/run.mjs --profile=page-actions --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9312 --settleMs=2500 --dump`
+    通过，`28/28`。
+  - `node scripts/parity/run.mjs --suite=page-actions --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9313 --settleMs=2500`
+    通过，`28/28`。
+- 流程经验：交互 profile 应等待被断言的语义状态，而不是只依赖固定延迟。
+  如果只有首视口失败、后续视口通过，优先排查 hydration/interaction readiness。
+
+### Stage 7.7 Callout second-pass parity
+
+本轮按新流程完成 Callout 二次对齐：
+
+- `DocCallout` 支持 Fumadocs-style `type`，并保留旧 `tone`。
+- alias 规则补齐为 `warn -> warning`、`tip -> info`。
+- 新增低层组合协议：`DocCalloutContainer`、`DocCalloutTitle`、
+  `DocCalloutDescription`。
+- `content/guide/components.md` fixture 覆盖全 tone、alias、无标题长内容和
+  container/title/description 组合。
+- `callout` profile 从两个样本的视觉壳检查扩展为协议、DOM、computed style、
+  responsive 检查。
+
+验证：
+
+- `node scripts/parity/run.mjs --profile=callout --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9286 --settleMs=2500 --dump`
+  通过，`28/28`。
+- `pnpm typecheck` 通过。
+
+流程经验：fixture 或组件刚变更后，移动端 capture 可能与 HMR settle 竞争。
+组件 profile 第一次验证建议使用 `--settleMs=2500`，确认稳定后再考虑降低。
+
+### Stage 7.7 Tabs / CodeTabs second-pass parity
+
+本轮按新流程完成 Tabs / CodeTabs 二次对齐：
+
+- `DocTabs` 支持 simple mode：`items`、`defaultIndex`、`label`。
+- 手写 triggers/panels 模式保持兼容。
+- `tabs` profile 覆盖 ordinary tabs、simple mode 和 CodeTabs。
+- profile 采集改为 direct ownership selector，避免普通 tabs 被嵌套或相邻
+  CodeTabs 污染。
+
+验证：
+
+- `node scripts/parity/run.mjs --profile=tabs --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9296 --settleMs=2500 --dump`
+  通过，`19/19`。
+
+流程经验：
+
+- slot-heavy fixture 应优先使用 MDC 语法，避免 raw PascalCase Vue blocks 在
+  Markdown 中产生不稳定嵌套边界。
+- `pnpm typecheck` 会触碰 `.nuxt` 生成物。若 dev server 正在运行，typecheck
+  后继续跑 runtime parity 前必须重启 managed dev server。
+
+### Stage 7.7 Accordion second-pass parity
+
+本轮按新流程完成 Accordion 二次对齐：
+
+- 确认当前 Vue 实现已经覆盖 root type、默认打开项、hash/copy/open state、
+  `hidden="until-found"` 和 `role="region"`。
+- `accordion` profile 增加 root `data-type` 断言。
+- profile 在首轮 capture 前增加短等待，并在点击前把 trigger 滚动到视口中间，
+  避免 hydration 和 offscreen click 造成假失败。
+
+验证：
+
+- `node scripts/parity/run.mjs --profile=accordion --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9299 --settleMs=2500 --dump`
+  通过，`10/10`。
+
+### Stage 7.7 Files second-pass parity
+
+本轮按新流程完成 Files / File / Folder 二次对齐：
+
+- fixture 覆盖嵌套 open folder、closed folder opening、disabled folder、根级
+  file、长文件名截断。
+- `files` profile 增加 tree density、folder state、nested border/indent、
+  disabled state、truncation 断言。
+
+验证：
+
+- `node scripts/parity/run.mjs --profile=files --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9303 --settleMs=3000 --dump`
+  通过，`16/16`。
+
+流程经验：
+
+- 深层 MDC tree 中，leaf node 用 inline 语法 `:doc-file{}` 更稳定。
+- 为了测量 parity，不必把所有状态塞进一棵大树；可以拆成多个 `DocFiles`
+  样本，profile 跨样本聚合断言。
+
+### Stage 7.7 InlineTOC second-pass parity
+
+本轮按新流程完成 InlineTOC 二次对齐：
+
+- `DocInlineToc` 的 `defaultOpen` 支持 boolean-like 字符串。
+- fixture 增加 default-closed 样本和真实 `h3` 嵌套标题。
+- `inline-toc` profile 覆盖 active link、depth padding、collapsed/open
+  interaction 和三视口响应式。
+
+验证：
+
+- `node scripts/parity/run.mjs --profile=inline-toc --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9305 --settleMs=2500 --dump`
+  通过，`10/10`。
+
+流程经验：
+
+- 断言某个状态前，fixture 必须真实呈现该状态。本轮 depth padding 初次失败，
+  原因是页面没有任何嵌套 heading。
+
+### Stage 7.7 TypeTable second-pass parity
+
+本轮按新流程完成手写 `DocTypeTable` 二次对齐：
+
+- fixture 扩展到 4 行，覆盖 required、default、deprecated、linked
+  `typeDescription`、parameters、returns 和 hash-open details。
+- `type-table` profile 覆盖 row matrix、detail 展开、`aria-expanded`、
+  details grid display、参数名、返回值和 `#page-on-change` hash。
+- 当前边界只验证手写 TypeTable UI contract；`AutoTypeTable` 仍归类为
+  generator/product enhancement，不阻塞 foundation component parity。
+
+验证：
+
+- `node scripts/parity/run.mjs --profile=type-table --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9309 --settleMs=4000 --dump`
+  通过，`16/16`。
+
+流程经验：
+
+- 会修改 `location.hash` 的 profile 必须在每次 capture 前后清理 hash。多视口
+  运行会复用页面上下文，否则前一个视口的 hash/open state 会污染后一个视口，
+  造成假失败。
+
+### Stage 7.7 current batch regression
+
+本轮 Callout / Tabs / Accordion / Files / InlineTOC / TypeTable / PageActions
+批次已完成回归：
+
+- `node scripts/parity/run.mjs --suite=content-components --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9317 --settleMs=3000 --dump`
+  通过。
+- `node scripts/parity/run.mjs --suite=page-actions --url=http://127.0.0.1:8888/guide/components --viewports=1440x1000,994x935,390x844 --chromePort=9313 --settleMs=2500`
+  通过。
+- `node scripts/parity/run.mjs --suite=full-regression --viewports=1440x1000,994x935,390x844 --chromePort=9319 --settleMs=3000 --retries=1 --dump`
+  通过。
+- `pnpm typecheck` 通过。
+- `git diff --check` 通过。
+
+回归经验：
+
+- full-regression 初次运行时曾出现单 viewport 的 Nuxt `500 - Internal Server
+  Error`，dump 显示标题为 Nuxt 500 而不是组件 DOM 缺失。重跑通过，判断为
+  dev-server rebuild/HMR 期间的 server-health 波动。长回归建议加
+  `--retries=1`，并在失败 dump 中先区分 server-health 与 UI mismatch。

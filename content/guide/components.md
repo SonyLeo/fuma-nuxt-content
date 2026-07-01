@@ -25,8 +25,45 @@ badge: MVP
 这是一个最小提示块。
 ::
 
-::doc-callout{title="Warning" tone="warning"}
+::doc-callout{title="Warning" type="warning"}
 这个组件已经从旧的 Vue 沙盒迁移进来了。
+::
+
+::doc-callout{title="Warn alias" type="warn"}
+`warn` alias should normalize to the warning tone without changing layout.
+::
+
+::doc-callout{title="Tip alias" type="tip"}
+`tip` alias should normalize to the information tone.
+::
+
+::doc-callout{title="Success" type="success"}
+Success callouts keep the same shell while changing the accent.
+::
+
+::doc-callout{title="Error" type="error"}
+Error callouts should not change root spacing, icon alignment, or rail height.
+::
+
+::doc-callout{title="Idea" type="idea"}
+Idea callouts use the idea accent and full icon fill behavior.
+::
+
+::doc-callout{type="info"}
+This callout intentionally has no title and includes a much longer sentence to
+verify wrapping, content width, and rail stretching across desktop and narrow
+viewports without changing the component height model.
+::
+
+::doc-callout-container{type="success"}
+  ::doc-callout-title
+  Container API
+  ::
+
+  ::doc-callout-description
+  The split container/title/description API mirrors the Fumadocs component
+  protocol for pages that need lower-level composition.
+  ::
 ::
 
 ## Cards
@@ -57,6 +94,20 @@ badge: MVP
 ::
 ::
 
+::doc-tabs{items='["Long Preview","Code Example","Install Guide"]' default-index=1 label="Mode"}
+::doc-tab{value="long-preview"}
+Simple mode keeps panels mounted while hiding inactive content.
+::
+
+::doc-tab{value="code-example"}
+The second tab is active by default through `defaultIndex`.
+::
+
+::doc-tab{value="install-guide"}
+A third tab helps verify list overflow and keyboard order.
+::
+::
+
 ## Code tabs
 
 <DocCodeTabs :tabs='[{"label":"pnpm","language":"bash","code":"pnpm install"},{"label":"npm","language":"bash","code":"npm install"}]'></DocCodeTabs>
@@ -84,11 +135,20 @@ hash 命中时可以自动展开，内容区也能继续沿用现有 prose 节�
 ::doc-files
 ::doc-folder{name="app" default-open=true}
 ::doc-folder{name="components" default-open=true}
-::doc-file{name="DocCodeBlock.vue"}
+:doc-file{name="DocCodeBlock.vue"}
+:doc-file{name="DocCalloutWithAnExceedinglyLongFileNameForOverflow.vue"}
 ::
-::doc-file{name="app.vue"}
 ::
-::doc-file{name="nuxt.config.ts"}
+
+::doc-files
+::doc-folder{name="server"}
+:doc-file{name="api/content.ts"}
+::
+::doc-folder{name="node_modules" disabled=true}
+:doc-file{name="hidden-package.js"}
+::
+:doc-file{name="app.vue"}
+:doc-file{name="nuxt.config.ts"}
 ::
 ::
 
@@ -97,9 +157,17 @@ hash 命中时可以自动展开，内容区也能继续沿用现有 prose 节�
 ::doc-inline-toc
 ::
 
+::doc-inline-toc{title="Collapsed contents" default-open=false}
+::
+
+### Inline TOC nested item
+
+This nested heading exists so the inline table of contents can verify depth
+indentation instead of only top-level links.
+
 ## Type table
 
-<DocTypeTable :rows='[{"id":"page-title","name":"title","type":"string","description":"Page title displayed in the docs header.","required":true},{"id":"page-toc","name":"toc","type":"boolean","description":"Controls table of contents rendering for a page.","default":"true"}]'></DocTypeTable>
+<DocTypeTable :rows='[{"id":"page-title","name":"title","type":"string","description":"Page title displayed in the docs header.","required":true,"typeDescription":"string"},{"id":"page-toc","name":"toc","type":"boolean","description":"Controls table of contents rendering for a page.","default":"true"},{"id":"page-legacy","name":"legacy","type":"boolean","description":"Deprecated compatibility flag kept for migration examples.","deprecated":true,"default":"false"},{"id":"page-on-change","name":"onChange","type":"(value) => void","description":"Callback fired when the page option changes.","typeDescription":"(value: string, event: Event) => void","typeDescriptionLink":"/guide/components","parameters":[{"name":"value","description":"The next option value."},{"name":"event","description":"The original browser event."}],"returns":"void"}]'></DocTypeTable>
 
 ## Steps
 

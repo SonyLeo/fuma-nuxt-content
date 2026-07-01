@@ -45,31 +45,83 @@ export const tabsProfile = {
             index,
             root: pick(root),
             list: pick(root.querySelector('.fd-doc-tabs-list')),
-            triggers: [...root.querySelectorAll('.fd-doc-tab-trigger')].map(
+            label: text(root.querySelector('.fd-doc-tabs-label')),
+            triggers: [
+              ...root.querySelectorAll(
+                ':scope > .fd-doc-tabs-list > .fd-doc-tab-trigger',
+              ),
+            ].map(
               (element) => ({
                 root: pick(element),
                 text: text(element),
                 state: element.getAttribute('data-state'),
                 selected: element.getAttribute('aria-selected'),
+                controls: element.getAttribute('aria-controls'),
               }),
             ),
-            panels: [...root.querySelectorAll('.fd-doc-tab-panel')].map(
+            panels: [
+              ...root.querySelectorAll(
+                ':scope > .fd-doc-tabs-panels > .fd-doc-tab-panel',
+              ),
+            ].map(
               (element) => ({
                 root: pick(element),
+                text: text(element),
                 state: element.getAttribute('data-state'),
                 hidden: element.hasAttribute('hidden'),
+                labelledby: element.getAttribute('aria-labelledby'),
               }),
             ),
           }),
         );
+      const codeTabs = () =>
+        [...document.querySelectorAll('.fd-doc-code-tabs')].map((root, index) => ({
+          index,
+          root: pick(root),
+          list: pick(root.querySelector(':scope > .fd-doc-tabs-list')),
+          triggers: [
+            ...root.querySelectorAll(
+              ':scope > .fd-doc-tabs-list > .fd-doc-tab-trigger',
+            ),
+          ].map((element) => ({
+            root: pick(element),
+            text: text(element),
+            state: element.getAttribute('data-state'),
+            selected: element.getAttribute('aria-selected'),
+          })),
+          panels: [
+            ...root.querySelectorAll(
+              ':scope > .fd-doc-tabs-panels > .fd-doc-tab-panel',
+            ),
+          ].map((element) => ({
+            root: pick(element),
+            text: text(element),
+            state: element.getAttribute('data-state'),
+            hidden: element.hasAttribute('hidden'),
+            codeBlocks: element.querySelectorAll('.fd-doc-code-block').length,
+          })),
+        }));
 
-      const top = { tabs: tabs(), title: document.title, url: location.href };
-      const secondTab = document
-        .querySelectorAll('.fd-doc-tabs:not(.fd-doc-code-tabs) .fd-doc-tab-trigger')
+      const top = {
+        tabs: tabs(),
+        codeTabs: codeTabs(),
+        title: document.title,
+        url: location.href,
+      };
+      const firstTabs = document.querySelector('.fd-doc-tabs:not(.fd-doc-code-tabs)');
+      const secondTab = firstTabs
+        ?.querySelectorAll(':scope > .fd-doc-tabs-list > .fd-doc-tab-trigger')
         .item(1);
+      secondTab?.scrollIntoView({ block: 'center', inline: 'center' });
+      await wait(80);
       secondTab?.click();
-      await wait(180);
-      const switched = { tabs: tabs(), title: document.title, url: location.href };
+      await wait(320);
+      const switched = {
+        tabs: tabs(),
+        codeTabs: codeTabs(),
+        title: document.title,
+        url: location.href,
+      };
 
       return { top, switched };
     })()`
@@ -83,11 +135,26 @@ export const tabsProfile = {
       const width = viewport.width
       const tabs = data.top.tabs[0]
       const activeTab = tabs?.triggers.find((item) => item.state === 'active')
+      const switchedTabs = data.switched.tabs[0]
       const inactivePanels =
-        tabs?.panels.filter((item) => item.state === 'inactive') ?? []
+        switchedTabs?.panels.filter((item) => item.state === 'inactive') ?? []
       const switchedTab = data.switched.tabs[0]?.triggers.find(
         (item) => item.text === 'Code',
       )
+      const simpleTabs = data.top.tabs[1]
+      const simpleActive = simpleTabs?.triggers.find(
+        (item) => item.state === 'active',
+      )
+      const codeTabs = data.top.codeTabs[0]
+      const codeTabsActive = codeTabs?.triggers.find(
+        (item) => item.state === 'active',
+      )
+
+      addCheck(report, {
+        label: `${width}px tabs examples present`,
+        pass: data.top.tabs.length >= 2,
+        message: `tabs=${data.top.tabs.length}`,
+      })
 
       addCheck(report, {
         label: `${width}px tabs list rhythm`,
@@ -112,17 +179,62 @@ export const tabsProfile = {
           .map((item) => item.hidden)
           .join(',')}`,
       })
+
+      addCheck(report, {
+        label: `${width}px tabs simple mode defaultIndex and label`,
+        pass:
+          simpleTabs?.label === 'Mode' &&
+          simpleTabs?.triggers.length === 3 &&
+          simpleActive?.text === 'Code Example' &&
+          simpleActive?.selected === 'true' &&
+          simpleTabs?.panels.some(
+            (item) =>
+              item.state === 'active' &&
+              item.text.includes('second tab is active'),
+          ),
+        message: simpleTabs
+          ? `label=${simpleTabs.label},triggers=${simpleTabs.triggers
+              .map((item) => `${item.text}:${item.state}/${item.selected}`)
+              .join('|')}`
+          : 'missing',
+      })
+
+      addCheck(report, {
+        label: `${width}px code tabs shell contract`,
+        pass:
+          Boolean(codeTabs) &&
+          codeTabs?.root?.style.display === 'flex' &&
+          codeTabs?.list?.style.overflowX !== 'visible' &&
+          codeTabs?.triggers.length === 2 &&
+          codeTabsActive?.text === 'pnpm' &&
+          codeTabsActive?.selected === 'true' &&
+          codeTabs?.panels.some(
+            (item) => item.state === 'active' && item.codeBlocks === 1,
+          ),
+        message: codeTabs
+          ? `triggers=${codeTabs.triggers
+              .map((item) => `${item.text}:${item.state}/${item.selected}`)
+              .join('|')},codeBlocks=${codeTabs.panels
+              .map((item) => `${item.state}:${item.codeBlocks}`)
+              .join('|')}`
+          : 'missing',
+      })
     }
   },
 
   summary(capture) {
     const top = capture.data.top.tabs[0]
+    const simple = capture.data.top.tabs[1]
     const switched = capture.data.switched.tabs[0]?.triggers.find(
       (item) => item.state === 'active',
     )
 
+    const codeTabs = capture.data.top.codeTabs[0]
+
     return `- ${capture.viewport.width}x${capture.viewport.height}: tabs=${
       capture.data.top.tabs.length
-    }; triggers=${top?.triggers.length ?? 0}; switched=${switched?.text ?? 'none'}`
+    }; triggers=${top?.triggers.length ?? 0}; switched=${switched?.text ?? 'none'}; simpleActive=${
+      simple?.triggers.find((item) => item.state === 'active')?.text ?? 'none'
+    }; codeTabs=${codeTabs?.triggers.length ?? 0}`
   },
 }

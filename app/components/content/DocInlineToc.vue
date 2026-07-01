@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ChevronDown, List } from '@lucide/vue'
 import type { DocsTocItem } from '~/types/docs'
+import { readBooleanLike } from '~/utils/doc-accordion'
 
 const props = withDefaults(
   defineProps<{
     items?: DocsTocItem[]
     title?: string
-    defaultOpen?: boolean
+    defaultOpen?: boolean | 'true' | 'false'
   }>(),
   {
     items: undefined,
@@ -17,6 +18,7 @@ const props = withDefaults(
 
 const resolvedItems = useDocsInlineToc(computed(() => props.items))
 const { activeId } = useDocsTocState(resolvedItems)
+const defaultOpenState = computed(() => readBooleanLike(props.defaultOpen, true))
 
 function itemStyle(item: DocsTocItem) {
   return {
@@ -29,7 +31,7 @@ function itemStyle(item: DocsTocItem) {
   <DocCollapsible
     v-if="resolvedItems.length > 0"
     class="fd-doc-inline-toc"
-    :default-open="defaultOpen"
+    :default-open="defaultOpenState"
   >
     <template #default="{ open, toggle, contentId }">
       <button

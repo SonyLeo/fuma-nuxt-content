@@ -43,13 +43,22 @@ export const typeTableProfile = {
           rows: [...root.querySelectorAll('.fd-doc-type-row')].map((element) => {
             const trigger = element.querySelector('.fd-doc-type-trigger');
             const details = element.querySelector('.fd-doc-type-details');
+            const prop = element.querySelector('.fd-doc-type-prop');
+            const value = element.querySelector('.fd-doc-type-value');
 
             return {
               root: pick(element),
               trigger: pick(trigger),
-              prop: pick(element.querySelector('.fd-doc-type-prop')),
-              value: pick(element.querySelector('.fd-doc-type-value')),
+              id: element.getAttribute('id'),
+              prop: pick(prop),
+              propName: text(prop?.querySelector('code')),
+              value: pick(value),
+              valueLink: value?.querySelector('a')?.getAttribute('href') || null,
+              badges: [...element.querySelectorAll('.fd-doc-type-badge')].map(text),
+              deprecated: Boolean(element.querySelector('code.is-deprecated')),
               details: pick(details),
+              metaLabels: [...element.querySelectorAll('.fd-doc-type-meta dt')].map(text),
+              paramNames: [...element.querySelectorAll('.fd-doc-type-param code')].map(text),
               open: element.getAttribute('data-open'),
               expanded: trigger?.getAttribute('aria-expanded') || null,
               detailsVisible: details
@@ -59,11 +68,29 @@ export const typeTableProfile = {
           }),
         }));
 
+      if (location.hash) {
+        history.replaceState(null, '', location.pathname + location.search);
+        await wait(100);
+      }
+
       const top = { typeTables: typeTables(), title: document.title, url: location.href };
-      const firstTypeTrigger = document.querySelector('.fd-doc-type-trigger');
-      firstTypeTrigger?.click();
-      await wait(180);
-      const opened = { typeTables: typeTables(), title: document.title, url: location.href };
+      const onChangeTrigger = [...document.querySelectorAll('.fd-doc-type-trigger')].find(
+        (element) => text(element).includes('onChange'),
+      );
+      onChangeTrigger?.scrollIntoView({ block: 'center', inline: 'center' });
+      await wait(80);
+      onChangeTrigger?.click();
+      await wait(220);
+      const openedHash = location.hash;
+      const opened = {
+        typeTables: typeTables(),
+        title: document.title,
+        url: location.href,
+        hash: openedHash,
+      };
+      if (location.hash) {
+        history.replaceState(null, '', location.pathname + location.search);
+      }
 
       return { top, opened };
     })()`
@@ -84,13 +111,22 @@ export const typeTableProfile = {
         label: `${width}px type table rendered`,
         pass:
           Boolean(typeTable) &&
-          typeTable.rows.length >= 2 &&
+          typeTable.rows.length >= 4 &&
           typeTable.root?.style.display === 'flex' &&
           typeTable.head?.style.display === 'flex',
         message: typeTable
           ? `rows=${typeTable.rows.length}, root=${typeTable.root?.style.display}, head=${typeTable.head?.style.display}`
           : 'missing',
       })
+
+      const titleRow = typeTable?.rows.find((item) => item.propName === 'title')
+      const tocRow = typeTable?.rows.find((item) => item.propName === 'toc?')
+      const legacyRow = typeTable?.rows.find((item) =>
+        item.propName.startsWith('legacy'),
+      )
+      const callbackRow = typeTable?.rows.find((item) =>
+        item.propName.startsWith('onChange'),
+      )
 
       addCheck(report, {
         label: `${width}px type table expands details`,
@@ -100,6 +136,34 @@ export const typeTableProfile = {
           openedTypeRow?.details?.style.display === 'grid',
         message: openedTypeRow
           ? `expanded=${openedTypeRow.expanded}, visible=${openedTypeRow.detailsVisible}, display=${openedTypeRow.details?.style.display}`
+          : 'missing',
+      })
+
+      addCheck(report, {
+        label: `${width}px type table field matrix`,
+        pass:
+          titleRow?.badges.includes('required') &&
+          tocRow?.detailsVisible === false &&
+          legacyRow?.deprecated &&
+          legacyRow?.badges.includes('deprecated') &&
+          callbackRow?.valueLink === '/guide/components',
+        message: typeTable
+          ? `titleBadges=${titleRow?.badges.join('|')},toc=${tocRow?.propName},legacyDeprecated=${legacyRow?.deprecated}/${legacyRow?.badges.join('|')},callbackLink=${callbackRow?.valueLink}`
+          : 'missing',
+      })
+
+      addCheck(report, {
+        label: `${width}px type table rich details and hash`,
+        pass:
+          openedTypeRow?.propName.startsWith('onChange') &&
+          openedTypeRow?.metaLabels.includes('Type') &&
+          openedTypeRow?.metaLabels.includes('Parameters') &&
+          openedTypeRow?.metaLabels.includes('Returns') &&
+          openedTypeRow?.paramNames.includes('value') &&
+          openedTypeRow?.paramNames.includes('event') &&
+          data.opened.hash === '#page-on-change',
+        message: openedTypeRow
+          ? `row=${openedTypeRow.propName},labels=${openedTypeRow.metaLabels.join('|')},params=${openedTypeRow.paramNames.join('|')},hash=${data.opened.hash}`
           : 'missing',
       })
     }
@@ -113,6 +177,6 @@ export const typeTableProfile = {
 
     return `- ${capture.viewport.width}x${capture.viewport.height}: typeRows=${
       table?.rows.length ?? 0
-    }; opened=${opened?.prop?.text ?? 'none'}`
+    }; opened=${opened?.propName ?? 'none'}`
   },
 }

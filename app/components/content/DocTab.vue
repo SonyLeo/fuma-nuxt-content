@@ -3,7 +3,7 @@ import { computed } from 'vue'
 
 const props = defineProps<{
   value: string
-  label: string
+  label?: string
   trigger?: boolean | 'true' | 'false'
 }>()
 
@@ -22,7 +22,7 @@ const isTrigger = computed(() => {
     :value="value"
     class="fd-doc-tab-trigger"
   >
-    {{ label }}
+    {{ label ?? value }}
   </UiTabsTrigger>
   <UiTabsContent
     v-else

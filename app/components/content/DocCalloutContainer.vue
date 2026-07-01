@@ -7,7 +7,6 @@ import {
   Lightbulb,
 } from '@lucide/vue'
 import type { Component } from 'vue'
-import { computed } from 'vue'
 
 type DocCalloutType =
   | 'info'
@@ -22,13 +21,11 @@ const props = withDefaults(
   defineProps<{
     type?: DocCalloutType
     tone?: DocCalloutType
-    title?: string
     icon?: Component | string
   }>(),
   {
     type: undefined,
     tone: 'info',
-    title: '',
     icon: undefined,
   },
 )
@@ -83,10 +80,7 @@ const iconComponent = computed(() => {
       <component :is="iconComponent" class="fd-callout-icon" aria-hidden="true" />
     </slot>
     <div class="fd-callout-content">
-      <p v-if="title" class="fd-callout-title">{{ title }}</p>
-      <div class="fd-callout-body">
-        <slot />
-      </div>
+      <slot />
     </div>
   </div>
 </template>

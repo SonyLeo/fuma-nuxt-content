@@ -84,6 +84,10 @@
   --fd-callout-color: var(--docs-color-idea);
 }
 
+.fd-callout.is-idea .fd-callout-icon {
+  fill: var(--fd-callout-color);
+}
+
 .fd-card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -898,6 +902,16 @@ code.shiki:not(.not-fumadocs-code *) span {
 
 .fd-doc-tabs-list::-webkit-scrollbar {
   display: none;
+}
+
+.fd-doc-tabs-label {
+  align-self: center;
+  margin-inline-end: auto;
+  color: var(--docs-color-card-foreground);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  white-space: nowrap;
 }
 
 .fd-doc-tabs-panels {
