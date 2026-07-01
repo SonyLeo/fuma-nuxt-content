@@ -395,6 +395,37 @@ Foundation 阶段的 P0-P2 临时 TODO 已闭环，后续不再保留 `design/fo
 - `design/fumadocs-alignment-plan.md`
 - `design/layout-provider-parity-plan.md`
 - `design/theme-runtime-parity-plan.md`
+- `design/fumadocs-gap-audit.md`
+
+### Fumadocs source gap audit
+
+本轮再次横向对比 Fumadocs 源码、当前实现和规划后，新增
+`design/fumadocs-gap-audit.md` 作为差异审计入口。
+
+审计覆盖：
+
+- core source / page-tree / loader / llms
+- MDX plugins / markdown transform
+- base-ui provider / layout / default MDX components
+- search clients/providers
+- ImageZoom / Banner / advanced components
+- OpenAPI / AsyncAPI / Story / TypeScript generator 等高级包
+
+结论摘要：
+
+- 正文基础组件和 page-adjacent primitives 大多已实现并有 profile。
+- 剩余 foundation P1 主要是 Theme Runtime、Root Provider/Layout Variants、
+  ImageZoom 和 Markdown Transform Pipeline。
+- 剩余 integration P1 主要是 remote search/API、feedback backend、RSS、
+  `llms-full.txt`、per-page markdown export、image CDN adapter 和 multi-source baseline。
+- OpenAPI / AsyncAPI / Story / AutoTypeTable / DynamicCodeBlock / GitHubInfo /
+  Mermaid / KaTeX / Twoslash 继续作为产品或高级能力后置。
+
+排期同步：
+
+- `design/product-roadmap.md` 的推荐执行顺序已同步为：
+  Theme Runtime -> Root Provider/Layout Variants -> ImageZoom ->
+  Markdown Transform -> Integration P1 -> Multi source -> Site product composition。
 
 ### Layout/provider gap audit against Fumadocs
 

@@ -65,6 +65,10 @@ sectionLabel: Plan
   - Theme runtime / theme switch / preset 的详细契约卡
   - 作为 Stage 7.9 的执行设计，不作为总路线图
 
+- [`design/fumadocs-gap-audit.md`](./fumadocs-gap-audit.md)
+  - 定期对比 Fumadocs 源码、当前实现和现有规划
+  - 记录剩余差异、分类和排期建议
+
 - `design/implementation-notes.md`
   - 只记录最新结论
   - 只记录当前状态

@@ -618,9 +618,9 @@ Stage 7.5：Fumadocs-Aligned UI Primitives Gate 已完成第一轮。
 推荐执行顺序：
 
 1. Theme Runtime / Preset Gate：先补 foundation runtime，再接 theme config / preset adapter。
-2. 基础缺口复核：ImageZoom、Home layout、not-found shell、sidebar layout tabs / root section switcher。
-3. Markdown transform pipeline：heading id/custom id、code meta、line/diff highlight、structured data extraction。
-4. 集成层 P1：remote search provider / search API、feedback backend、RSS、llms-full.txt / per-page markdown export。
-5. Image pipeline 深化：先补 ImageZoom foundation UI，再接 CDN adapter。
+2. Root Provider / Layout Variants Gate：provider、baseSlots、sidebar state、Home/not-found、layout tabs、Banner/Notebook/Flux decisions。
+3. ImageZoom：先补 foundation UI，再接 CDN/image adapter。
+4. Markdown transform pipeline：heading id/custom id、code meta、line/diff/highlight、structured data extraction。
+5. 集成层 P1：remote search provider / search API、feedback backend、RSS、llms-full.txt / per-page markdown export。
 6. Multi source baseline：定义 docs/blog/changelog/api 的 loader、route、metadata 和 nav contract。
 7. 站点产品组合层：blog/changelog/API 页面体验、story/playground、AI/MCP/docs assistant、versioning/i18n。
