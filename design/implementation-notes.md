@@ -393,6 +393,74 @@ Foundation 阶段的 P0-P2 临时 TODO 已闭环，后续不再保留 `design/fo
 - `design/product-roadmap.md`
 - `design/nuxt-content-mvp-plan.md`
 - `design/fumadocs-alignment-plan.md`
+- `design/layout-provider-parity-plan.md`
+- `design/theme-runtime-parity-plan.md`
+
+### Layout/provider gap audit against Fumadocs
+
+本轮再次对照 Fumadocs layout 源码后，确认此前规划仍偏重内容组件和当前
+`DocsLayoutShell`，对 layout/provider 协议排期不够明确。
+
+Fumadocs 证据：
+
+- `packages/base-ui/src/provider/base.tsx`：
+  - `RootProvider` 承接 theme、search、i18n、dir 和 framework adapter 的公共入口。
+- `packages/base-ui/src/layouts/shared/index.tsx`：
+  - `BaseLayoutProps` 承接 `githubUrl / links / nav / slots / themeSwitch / searchToggle / i18n`。
+  - `LayoutTab / getLayoutTabs / isLayoutTabActive` 是 layout tabs/root section switcher 的协议来源。
+- `packages/base-ui/src/layouts/shared/client.tsx`：
+  - `baseSlots()` 集中提供 `themeSwitch / searchTrigger / languageSelect` 默认 slot。
+- `packages/base-ui/src/layouts/docs/client.tsx` 和 `layouts/docs/slots/sidebar.tsx`：
+  - docs layout 把 container/header/sidebar/provider/root/trigger/useSidebar 都当作 slots/protocol。
+  - sidebar 支持 banner、footer、components、collapsible、tabs dropdown、language/theme/search footer。
+- `packages/base-ui/src/layouts/home/*`：
+  - Home layout、navbar menu、default not-found 是基础 layout surface，不只是页面示例。
+- `packages/base-ui/src/layouts/notebook/*`、`layouts/flux/*`：
+  - Notebook / Flux 是 layout variants。当前不需要全量实现，但需要 decision card 防止漏排。
+
+当前项目状态：
+
+- 已有 `DocsLayoutShell / DocsHeader / DocsSidebar / DocsMobileNav / DocsPage / DocsToc`。
+- 已有 `banner / search-trigger / theme-switch / language-select` slots。
+- 已有 `nav.tabs` 和 sidebar dropdown 的第一版。
+- 缺少独立 `RootProvider`、`baseSlots` 等价默认 slot provider、sidebar provider/state contract。
+- Home 仍是 `app/pages/index.vue` 页面组合，不是共享 layout contract。
+- Not-found shell 未纳入 foundation。
+- Banner 只有 slot 和 `--fd-banner-height` 预留，缺少是否进入 foundation 的 decision card。
+- Notebook / Flux 没有实现，也没有延期决策记录。
+
+边界结论：
+
+- 这些 layout/provider 面属于 Foundation Substrate P1，不属于站点产品组合层。
+- Notebook / Flux 不应现在实现，但必须记录 deferred variant decision。
+- Banner 需要先做 foundation/product decision；若进入 foundation，必须覆盖 dismiss、storage、sticky 和 layout height。
+
+已更新规划：
+
+- `design/roadmap.md` 新增 `Stage 7.10：Root Provider / Layout Variants Gate`。
+- `design/roadmap.md` 保持扁平，只保留 Stage 7.10 的目标、产物和链接。
+- `design/foundation-roadmap.md` 新增摘要型 `Root Provider / Layout Variants Contract` 和
+  `Phase 5.6：Root Provider / Layout Variants Gate`。
+- `design/layout-provider-parity-plan.md` 承接详细 contract、契约卡和 profile 设计。
+- `design/fumadocs-component-parity-inventory.md` 新增 `Layout / Root Provider Parity Inventory`。
+
+文档治理规则：
+
+- `design/roadmap.md` 只保留扁平路线、阶段顺序、当前优先级和指向详细文档的锚点。
+- 具体设计、契约卡、profile 细节进入独立计划文档。
+- inventory 只记录清单和状态，不复制完整执行设计。
+
+后续执行顺序：
+
+1. Theme Runtime / Preset Gate。
+2. RootProvider + baseSlots/default slot provider。
+3. Sidebar provider/state contract。
+4. Layout tabs / root section switcher。
+5. Home layout + not-found shell。
+6. Banner decision。
+7. Notebook / Flux decision cards。
+8. ImageZoom。
+9. Markdown transform pipeline。
 
 ## Foundation UI Gate 完成记录
 
@@ -1375,3 +1443,172 @@ Page actions 契约卡验证：
   而新增断言也很难表达“这个 profile 到底保护什么”。
 - computed CSS 要按浏览器解析后的值断言。例如 `50vh` 会变成像素值，应按
   `viewport.height * 0.5` 做容差比较。
+
+### Boundary review: Fumadocs / Fumapress / assistant-ui
+
+本轮重新复核 Fumadocs、Fumapress 和 assistant-ui docs 源码后，修正此前过于粗糙
+的“基础层 / 产品层”二分法。
+
+证据：
+
+- Fumadocs 自身承担大量基建：
+  - `packages/core/src/source/*` 提供 source loader、page tree、schema、llms。
+  - `packages/core/src/search/*` 提供 search server / flexsearch from source。
+  - `packages/base-ui/src/layouts/docs/*` 提供 DocsLayout / DocsPage / TOC / page slots。
+  - `packages/base-ui/src/mdx.tsx` 和 `components/*` 提供 default MDX components、
+    codeblock、tabs、accordion、callout、card、files、steps、type-table 等。
+- Fumapress 主要是 Fumadocs 的应用框架封装：
+  - `packages/core/src/config.ts` 聚合 content、site、layouts、plugins、adapters。
+  - `packages/core/src/layouts/docs.tsx` 直接消费 Fumadocs `DocsLayout`、
+    `DocsPage`、`MarkdownCopyButton`、`ViewOptionsPopover`。
+  - `packages/core/src/lib/types.ts` 用 `ServerPlugin` 承接 route、middleware、
+    render override 和 loader 配置。
+  - `plugins/flexsearch.ts`、`plugins/llms.txt.ts` 等更多是在 Fumadocs core
+    能力外面加 output route、mode 和 provider 装配。
+- assistant-ui docs 直接消费 Fumadocs contract，但做了明显的站点产品组合：
+  - `source.config.ts` 使用 `fumadocs-mdx/config` 定义 docs、examples、blog、
+    careers 等 collections。
+  - `lib/source.tsx` 使用 `fumadocs-core/source` loader，并加本地
+    `platformsPlugin()`。
+  - docs page 使用 Fumadocs `DocsPage` / `DocsBody`，但自定义 header、TOC
+    actions、pager、sidebar、assistant panel、platform filter 和 analytics。
+
+更新后的边界：
+
+1. Foundation Substrate：
+   Vue / Nuxt 版 Fumadocs 等价底座，包括 source/page tree、layout/page slots、
+   TOC/sidebar/mobile nav、default MDC components、code/prose/preview/content
+   components、UI primitives、tokens 和 CSS layering。
+2. Integration / Plugin Layer：
+   类 Fumapress 层，包括 site config、adapters、server/product routes、
+   search provider、feedback backend、sitemap/RSS/SEO、llms/markdown export、
+   image CDN、multi source loader 和 deploy/generate strategy。
+3. Site Product Composition：
+   类 assistant-ui 层，包括 brand/home/product pages、自定义 docs shell
+   组合、TOC actions、AI/MCP/docs assistant、story/playground、blog/changelog/API
+   页面体验、i18n/versioning、analytics 和业务路由。
+
+结论：
+
+- 当前项目不能直接复用 Fumadocs React 基建，所以仍要先把 Vue foundation
+  substrate 补稳。
+- Fumapress 不应被理解成“重写 docs UI 的产品层”，而应作为 config/adapter/plugin
+  封装模式参考。
+- assistant-ui 不应被理解成 foundation 来源，而应作为站点产品组合和自定义壳层
+  节奏参考。
+- Changelog / Open issues 暂不进入当前主线；它们应等 multi source / page metadata
+  contract 稳定后再作为集成层和站点组合层能力推进。
+
+后续执行顺序：
+
+1. 基础缺口复核：
+   - ImageZoom
+   - Home layout
+   - not-found shell
+   - sidebar layout tabs / root section switcher
+2. Markdown transform pipeline：
+   - heading id / custom id
+   - code meta parsing
+   - line highlight / diff / focus / filename
+   - structured data extraction
+3. 集成层 P1：
+   - remote search provider / search API
+   - feedback backend / GitHub issue template
+   - RSS
+   - llms-full.txt / per-page markdown export
+4. Image pipeline 深化：
+   - 先补 ImageZoom foundation UI
+   - 再接 CDN adapter / provider config
+5. Multi source baseline：
+   - docs / blog / changelog / api 的 loader、route、metadata、nav contract
+   - 先建立内容源和 route 规则，再做具体 changelog/open issues 页面体验
+6. 站点产品组合层：
+   - blog/changelog/API 页面体验
+   - story / playground runtime
+   - AI / MCP / docs assistant
+   - versioning / i18n
+
+### Theme runtime / preset planning
+
+本轮对照 Fumadocs theme 实现和当前项目状态，确认主题化不能只停留在 token 层。
+
+Fumadocs 证据：
+
+- `packages/base-ui/src/provider/base.tsx`：
+  - `RootProvider` 内置 `next-themes`。
+  - 默认 `attribute="class"`、`defaultTheme="system"`、`enableSystem`。
+  - dark mode source of truth 是 root `.dark` class。
+- `packages/base-ui/src/layouts/shared/slots/theme-switch.tsx`：
+  - `ThemeSwitch` 使用 `useTheme()`。
+  - 支持 `light-dark` 和 `light-dark-system`。
+  - UI 是 icon button，不是文字按钮。
+- `packages/base-ui/css/*.css`：
+  - `neutral / black / purple / ocean / ruby ...` 等 theme preset 覆盖
+    `--color-fd-*`。
+  - `.dark` 下有独立 token 覆盖。
+- `apps/docs/content/docs/ui/theme.mdx`：
+  - Fumadocs 官方文档把 light/dark 和 colors 分开讲。
+  - 自定义主题色也是覆盖 CSS/Theme variables。
+
+当前项目状态：
+
+- `app/assets/css/tokens.css` 已有 `:root` light token 和 `.dark` dark token。
+- `--docs-*` 已桥接到 `--color-fd-*`。
+- `app/assets/css/tailwind.css` 已通过 Tailwind v4 `@theme` 暴露 token。
+- `DocsHeader / DocsLayoutShell / DocsSidebar` 已有 `theme-switch` slot。
+- `DocsSidebar` 当前主题按钮只是静态占位，没有状态、持久化和切换行为。
+- `docsSiteConfig` 没有 theme 配置。
+- 缺少 first-paint inline script，因此即使补 client state，也可能出现 light/dark
+  首屏闪烁。
+
+边界判断：
+
+- Theme runtime 属于 Foundation Substrate P1：
+  - `light / dark / system`
+  - `.dark` class
+  - `useDocsTheme()`
+  - `DocsThemeSwitch`
+  - first-paint script
+  - token/preset contract
+- Theme config / preset adapter 属于 Integration / Plugin Layer：
+  - `docsSiteConfig.theme`
+  - defaultMode / switchMode / storageKey / preset
+  - config -> provider/switch/preset props
+- Theme gallery、品牌主题展示、在线颜色编辑器属于 Site Product Composition，后置。
+
+已更新规划：
+
+- `design/roadmap.md` 新增 `Stage 7.9：Theme Runtime / Preset Gate`。
+- `design/roadmap.md` 保持扁平，只保留 Stage 7.9 的目标、产物和链接。
+- `design/foundation-roadmap.md` 新增摘要型 `Theme Runtime / Preset Contract` 和
+  `Phase 5.5：Theme Runtime / Preset Gate`。
+- `design/theme-runtime-parity-plan.md` 承接详细 contract、实现步骤和 profile 设计。
+- `design/product-roadmap.md` 新增 `Phase 1.5：Theme Config / Preset Adapter`。
+
+文档治理规则：
+
+- Theme Runtime 这类会展开大量实现细节的 gate，不直接塞进 roadmap。
+- roadmap 只保留路线、阶段顺序、产物和锚点链接。
+- foundation-roadmap 只保留 foundation 摘要和验收入口。
+
+后续实现顺序：
+
+1. `DocsThemeConfig` 类型和默认值。
+2. `useDocsTheme()` composable。
+3. theme client plugin。
+4. first-paint inline script。
+5. `DocsThemeSwitch.vue`。
+6. 替换 sidebar 静态主题占位。
+7. `themes.css` preset 覆盖。
+8. site config theme adapter。
+9. `theme` parity profile。
+
+验证重点：
+
+- root `.dark` 和 `data-docs-theme` 正确。
+- localStorage 持久化正确。
+- system mode 跟随 `prefers-color-scheme`。
+- header/sidebar switch 状态一致。
+- dark reload 无首屏错色。
+- Shiki dark token 生效。
+- theme preset 只通过 CSS variables 改色。

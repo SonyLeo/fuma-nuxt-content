@@ -48,6 +48,18 @@ Primary Fumadocs sources:
 - `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\type-table.tsx`
 - `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\docs\page\index.tsx`
 - `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\shared\page-actions.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\provider\base.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\shared\index.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\shared\client.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\docs\client.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\docs\slots\sidebar.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\home\index.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\home\navbar.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\home\not-found.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\notebook\index.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\flux\index.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\sidebar\base.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\sidebar\tabs\index.tsx`
 - `D:\Projects\Learning\gh\fumadocs\apps\docs\source.config.ts`
 
 Local implementation sources:
@@ -244,6 +256,51 @@ Rule:
 
 - do not pull these into foundation batches unless a concrete product page
   requires them
+
+<a id="layout-root-provider-parity-inventory"></a>
+
+## Layout / Root Provider Parity Inventory
+
+This section tracks Fumadocs layout surfaces that are easy to miss when parity
+work focuses only on body components. Detailed contract cards live in
+[`design/layout-provider-parity-plan.md`](./layout-provider-parity-plan.md).
+
+| Fumadocs surface | Local equivalent | Current status | Priority / action |
+| --- | --- | --- | --- |
+| `RootProvider` | No standalone equivalent. Theme/search/language slots are wired through layout components. | Missing protocol. Theme runtime is already planned, but the provider boundary is not implemented. | Foundation P1. Add Nuxt equivalent provider/plugin after Theme Runtime. |
+| `BaseLayoutProps` / shared layout options | `DocsLayoutProps`, `DocsNavLink`, site config adapter | Partially implemented. Options exist, but provider/default-slot ownership is not explicit. | Keep and harden in Root Provider / Layout Variants Gate. |
+| `baseSlots()` / `BaseSlots` | Slots named `search-trigger`, `theme-switch`, `language-select` | Partially implemented. Replacement points exist, but defaults are scattered across header/sidebar/layout. | Add `useDocsLayoutSlots()` or equivalent helper plus `layout-slots` profile. |
+| `SearchTrigger` / `ThemeSwitch` / `LanguageSelect` shared slots | `DocsSearchTrigger`; `DocsThemeSwitch` planned; no real language select | Search exists, theme runtime planned, language is only a slot placeholder. | Implement default theme switch in Stage 7.9; keep language select disabled/placeholder contract until i18n. |
+| Docs layout container/header/sidebar slots | `DocsLayoutShell`, `DocsHeader`, `DocsSidebar`, `DocsMobileNav` | Main docs shell implemented and profiled. Provider/state contract remains too local. | Add provider-level state profile for collapse, hover preview, mobile drawer, and tabs dropdown. |
+| `SidebarProvider` / folder state | `DocsSidebar` local state and `DocsSidebarTree` | Partially implemented visually. No explicit provider contract. | Foundation P1. Introduce `useDocsSidebarState()` or equivalent. |
+| `LayoutTab`, `getLayoutTabs`, sidebar tabs dropdown | `nav.tabs` and local sidebar tab dropdown | Partially implemented. It lacks a formal root-section contract and `tabMode` decision. | Foundation P1. Add layout tabs/root section switcher contract and profile. |
+| `HomeLayout` | `app/pages/index.vue` ad hoc composition | Missing as layout contract. | Foundation P1. Add `DocsHomeLayout` baseline sharing nav/header options. |
+| `DefaultNotFound` | No foundation shell equivalent found | Missing. | Foundation P1. Add basic not-found shell using same tokens/nav/link contract. |
+| `NavbarMenu` / home nav menu | No dedicated navigation menu primitive | Missing but not always required. | Defer until Home layout needs menu links; do not block provider gate. |
+| `Banner` | Top `banner` slot and `--fd-banner-height` token only | Decision required. | Add decision card. If implemented, cover dismiss, persistence, sticky height, and shell offsets. |
+| Notebook layout | No equivalent | Deferred variant. | Do not implement now. Record decision card and keep protocol in mind for future compact docs layouts. |
+| Flux layout | No equivalent | Deferred variant. | Do not implement now. Record decision card and keep as advanced layout backlog. |
+
+Recommended gate order:
+
+1. Theme Runtime / Preset Gate.
+2. RootProvider + baseSlots/default slot provider.
+3. Sidebar provider/state contract.
+4. Layout tabs / root section switcher.
+5. Home layout + not-found shell.
+6. Banner decision.
+7. Notebook / Flux decision cards.
+
+Recommended profiles:
+
+- `root-provider`
+- `layout-slots`
+- `sidebar-state`
+- `layout-tabs`
+- `home-layout`
+- `not-found`
+- `banner-decision` or `banner`
+- `layout-variants-audit`
 
 ## Contract Card Requirements
 
@@ -1042,6 +1099,11 @@ to prevent partial-regression false confidence.
       collisions, and common constrained-width layouts.
 - [ ] Decide ImageZoom foundation/product classification.
 - [ ] Decide Banner foundation/product classification.
+- [ ] Add RootProvider / baseSlots parity card and profile.
+- [ ] Add sidebar provider/state contract card and profile.
+- [ ] Add layout tabs / root section switcher contract card and profile.
+- [ ] Add Home layout and not-found shell parity cards.
+- [ ] Add Notebook / Flux deferred layout variant decision cards.
 - [ ] Replace placeholder-only Banner fixture if Banner enters foundation.
 - [x] Keep `GitHubInfo`, `DynamicCodeBlock`, `AutoTypeTable`, `GraphView`, and
       advanced docs features out of foundation batches until explicitly scoped.

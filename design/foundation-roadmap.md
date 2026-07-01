@@ -71,6 +71,7 @@ sectionLabel: Plan
 ### Fumadocs UI / Base UI
 
 - `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\mdx.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\provider\base.tsx`
 - `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\shared\index.tsx`
 - `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\shared\client.tsx`
 - `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\shared\slots\search-trigger.tsx`
@@ -81,7 +82,13 @@ sectionLabel: Plan
 - `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\docs\page\index.tsx`
 - `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\docs\slots\sidebar.tsx`
 - `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\docs\page\slots\toc.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\home\index.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\home\navbar.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\home\not-found.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\notebook\index.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\flux\index.tsx`
 - `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\sidebar\base.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\sidebar\tabs\index.tsx`
 - `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\toc\index.tsx`
 - `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\codeblock.tsx`
 - `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\type-table.tsx`
@@ -158,6 +165,7 @@ sectionLabel: Plan
 - layout slots
 - layout options shape
 - layout width tokens
+- theme runtime contract
 
 基础 options 需要预留：
 
@@ -175,6 +183,7 @@ sectionLabel: Plan
 - navbar/sidebar/TOC 不直接读产品配置
 - search/theme/language 都有 slot 或 trigger 位置
 - layout 尺寸通过 token / CSS variables 控制
+- theme switch 可以通过 slot 替换，但默认实现必须可用
 
 ### 4. Page Protocol
 
@@ -282,6 +291,53 @@ sectionLabel: Plan
 - docs components 不重复造交互状态
 - search shell、page actions、sidebar switcher 可复用 primitives
 - focus-visible、Escape、outside click、aria state 有统一规则
+
+### 8.5 Theme Runtime / Preset Contract
+
+本节只保留 foundation 级摘要。详细 contract、实现步骤和 profile 设计见
+[`design/theme-runtime-parity-plan.md`](./theme-runtime-parity-plan.md)。
+
+必须稳定：
+
+- `light / dark / system`
+- resolved theme state
+- localStorage persistence
+- root `.dark` class
+- root `data-docs-theme` preset marker
+- first-paint script
+- `DocsThemeSwitch`
+- theme preset CSS contract
+- theme parity profile
+
+验收摘要：
+
+- 主题状态可切换、持久化，并在首屏无闪烁。
+- header/sidebar/mobile 共享同一 theme state。
+- preset 只通过 CSS variables 改色。
+- code block dark token 和 prose/content token 不错色。
+
+### 8.6 Root Provider / Layout Variants Contract
+
+本节只保留 foundation 级摘要。详细 contract、契约卡和 profile 设计见
+[`design/layout-provider-parity-plan.md`](./layout-provider-parity-plan.md)。
+
+必须稳定：
+
+- RootProvider 等价 provider boundary
+- `baseSlots()` 等价默认 slot provider
+- sidebar provider/state contract
+- layout tabs / root section switcher
+- Home layout baseline
+- basic not-found shell
+- Banner decision
+- Notebook / Flux deferred variant decision cards
+
+验收摘要：
+
+- 默认 slot 不再散落在 header/sidebar/mobile nav 中。
+- sidebar 状态可通过 profile 采集并回归。
+- home / not-found 与 docs shell 共享 layout options。
+- Notebook / Flux 延期边界明确记录。
 
 ### 9. Prose / Typography
 
@@ -509,6 +565,52 @@ P2 / Product-aware:
 - 技术文档最常见正文表达可稳定使用
 - story/playground 可复用 preview contract
 
+<a id="phase-5-5-theme-runtime-preset"></a>
+
+### Phase 5.5：Theme Runtime / Preset Gate
+
+当前状态：计划补齐。
+
+定位：
+
+- 属于 foundation P1。
+- 排在 Stage 8 集成 / 插件层深化之前。
+- 不阻塞已完成的 site config / search / feedback 第一轮，但会成为后续视觉回归和产品组合前的 gate。
+
+需要完成：
+
+1. 按 [`theme-runtime-parity-plan`](./theme-runtime-parity-plan.md) 完成契约卡。
+2. 完成 theme runtime / provider / first-paint / switch / preset 实现。
+3. 完成 `theme` focused profile。
+4. 将 theme profile 纳入 shell 或 full regression。
+
+验收：
+
+- 详细验收以 [`theme-runtime-parity-plan`](./theme-runtime-parity-plan.md#verification) 为准。
+
+<a id="phase-5-6-root-provider-layout-variants"></a>
+
+### Phase 5.6：Root Provider / Layout Variants Gate
+
+当前状态：计划补齐。
+
+定位：
+
+- 属于 foundation P1。
+- 排在 Theme Runtime / Preset Gate 之后。
+- 目标是补齐 Fumadocs layout 层的 provider、slot 和 variant 决策，而不是全量实现每一种 layout。
+
+需要完成：
+
+1. 按 [`layout-provider-parity-plan`](./layout-provider-parity-plan.md) 完成契约卡。
+2. 完成 RootProvider / layout slots / sidebar state / layout tabs / home / not-found 的 focused profiles。
+3. 完成 Banner decision card。
+4. 完成 Notebook / Flux deferred variant decision cards。
+
+验收：
+
+- 详细验收以 [`layout-provider-parity-plan`](./layout-provider-parity-plan.md#verification-matrix) 为准。
+
 ### Phase 6：Docs Content Components Gate
 
 当前状态：P0 已完成。
@@ -543,12 +645,9 @@ P2 / Product-aware:
 
 Foundation UI Gate 已完成第一轮。
 
-下一步进入产品层起步：
+下一步优先补 Theme Runtime / Preset Gate，再继续 foundation P1 与集成层 P1：
 
-1. site config schema
-2. layout shared options 由 config 生成
-3. nav links schema
-4. Git metadata config
-5. page actions contract
-6. GitHub source link
-7. Copy Markdown
+1. Theme Runtime / Preset Gate
+2. Root Provider / Layout Variants Gate
+3. ImageZoom
+4. Markdown transform pipeline

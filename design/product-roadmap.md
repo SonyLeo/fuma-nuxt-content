@@ -7,15 +7,23 @@ sectionLabel: Plan
 
 ## 目标
 
-产品层建立在 foundation 之上。
+上层能力建立在 foundation 之上。
 
 它不负责补基础 UI、重写 docs tree、重写 page protocol，也不直接改 Markdown rendering contract。
 
-它只负责把已经稳定的 docs foundation 变成完整站点产品。
+本文件现在按两层描述：
 
-## 进入产品层的前置条件
+1. 集成 / 插件层：把 foundation 暴露成可配置、可替换的站点能力。
+2. 站点产品组合层：把 foundation 和集成层输出组合成具体站点体验。
 
-进入产品层前，foundation 必须完成 Exit Gate。
+这个边界修正来自 Fumadocs / Fumapress / assistant-ui 源码复核：
+Fumadocs 自身已经提供大量基建；Fumapress 主要做 config、adapter、server
+plugin、routing 和 output routes；assistant-ui 则在 Fumadocs contract 上做站点
+产品体验组合。
+
+## 进入上层能力的前置条件
+
+进入集成 / 插件层或站点产品组合层前，foundation 必须完成 Exit Gate。
 
 必须可用：
 
@@ -35,33 +43,53 @@ sectionLabel: Plan
 - preview / code preview
 - P0 docs content components
 
-如果产品层工作需要新增这些基础能力，说明还不能进入产品层，应先回到 `design/foundation-roadmap.md`。
+如果上层工作需要新增这些基础能力，说明还不能推进该能力，应先回到
+`design/foundation-roadmap.md`。
 
-## 产品层范围
+## 上层能力范围
 
-产品层包含：
+### 集成 / 插件层
+
+对应 Fumapress 的主要价值：使用 Fumadocs 基建，并通过配置、adapter、plugin
+和 route/output 封装成可消费能力。
+
+包含：
 
 - site config 数据来源
 - layout shared options 生成
 - nav links 数据生成
 - Git metadata config
-- page actions
-- Copy Markdown
-- GitHub source link
+- theme config / preset adapter
+- page actions 数据编排
+- Copy Markdown / GitHub source link 的数据读取与动作编排
 - search engine / index / API
 - search provider config
-- feedback
-- blog / changelog / api 多 source
+- feedback backend / GitHub issue template
+- multi source loader / adapter
 - sitemap / rss / SEO
-- llms.txt
+- llms.txt / llms-full.txt / per-page markdown export
 - link validation
-- image pipeline
-- AI / MCP / docs assistant
-- story / playground runtime
-- i18n / versioning 路由策略
+- image pipeline / CDN adapter
 - deploy / generate strategy
 
-产品层不包含：
+### 站点产品组合层
+
+对应 assistant-ui docs 的主要价值：消费 Fumadocs contract，并围绕具体产品形态
+组合 header、sidebar、TOC actions、pager、assistant panel、platform filter、
+业务页面和 analytics。
+
+包含：
+
+- brand / home / product pages
+- docs shell 的站点级组合与 replacement
+- blog / changelog / api 具体页面体验
+- AI / MCP / docs assistant 入口
+- story / playground runtime
+- i18n / versioning 路由策略
+- OpenAPI / AsyncAPI / type generation
+- analytics / conversion / business-specific routes
+
+上层能力不包含：
 
 - default MDX components
 - code block shell
@@ -76,7 +104,7 @@ sectionLabel: Plan
 
 ### 1. 不反向污染 foundation
 
-产品能力不能破坏：
+上层能力不能破坏：
 
 - `DocsNode`
 - docs tree
@@ -88,7 +116,7 @@ sectionLabel: Plan
 
 ### 2. 以配置和扩展位接入
 
-产品能力优先通过：
+上层能力优先通过：
 
 - config
 - composable
@@ -100,7 +128,7 @@ sectionLabel: Plan
 
 接入。
 
-### 3. 产品层生成 props，不定义底层 contract
+### 3. 上层能力生成 props，不定义底层 contract
 
 例如：
 
@@ -120,7 +148,7 @@ sectionLabel: Plan
 
 ### Fumapress
 
-Fumapress 的产品层模式是：
+Fumapress 的集成 / 插件层模式是：
 
 - `defineConfig()`
 - `content`
@@ -141,16 +169,20 @@ Fumapress 的产品层模式是：
 
 对当前项目的结论：
 
-- 不做完整 Fumapress router/plugin runtime
-- 先做最小 site config
-- 再做 page actions
-- search/sitemap/llms/feedback/blog 后置
+- Fumapress 不是替代 Fumadocs 的 docs UI 基建，而是对 Fumadocs source/layout/page
+  contract 的应用框架封装。
+- 当前项目不能照搬其 React/Waku 实现，但可以借鉴 config builder、adapter、
+  server plugin 和 output route 的分层。
+- 先保持当前轻量 site config，不急着做完整 plugin runtime。
+- search/sitemap/llms/feedback 这类能力应视为集成 / 插件层能力，而不是基础
+  UI 能力。
+- blog/changelog/API 需要先有 multi source baseline，再进入站点产品组合层。
 
 ### Fumadocs UI
 
-Fumadocs UI 的 `BaseLayoutProps` 和 layout slots 是 foundation 参考，不是产品层参考。
+Fumadocs UI 的 `BaseLayoutProps` 和 layout slots 是 foundation 参考，不是上层能力参考。
 
-产品层只消费这些 contract。
+集成 / 插件层和站点产品组合层都只消费这些 contract。
 
 关键源码：
 
@@ -162,7 +194,7 @@ Fumadocs UI 的 `BaseLayoutProps` 和 layout slots 是 foundation 参考，不�
 
 ### 目标
 
-建立最小站点配置层，作为产品能力的数据来源。
+建立最小站点配置层，作为上层能力的数据来源。
 
 ### 前置
 
@@ -194,7 +226,13 @@ foundation 已有：
    - components
    - GitHub
    - external links
-5. 提供 config -> foundation layout props 的 adapter
+5. 定义 theme 数据：
+   - enabled
+   - defaultMode
+   - switchMode
+   - storageKey
+   - preset
+6. 提供 config -> foundation layout/theme props 的 adapter
 
 ### 不做
 
@@ -202,12 +240,59 @@ foundation 已有：
 - 不重写 navbar
 - 不实现 page actions
 - 不实现 search
+- 不在 site config 阶段实现 theme runtime
+- 不在 site config 阶段生成任意颜色算法
 
 ### 验收
 
 - 品牌名不再散落在组件里
 - GitHub URL 不再散落在组件里
 - navbar/home/footer 能通过同一份 config 获取数据
+- theme config 只生成 provider/switch/preset props，不直接操作 DOM
+
+<a id="phase-1-5-theme-config-preset-adapter"></a>
+
+## Phase 1.5：Theme Config / Preset Adapter
+
+### 目标
+
+在 Foundation Theme Runtime / Preset Gate 完成后，把站点配置接入主题系统。
+
+Foundation runtime 设计见
+[`design/theme-runtime-parity-plan.md`](./theme-runtime-parity-plan.md)。
+
+### 前置
+
+foundation 已有：
+
+- `DocsThemeConfig`
+- `useDocsTheme()`
+- theme client plugin
+- first-paint inline script
+- `DocsThemeSwitch`
+- `themes.css` preset contract
+
+### 需要完成
+
+1. 在 `app/types/docs-site.ts` 暴露 `theme?: DocsThemeConfig`。
+2. 在 `app/config/docs-site.ts` 配置默认 theme。
+3. 在 route/layout composition surface 中把 site config theme 转成 foundation props。
+4. 允许 site config 选择 preset，但不允许组件读取 site config 后局部改色。
+5. 为未来品牌主题预留 `preset` 扩展，不实现在线颜色编辑器。
+
+### 不做
+
+- 不实现 Fumadocs 全量 theme gallery。
+- 不实现运行时任意色板生成。
+- 不把 theme mode 写进 docs tree、page protocol 或 Markdown frontmatter。
+- 不让 blog/changelog/API 单独定义不兼容的主题系统。
+
+### 验收
+
+- 删除或禁用 `theme` config 时，foundation 默认主题仍能独立工作。
+- 修改 `preset` 后，只改变 CSS variables，不改变组件 DOM 结构。
+- theme config 不破坏 `theme-switch` slot replacement。
+- profile 能在默认 config 和至少一个 preset config 下通过。
 
 ## Phase 2：Page Actions
 
@@ -472,7 +557,7 @@ content
 
 Foundation UI Gate 已完成第一轮。
 
-产品层第一步也已完成第一轮：
+集成 / 插件层第一步也已完成第一轮：
 
 1. site config
 2. config -> layout props adapter
@@ -490,7 +575,7 @@ Foundation UI Gate 已完成第一轮。
 - GitHub source/edit 基于 page `sourcePath`，不基于 route path 猜文件。
 - Copy Markdown 当前使用 Vite raw import 读取 `content/**/*.md(x)`，避免引入 Node type 依赖。
 
-产品层增强第一轮也已完成：
+集成 / 插件层增强第一轮也已完成：
 
 1. search config / local search shell / local index
 2. feedback config / page footer feedback
@@ -528,13 +613,14 @@ Stage 7.5：Fumadocs-Aligned UI Primitives Gate 已完成第一轮。
 - `DocCodeBlock / DocAccordion / DocTabs / DocTypeTable` 已消费 shared
   copy/tabs/collapsible/accordion primitive。
 
-下一步可以进入产品层高级能力：
+边界复核后的下一步不直接进入 changelog/open issues 或完整站点产品能力。
 
-1. remote search provider / search API
-2. feedback backend / GitHub issue template
-3. RSS
-4. image CDN / ImageZoom / llms-full.txt
-5. blog / changelog / API 多 source
-6. story / playground runtime
-7. AI / MCP / docs assistant
-8. versioning / i18n
+推荐执行顺序：
+
+1. Theme Runtime / Preset Gate：先补 foundation runtime，再接 theme config / preset adapter。
+2. 基础缺口复核：ImageZoom、Home layout、not-found shell、sidebar layout tabs / root section switcher。
+3. Markdown transform pipeline：heading id/custom id、code meta、line/diff highlight、structured data extraction。
+4. 集成层 P1：remote search provider / search API、feedback backend、RSS、llms-full.txt / per-page markdown export。
+5. Image pipeline 深化：先补 ImageZoom foundation UI，再接 CDN adapter。
+6. Multi source baseline：定义 docs/blog/changelog/api 的 loader、route、metadata 和 nav contract。
+7. 站点产品组合层：blog/changelog/API 页面体验、story/playground、AI/MCP/docs assistant、versioning/i18n。

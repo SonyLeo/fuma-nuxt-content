@@ -7,15 +7,18 @@ sectionLabel: Plan
 
 ## 目标
 
-当前项目的长期路线拆成三条边界：
+当前项目的长期路线拆成四条边界：
 
 1. 基础层
-2. 产品层
-3. 未来 VitePress 兼容边界
+2. 集成 / 插件层
+3. 站点产品组合层
+4. 未来 VitePress 兼容边界
 
 基础层负责“文档系统成立”。
 
-产品层负责“文档系统产品化”。
+集成 / 插件层负责“把文档系统能力配置化、路由化、输出化”。
+
+站点产品组合层负责“把稳定底座和集成能力组合成具体站点体验”。
 
 未来 VitePress 边界只负责“未来迁移、兼容或复用时如何映射”，不作为当前 `Nuxt + @nuxt/content` foundation 的架构来源。
 
@@ -25,7 +28,7 @@ sectionLabel: Plan
 
 - `design/roadmap.md`
   - 总路线图
-  - 说明基础层 / 产品层 / 未来 VitePress 边界
+  - 说明基础层 / 集成插件层 / 站点产品组合层 / 未来 VitePress 边界
   - 说明阶段优先级和当前下一步
 
 - `design/foundation-prep-plan.md`
@@ -40,9 +43,9 @@ sectionLabel: Plan
   - 验收标准
 
 - `design/product-roadmap.md`
-  - 产品层详细演进顺序
-  - site config、page actions、search、feedback、AI 等产品能力规划
-  - 插件和产品能力边界
+  - 集成 / 插件层和站点产品组合层详细演进顺序
+  - site config、page actions、search、feedback、AI 等上层能力规划
+  - 插件和站点产品组合边界
   - 验收标准
 
 - `design/fumadocs-alignment-plan.md`
@@ -53,6 +56,14 @@ sectionLabel: Plan
   - Fumadocs 基础组件 parity 清单
   - 当前本地实现 / profile 覆盖 / 缺失组件分类
   - 后续按批次对齐的执行入口
+
+- [`design/layout-provider-parity-plan.md`](./layout-provider-parity-plan.md)
+  - RootProvider / baseSlots / sidebar provider / layout variants 的详细契约卡
+  - 作为 Stage 7.10 的执行设计，不作为总路线图
+
+- [`design/theme-runtime-parity-plan.md`](./theme-runtime-parity-plan.md)
+  - Theme runtime / theme switch / preset 的详细契约卡
+  - 作为 Stage 7.9 的执行设计，不作为总路线图
 
 - `design/implementation-notes.md`
   - 只记录最新结论
@@ -86,9 +97,16 @@ Fumadocs 对当前项目的价值分成三层：
 - `D:\Projects\Learning\gh\fumadocs\packages\core\src\source\page-tree\builder.ts`
 - `D:\Projects\Learning\gh\fumadocs\packages\core\src\page-tree\definitions.ts`
 - `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\mdx.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\provider\base.tsx`
 - `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\shared\index.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\shared\client.tsx`
 - `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\docs\index.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\docs\client.tsx`
 - `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\docs\page\index.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\home\index.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\home\not-found.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\notebook\index.tsx`
+- `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\layouts\flux\index.tsx`
 - `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\sidebar\base.tsx`
 - `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\toc\index.tsx`
 - `D:\Projects\Learning\gh\fumadocs\packages\base-ui\src\components\codeblock.tsx`
@@ -106,7 +124,7 @@ Fumadocs 对当前项目的价值分成三层：
 
 ### Fumapress
 
-Fumapress 对当前项目的价值是产品层封装方式：
+Fumapress 对当前项目的价值是集成 / 插件层封装方式：
 
 - `defineConfig()`
 - content / site / meta / layouts / plugins / adapters 聚合
@@ -162,34 +180,58 @@ Fumapress 对当前项目的价值是产品层封装方式：
 - component preview / code preview
 - docs content components
 - Home layout / basic not-found shell
+- theme runtime / theme switch / theme preset contract
 - tokens / shell.css / prose.css / content.css
 
-基础层的目标不是做“所有功能”，而是提供产品层可以安全挂载的稳定 contract。
+基础层的目标不是做“所有功能”，而是提供上层能力可以安全挂载的稳定 contract。
 
-### 产品层
+### 集成 / 插件层
 
-产品层负责把稳定 foundation 变成完整站点产品。
+集成 / 插件层负责把稳定 foundation 暴露成可配置、可替换的站点能力。
 
-产品层包括：
+它对应 Fumapress 的主要价值：不是重写 Fumadocs UI，而是用 config、
+adapters、server plugins、routing 和 output routes 把已有基建装配成产品。
+
+集成 / 插件层包括：
 
 - site config
 - nav links 数据来源
 - Git metadata config
-- page actions
-- Copy Markdown / GitHub source link
-- search engine / search index / search API
-- feedback
-- blog / changelog / api 多内容源
-- sitemap / rss / seo / llms.txt
-- image pipeline
-- AI / MCP / docs assistant
+- page actions 数据编排
+- Copy Markdown / GitHub source link 的数据读取与动作编排
+- search provider / index / API
+- feedback backend / GitHub issue 引导
+- sitemap / rss / seo / llms.txt / markdown export
+- image pipeline / CDN adapter
+- multi source loader / adapter
+- deploy / generate strategy
+
+集成 / 插件层不能反向补基础 UI 的洞。
+
+如果一个集成能力需要新增基础布局、重写 code block、重写 table、重写 TOC、
+重写 sidebar 或重写 MDX component mapping，说明它应该先回到基础层。
+
+### 站点产品组合层
+
+站点产品组合层负责把 foundation 和集成层能力组合成具体站点体验。
+
+它对应 assistant-ui docs 的主要价值：直接消费 Fumadocs source/layout/page
+合同，同时按自身产品需要组合 header、sidebar、TOC actions、pager、platform
+filter、assistant panel、analytics、产品页和业务内容源。
+
+站点产品组合层包括：
+
+- brand / home / product pages
+- docs shell 的站点级组合与 replacement
+- 自定义 TOC actions / page header actions
+- AI / MCP / docs assistant 入口
 - story / playground runtime
+- blog / changelog / api 内容体验
 - i18n / versioning 完整路由策略
-- 部署和生成策略
+- analytics / conversion / business-specific routes
 
-产品层不能反向补基础 UI 的洞。
-
-如果一个产品能力需要新增基础布局、重写 code block、重写 table、重写 TOC、重写 sidebar 或重写 MDX component mapping，说明它应该先回到基础层。
+站点产品组合层只能消费 foundation contract 和集成层输出，不能把站点特例倒灌为
+基础组件规则。
 
 ### 未来 VitePress 边界
 
@@ -416,7 +458,7 @@ P0 只实现当前 Docs Layout。
 - layout tabs / root section switcher
 - Home layout / not-found shell
 
-### 属于产品层
+### 属于集成 / 插件层
 
 - site config 数据来源
 - GitHub metadata fetching
@@ -425,8 +467,13 @@ P0 只实现当前 Docs Layout。
 - feedback backend
 - AI / MCP
 - sitemap / rss / llms.txt / SEO metadata generation
+- image pipeline / CDN adapter
+
+### 属于站点产品组合层
+
 - blog / changelog / API 多 source
 - story controls / registry / interactive playground runtime
+- AI / MCP / docs assistant 入口
 - i18n / versioning 路由策略
 
 ### 属于未来兼容边界
@@ -499,7 +546,7 @@ P0 只实现当前 Docs Layout。
 
 ### Stage 5：Foundation UI Gate
 
-进入产品层前必须完成：
+进入上层能力前必须完成：
 
 - default MDX components 静态审计
 - link protocol 静态审计
@@ -511,7 +558,7 @@ P0 只实现当前 Docs Layout。
 - root provider / theme / search trigger slot 审计
 - product extension slots 审计
 
-### Stage 6：产品层起步
+### Stage 6：集成 / 插件层起步
 
 - site config schema
 - layout shared options 由 config 生成
@@ -521,7 +568,7 @@ P0 只实现当前 Docs Layout。
 - GitHub source link
 - Copy Markdown
 
-### Stage 7：产品层增强
+### Stage 7：集成 / 插件层增强
 
 - search engine / search index / search API
 - feedback
@@ -588,9 +635,58 @@ P0 只实现当前 Docs Layout。
 - search dialog 与 Fumadocs search dialog 的结构能力对齐：overlay、content、header、input、close、list、footer、keyboard navigation。
 - tabs/accordion/collapsible 的 data state、ARIA 和 keyboard 行为与 Fumadocs 尽量一致。
 - 所有 primitive 使用 token，不新增局部硬编码色板。
-- 完成后再进入 Stage 8。
+- 完成后再进入 Stage 7.9 theme gate。
 
-### Stage 8：产品层高级能力
+<a id="stage-7-9-theme-runtime-preset"></a>
+
+### Stage 7.9：Theme Runtime / Preset Gate
+
+目标：补齐 foundation 主题运行时、ThemeSwitch、首屏防闪和 CSS preset contract。
+
+执行设计：
+
+- [`design/theme-runtime-parity-plan.md`](./theme-runtime-parity-plan.md)
+- [`design/product-roadmap.md#phase-1-5-theme-config-preset-adapter`](./product-roadmap.md#phase-1-5-theme-config-preset-adapter)
+
+产物：
+
+- theme runtime / provider contract
+- `useDocsTheme()` contract
+- first-paint script
+- `DocsThemeSwitch`
+- `themes.css` preset contract
+- `theme` parity profile
+
+<a id="stage-7-10-root-provider-layout-variants"></a>
+
+### Stage 7.10：Root Provider / Layout Variants Gate
+
+目标：补齐 Fumadocs layout 层的 provider、默认 slots、sidebar state、
+Home/not-found 和 layout variant 决策，不在 roadmap 展开具体 contract。
+
+执行设计：
+
+- [`design/layout-provider-parity-plan.md`](./layout-provider-parity-plan.md)
+- [`design/fumadocs-component-parity-inventory.md#layout-root-provider-parity-inventory`](./fumadocs-component-parity-inventory.md#layout-root-provider-parity-inventory)
+
+产物：
+
+- RootProvider / baseSlots parity card
+- sidebar provider/state parity card
+- layout tabs / root section switcher parity card
+- Home layout / not-found shell parity cards
+- Banner decision card
+- Notebook / Flux deferred variant decision cards
+
+### Stage 8：集成 / 插件层深化
+
+- remote search provider / search API
+- feedback backend / GitHub issue template
+- RSS / llms-full.txt / per-page markdown export
+- image CDN / ImageZoom adapter
+- multi source adapter baseline
+
+### Stage 9：站点产品组合层
 
 - blog / changelog / API
 - story / playground
@@ -599,7 +695,7 @@ P0 只实现当前 Docs Layout。
 - i18n
 - OpenAPI / AsyncAPI / type generation
 
-### Stage 9：未来 VitePress 兼容评估
+### Stage 10：未来 VitePress 兼容评估
 
 - VitePress themeConfig 映射表
 - sidebar/search/outline adapter 可行性
@@ -634,7 +730,7 @@ P0 只实现当前 Docs Layout。
 
 Foundation UI Gate 已完成第一轮。
 
-Stage 6：产品层起步已完成第一轮。
+Stage 6：集成 / 插件层起步已完成第一轮。
 
 已完成：
 
@@ -646,11 +742,14 @@ Stage 6：产品层起步已完成第一轮。
 - GitHub source/edit link
 - Copy Markdown
 
-仍后置为 P1，不阻塞产品层起步：
+仍后置为 P1，不阻塞集成 / 插件层起步：
 
 - ImageZoom
 - Home layout / not-found shell 深化
 - sidebar layout tabs / root section switcher
+- RootProvider / baseSlots / sidebar provider contract
+- Banner contract decision
+- Notebook / Flux layout variant decision cards
 - 完整 page-tree transformer/plugin runtime
 - 完整 markdown transform pipeline
 
@@ -660,7 +759,7 @@ Stage 6：产品层起步已完成第一轮。
 - Copy Markdown 的 server/API 读取模式
 - page actions 的更多 placement 和分组
 
-Stage 7：产品层增强已完成第一轮。
+Stage 7：集成 / 插件层增强已完成第一轮。
 
 已完成：
 
@@ -708,14 +807,14 @@ Stage 7.7：Fumadocs component parity 当前批次已完成。
 `design/fumadocs-component-parity-inventory.md` 分批推进，下一批建议从
 Cards / Steps / Heading 开始。
 
-下一步可以进入 Stage 8：产品层高级能力。
+下一步先回补 foundation 和集成层 P1 缺口，再进入站点产品组合层。
 
 建议优先顺序：
 
-1. remote search provider / search API
-2. feedback backend / GitHub issue template
-3. RSS / image CDN / ImageZoom / llms-full.txt
-4. blog / changelog / API 多 source
-5. story / playground runtime
-6. AI / MCP / docs assistant
-7. versioning / i18n
+1. Theme Runtime / Preset Gate：补真实 light/dark/system、ThemeSwitch、首屏防闪和 preset contract。
+2. Root Provider / Layout Variants Gate：补 provider、baseSlots、sidebar provider、Home/not-found、layout tabs、banner decision、Notebook/Flux decision card。
+3. ImageZoom：先补 foundation UI，再接 image pipeline adapter。
+4. Markdown transform pipeline：heading id/custom id、code meta、line/diff highlight、structured data extraction。
+5. 集成层 P1：remote search provider / search API、feedback backend、RSS、llms-full.txt / per-page markdown export。
+6. Multi source baseline：先建立 docs/blog/changelog/api 的 loader/route/content contract，再做具体页面体验。
+7. 站点产品组合层：story/playground、AI/MCP/docs assistant、versioning/i18n、OpenAPI/AsyncAPI/type generation。
