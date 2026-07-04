@@ -25,7 +25,9 @@ withDefaults(defineProps<DocsLayoutProps>(), {
       <slot name="search-trigger" />
     </template>
     <template #theme-switch>
-      <slot name="theme-switch" />
+      <slot name="theme-switch">
+        <DocsThemeSwitch />
+      </slot>
     </template>
     <template #language-select>
       <slot name="language-select" />

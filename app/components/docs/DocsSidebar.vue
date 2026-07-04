@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Check, ChevronsUpDown, Moon, PanelLeft, Search, Sun } from '@lucide/vue'
+import { Check, ChevronsUpDown, PanelLeft, Search } from '@lucide/vue'
 import type {
   DocsBrandOptions,
   DocsNavLink,
@@ -37,6 +37,7 @@ const emit = defineEmits<{
   'update:collapsed': [value: boolean]
 }>()
 
+const slots = useSlots()
 const tabsRef = useTemplateRef<HTMLElement>('tabs')
 const tabsOpen = shallowRef(false)
 const sidebarHovered = shallowRef(false)
@@ -59,10 +60,20 @@ const sidebarLinks = computed(() => {
     return (link.on ?? 'all') === 'all' || link.on === 'menu'
   })
 })
+const theme = useDocsTheme()
 const showGithubShortcut = computed(() => {
   return Boolean(
     props.githubUrl &&
       !sidebarLinks.value.some((link) => link.href === props.githubUrl),
+  )
+})
+const showSidebarFooter = computed(() => {
+  return Boolean(
+    sidebarLinks.value.length > 0 ||
+      showGithubShortcut.value ||
+      slots['theme-switch'] ||
+      slots['language-select'] ||
+      theme.config.value.enabled,
   )
 })
 
@@ -266,12 +277,7 @@ onBeforeUnmount(() => {
       </nav>
 
       <div
-        v-if="
-          sidebarLinks.length > 0 ||
-          showGithubShortcut ||
-          $slots['theme-switch'] ||
-          $slots['language-select']
-        "
+        v-if="showSidebarFooter"
         class="docs-sidebar-footer"
       >
         <nav
@@ -309,29 +315,7 @@ onBeforeUnmount(() => {
         <div class="docs-sidebar-footer-controls">
           <slot name="theme-switch" />
           <slot name="language-select" />
-          <div
-            v-if="!$slots['theme-switch'] && !$slots['language-select']"
-            class="docs-sidebar-theme-default"
-            role="group"
-            aria-label="Theme"
-          >
-            <button
-              class="docs-sidebar-theme-button is-active"
-              type="button"
-              aria-label="Use system theme"
-              aria-pressed="true"
-            >
-              <Sun class="docs-sidebar-theme-icon" aria-hidden="true" />
-            </button>
-            <button
-              class="docs-sidebar-theme-button"
-              type="button"
-              aria-label="Use dark theme"
-              aria-pressed="false"
-            >
-              <Moon class="docs-sidebar-theme-icon" aria-hidden="true" />
-            </button>
-          </div>
+          <DocsThemeSwitch v-if="!$slots['theme-switch']" />
         </div>
       </div>
       </div>

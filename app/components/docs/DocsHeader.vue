@@ -79,7 +79,9 @@ function isActive(link: DocsNavLink) {
       <div class="docs-header-meta">
         <span class="docs-header-section">{{ title || 'Documentation' }}</span>
         <slot name="search-trigger" />
-        <slot name="theme-switch" />
+        <slot name="theme-switch">
+          <DocsThemeSwitch />
+        </slot>
         <slot name="language-select" />
         <DocsLink
           v-if="showGithubShortcut"

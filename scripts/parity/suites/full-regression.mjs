@@ -5,6 +5,7 @@ export const fullRegressionSuite = {
     'steps',
     'heading',
     'prose-defaults',
+    'theme',
     'preview',
     'callout',
     'tabs',

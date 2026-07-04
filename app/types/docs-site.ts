@@ -1,3 +1,4 @@
+import type { DocsThemeConfig } from '~/types/docs-theme'
 import type { DocsNavLink, DocsNavOptions } from '~/types/docs'
 
 export type DocsSiteBrandConfig = {
@@ -76,6 +77,7 @@ export type DocsSiteConfig = {
   feedback?: DocsSiteFeedbackConfig
   seo?: DocsSiteSeoConfig
   images?: DocsSiteImageConfig
+  theme?: DocsThemeConfig
 }
 
 export function defineDocsSiteConfig(config: DocsSiteConfig) {

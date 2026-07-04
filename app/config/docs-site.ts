@@ -106,4 +106,12 @@ export const docsSiteConfig = defineDocsSiteConfig({
     lazy: true,
     captions: true,
   },
+  theme: {
+    enabled: true,
+    defaultMode: 'system',
+    switchMode: 'light-dark-system',
+    storageKey: 'fuma-nuxt-theme',
+    preset: 'default',
+    disableTransitionOnChange: true,
+  },
 })

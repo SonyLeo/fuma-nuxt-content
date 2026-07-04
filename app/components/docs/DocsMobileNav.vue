@@ -81,7 +81,19 @@ function isActive(link: DocsNavLink) {
         :items="props.items"
         :current-path="props.currentPath"
         @navigate="close"
-      />
+      >
+        <template #search-trigger>
+          <slot name="search-trigger" />
+        </template>
+        <template #theme-switch>
+          <slot name="theme-switch">
+            <DocsThemeSwitch />
+          </slot>
+        </template>
+        <template #language-select>
+          <slot name="language-select" />
+        </template>
+      </DocsSidebar>
 
       <nav
         v-if="menuLinks.length > 0"

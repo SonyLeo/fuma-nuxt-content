@@ -27,7 +27,9 @@ const sidebarCollapsed = shallowRef(false)
           <slot name="search-trigger" />
         </template>
         <template #theme-switch>
-          <slot name="theme-switch" />
+          <slot name="theme-switch">
+            <DocsThemeSwitch />
+          </slot>
         </template>
         <template #language-select>
           <slot name="language-select" />
@@ -46,7 +48,19 @@ const sidebarCollapsed = shallowRef(false)
           :items="navigation"
           :current-path="currentPath"
           :links="links"
-        />
+        >
+          <template #search-trigger>
+            <slot name="search-trigger" />
+          </template>
+          <template #theme-switch>
+            <slot name="theme-switch">
+              <DocsThemeSwitch />
+            </slot>
+          </template>
+          <template #language-select>
+            <slot name="language-select" />
+          </template>
+        </DocsMobileNav>
       </slot>
 
       <slot name="sidebar">
@@ -65,7 +79,9 @@ const sidebarCollapsed = shallowRef(false)
             <slot name="search-trigger" />
           </template>
           <template #theme-switch>
-            <slot name="theme-switch" />
+            <slot name="theme-switch">
+              <DocsThemeSwitch />
+            </slot>
           </template>
           <template #language-select>
             <slot name="language-select" />

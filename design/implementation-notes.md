@@ -1643,3 +1643,75 @@ Fumadocs 证据：
 - dark reload 无首屏错色。
 - Shiki dark token 生效。
 - theme preset 只通过 CSS variables 改色。
+
+### Stage 7.9 Theme runtime implementation
+
+本轮开始按 Stage 7.9 实现 Theme Runtime / Preset Gate：
+
+- 新增 `app/types/docs-theme.ts`，把 `light / dark / system`、resolved mode、
+  switch mode、preset 和默认值作为 foundation contract。
+- 新增 `app/utils/docs-theme.ts`，集中处理 localStorage、安全读取、system
+  preference、root `.dark`、`data-docs-theme`、`data-docs-theme-mode` 和
+  `data-docs-theme-resolved`。
+- 新增 `app/composables/useDocsTheme.ts`，组件只消费共享状态和显式 action，
+  不直接读写 DOM 或 site config。
+- 新增 `app/plugins/docs-theme.client.ts`，在 client 侧读取
+  `docsSiteConfig.theme` 并初始化 runtime。
+- `app/app.vue` 注入 first-paint inline script，hydration 前先设置 `.dark`、
+  `data-docs-theme` 和 `color-scheme`。
+- 新增 `DocsThemeSwitch.vue`，支持 `light-dark` 与
+  `light-dark-system`，使用 icon button、`aria-label`、`aria-pressed` 和
+  `data-active`。
+- `DocsHeader`、`DocsSidebar`、`DocsMobileNav` 和 `DocsLayoutShell` 保留
+  `theme-switch` slot replacement，同时在无替换时渲染默认 switch。
+- 新增 `app/assets/css/themes.css`，preset 只覆盖 `--docs-*` 语义变量，
+  `--color-fd-*` 继续通过 tokens bridge 派生。
+- 新增 `theme` profile，并纳入 `docs-shell` 与 `full-regression`。
+
+流程经验：
+
+- Theme parity 不能从按钮开始做，应先补 runtime source of truth；否则
+  Header、Sidebar、Mobile 三个入口会出现状态漂移。
+- first-paint 与 client plugin 要共享同一份 config 和解析规则；首屏脚本只做
+  root DOM 同步，不承载 Vue state。
+- slot fallback 要在提供 slot 的上游同时处理。若上游传了空 slot，下游
+  `<slot>` fallback 不会生效。
+- profile 应聚焦 theme state、slot wiring、a11y 和 token smoke，不要把
+  主题验证塞回旧的大型 parity probe。
+
+### Parity validation performance rule
+
+本轮对 Stage 7.9 后的验证流程做了实测，确认“先增量、再影响面、最后全量”
+的收益足够客观，可以作为后续默认验证策略。
+
+实测数据：
+
+- `theme` focused profile：
+  - 命令：`node scripts/parity/run.mjs --profile=theme --url=http://127.0.0.1:8888/guide/code-block --viewports=1440x1000,994x935,390x844 --chromePort=9361 --dump`
+  - 结果：`29/29` 通过。
+  - 耗时：约 `8.7s`。
+- `docs-shell` impact suite：
+  - 命令：`node scripts/parity/run.mjs --suite=docs-shell --url=http://127.0.0.1:8888/guide/component-detail --viewports=1440x1000,994x935,390x844 --chromePort=9362 --retries=1 --dump`
+  - 结果：`theme / toc / toc-responsive / sidebar` 全部通过。
+  - 耗时：约 `43.0s`。
+- `full-regression` 默认等待：
+  - 命令：`node scripts/parity/run.mjs --suite=full-regression --viewports=1440x1000,994x935,390x844 --chromePort=9363 --retries=1 --dump`
+  - 结果：`19` 个 profile 全部通过。
+  - 耗时：约 `129.7s`。
+
+规则：
+
+- 日常实现阶段先跑改动面对应 focused profile。
+- 再跑对应 impact suite：
+  - shell/layout/theme/sidebar/TOC 改动：`docs-shell`
+  - 正文基础组件改动：`content-components`
+  - page actions 改动：`page-actions`
+  - feedback/pager 改动：`page-tail`
+- 需要跨层烟测时跑 `fast-regression`，它覆盖 `theme / prose-defaults /
+  code-block / toc-responsive / sidebar / page-actions`。
+- `full-regression` 只用于阶段收口、跨层大改、提交前总检。
+- 不要给 `full-regression` 传全局高 `--settleMs=3200`。`toc` 和
+  `toc-responsive` profile 已经在 profile 内部设置了必要的最低等待；全局高
+  `settleMs` 会把所有 profile 的每个 viewport 都强制拉长。
+- typecheck 后如果 dev server health 变成 404，先 `pnpm dev:restart` 再跑
+  parity profile；不要把 Nuxt Content dev DB 中间态误判成 UI 回归。

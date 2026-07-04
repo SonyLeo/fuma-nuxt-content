@@ -13,6 +13,7 @@ import { previewProfile } from './preview.mjs'
 import { sidebarProfile } from './sidebar.mjs'
 import { stepsProfile } from './steps.mjs'
 import { tabsProfile } from './tabs.mjs'
+import { themeProfile } from './theme.mjs'
 import { tocResponsiveProfile } from './toc-responsive.mjs'
 import { tocProfile } from './toc.mjs'
 import { typeTableProfile } from './type-table.mjs'
@@ -33,6 +34,7 @@ export const profiles = new Map([
   [sidebarProfile.name, sidebarProfile],
   [stepsProfile.name, stepsProfile],
   [tabsProfile.name, tabsProfile],
+  [themeProfile.name, themeProfile],
   [tocResponsiveProfile.name, tocResponsiveProfile],
   [tocProfile.name, tocProfile],
   [typeTableProfile.name, typeTableProfile],

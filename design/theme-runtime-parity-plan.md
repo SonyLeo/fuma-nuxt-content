@@ -55,18 +55,17 @@ Current local foundation state:
 - `app/assets/css/tailwind.css` exposes tokens through Tailwind v4 `@theme`.
 - `DocsHeader`, `DocsLayoutShell`, and `DocsSidebar` already expose a
   `theme-switch` slot.
-- `DocsSidebar` has a static theme placeholder, but no real runtime state.
-- There is no first-paint script yet.
+- Stage 7.9 implementation now adds `DocsThemeConfig`, `useDocsTheme()`,
+  `docs-theme.client.ts`, first-paint head injection, `DocsThemeSwitch`,
+  `themes.css`, and a focused `theme` profile.
+- Header, sidebar, and mobile nav render a default `DocsThemeSwitch` when the
+  `theme-switch` slot is not replaced.
 
-Missing:
+Remaining after Stage 7.9:
 
-- `DocsThemeConfig`
-- `useDocsTheme()`
-- theme client plugin/provider
-- first-paint script
-- `DocsThemeSwitch`
-- `themes.css` preset layer
-- theme profile
+- runtime visual verification across the full viewport matrix.
+- broader preset gallery, online color editing, and brand theme showcase remain
+  product-layer work.
 
 ## Boundary Decision
 
@@ -173,9 +172,11 @@ Suggested files:
    - keep `--docs-*` as source tokens
    - keep `--color-fd-*` as bridge tokens
    - preset overrides only semantic variables
-8. Add product adapter later:
+8. Add product adapter:
    - `docsSiteConfig.theme` maps to foundation props
    - site config does not directly mutate DOM or component styles
+   - current implementation reads config in the client plugin and first-paint
+     script; components consume only `useDocsTheme()`.
 
 ## CSS Preset Rule
 
@@ -231,6 +232,7 @@ Code/theme check:
 Profile:
 
 - `theme`
+- The profile is registered in `docs-shell` and `full-regression`.
 
 Viewport matrix:
 
