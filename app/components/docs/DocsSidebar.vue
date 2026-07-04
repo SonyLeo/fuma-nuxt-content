@@ -23,6 +23,9 @@ const props = withDefaults(
     navigationLabel?: string
     nav?: DocsNavOptions
     collapsed?: boolean
+    sidebarId?: string | null
+    allowCollapse?: boolean
+    showHeader?: boolean
   }>(),
   {
     brand: undefined,
@@ -33,6 +36,9 @@ const props = withDefaults(
     navigationLabel: 'Documentation navigation',
     nav: undefined,
     collapsed: undefined,
+    sidebarId: 'nd-sidebar',
+    allowCollapse: true,
+    showHeader: true,
   },
 )
 
@@ -51,7 +57,13 @@ const sidebarTabs = computed(() => resolveDocsLayoutTabs(props.nav))
 const selectedTab = computed(() => {
   return findActiveDocsLayoutTab(sidebarTabs.value, props.currentPath)
 })
-const isCollapsed = computed(() => props.collapsed ?? sidebarState.collapsed.value)
+const isCollapsed = computed(() => {
+  if (!props.allowCollapse) {
+    return false
+  }
+
+  return props.collapsed ?? sidebarState.collapsed.value
+})
 const sidebarLinks = computed(() => {
   return props.links.filter((link) => {
     return (link.on ?? 'all') === 'all' || link.on === 'menu'
@@ -147,7 +159,7 @@ onBeforeUnmount(() => {
 
 <template>
   <aside
-    id="nd-sidebar"
+    :id="sidebarId ?? undefined"
     class="docs-sidebar"
     :data-collapsed="isCollapsed ? 'true' : 'false'"
     :data-hovered="isCollapsed && sidebarState.hovered.value ? 'true' : 'false'"
@@ -165,7 +177,7 @@ onBeforeUnmount(() => {
       @pointerenter="openHoverPreview"
       @pointerleave="closeHoverPreview"
     >
-      <div class="docs-sidebar-header">
+      <div v-if="showHeader" class="docs-sidebar-header">
         <NuxtLink :to="brandHref" class="docs-sidebar-brand">
           <span class="docs-sidebar-brand-mark">
             <span v-if="brandMark">{{ brandMark }}</span>
@@ -173,6 +185,7 @@ onBeforeUnmount(() => {
           <span class="docs-sidebar-brand-text">{{ brandLabel }}</span>
         </NuxtLink>
         <button
+          v-if="allowCollapse"
           class="docs-sidebar-collapse"
           type="button"
           :aria-label="isCollapsed ? 'Pin sidebar' : 'Collapse sidebar'"

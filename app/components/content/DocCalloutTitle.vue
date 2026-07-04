@@ -1,5 +1,5 @@
 <template>
-  <p class="fd-callout-title">
+  <div class="fd-callout-title">
     <slot />
-  </p>
+  </div>
 </template>

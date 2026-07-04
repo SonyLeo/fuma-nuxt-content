@@ -1789,3 +1789,243 @@ Fumadocs 证据：
   的 `Accept`/selector 问题误修成组件逻辑。
 - 内容数量不是契约。契约卡应采集 DOM ownership、state、slot/default 行为、
   SSR selector、ARIA 和 responsive visibility。
+
+### Playwright verification POC
+
+本轮按验证方案优化计划实现 Playwright POC，目标是验证能否用 Playwright 替换
+自研 CDP runner 的本地执行层。
+
+实现：
+
+- 新增 `@playwright/test`，安装时使用 `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`，
+  复用本机 Chrome。
+- 新增 `playwright.config.ts`：
+  - `baseURL=http://127.0.0.1:8888`
+  - projects 对齐当前 parity 视口：`1440x1000`、`994x935`、`390x844`
+  - `channel: chrome`
+  - failure 时保留 trace / screenshot / video
+- 新增 `tests/e2e/layout-provider.spec.ts`。
+- 新增 `tests/e2e/helpers/docs-page.ts` 和
+  `tests/e2e/helpers/assertions.ts`。
+- 新增 `pnpm test:e2e` 和 `pnpm test:e2e:layout`。
+
+验证结果：
+
+- `pnpm test:e2e:layout`：
+  - `17 passed`
+  - `1 skipped`
+  - `20.1s`
+- legacy 对照：
+  - `node scripts\parity\run.mjs --suite=layout-provider --viewports=1440x1000,994x935,390x844 --chromePort=9381 --retries=1 --dump`
+  - `72/72` checks passed
+  - `31.6s`
+- `pnpm typecheck` 通过。
+- `git diff --check` 通过。
+
+代码量对比：
+
+- legacy `layout-provider` 六个 profile 合计 `384` 行。
+- Playwright spec + helpers 合计 `183` 行，减少 `52.3%`。
+- 如果把一次性 `playwright.config.ts` 计入，合计 `244` 行，减少 `36.5%`。
+
+POC 暴露并修复的问题：
+
+- Playwright actionability 发现移动端 `Browse docs` 按钮可见但被
+  `.docs-shell-content` 拦截。旧 parity 用程序化 `element.click()`，因此没有发现
+  真实用户点击失败。
+- 修复方式：移动端 `.docs-shell-body` 明确设置
+  `grid-template-areas: 'mobile-nav' 'main'`，并为 `.docs-mobile-nav` 与
+  `.docs-shell-content` 指定对应 `grid-area`。
+
+流程结论：
+
+- Playwright 适合替换本地执行层：页面加载、locator、交互、可见性、ARIA、
+  trace 和响应式 project。
+- parity 契约卡仍然保留，负责定义“要验证什么”。
+- legacy runner 继续保留，用于远程/reference 采集、隐藏 DOM 检查和未迁移
+  profile。
+- 对可见交互，Playwright 比 `element.click()` 更接近真实用户行为，应优先作为
+  日常回归入口。
+
+### Playwright fast-regression migration
+
+本轮开始把 Playwright 从 POC 推进到日常迁移主流程：
+
+- 新增 Playwright 分层入口：
+  - `pnpm test:e2e:shell`
+  - `pnpm test:e2e:content`
+  - `pnpm test:e2e:page`
+  - `pnpm test:e2e:fast`
+- 新增 helper 分层：
+  - `tests/e2e/helpers/interaction.ts` 负责可见元素选择和真实点击。
+  - `tests/e2e/helpers/layout.ts` 负责 shell/column/overlap 类断言。
+  - `tests/e2e/helpers/assertions.ts` 补通用 CSS、box 和 overflow 断言。
+- 将旧 `fast-regression` 的本地验证意图拆成独立 spec：
+  - `theme`
+  - `prose-defaults`
+  - `code-block`
+  - `toc-responsive`
+  - `sidebar`
+  - `page-actions`
+
+流程规则更新：
+
+- Playwright spec 按 surface 拆分，命令按 suite 组合；不要把新增契约塞回单个
+  大型 probe。
+- legacy parity runner 暂不删除，角色改为 reference/probe 和未迁移 profile 的
+  primary check。
+- 对可见 UI 交互，优先使用 Playwright locator/click/keyboard 断言；只有隐藏 DOM
+  或 reference 采集继续使用 legacy runner。
+
+### Playwright full-regression migration
+
+本轮继续完成旧 `full-regression` 的 Playwright 本地验证迁移：
+
+- 新增 `tests/e2e/content-components.spec.ts`：
+  - cards
+  - steps
+  - heading
+  - preview / install-card
+  - callout
+  - tabs / code-tabs
+  - accordion
+  - files
+  - inline-toc
+  - type-table
+- 新增 `tests/e2e/toc.spec.ts`，覆盖桌面 TOC rail、响应式 popover shell 和
+  桌面 bottom current 状态。
+- 新增脚本：
+  - `pnpm test:e2e:components`
+  - `pnpm test:e2e:toc`
+  - `pnpm test:e2e:full`
+- `pnpm test:e2e:content` 现在包含 prose、code-block 和 content components。
+- `pnpm test:e2e:shell` 现在包含 layout provider、theme、toc、toc-responsive
+  和 sidebar。
+
+验证结果：
+
+- `pnpm test:e2e:fast`：`38 passed`、`7 skipped`、`37.8s`。
+- `pnpm test:e2e:layout`：`17 passed`、`1 skipped`、`34.8s`。
+- `pnpm test:e2e:components`：`30 passed`、`31.3s`。
+- `pnpm test:e2e:toc`：`10 passed`、`5 skipped`、`17.1s`。
+- `pnpm test:e2e:shell`：`40 passed`、`8 skipped`、`47.3s`。
+- `pnpm test:e2e:page`：`6 passed`、`28.6s`。
+- `pnpm test:e2e:full`：`89 passed`、`10 skipped`、`1.9m`。
+- legacy `fast-regression`：`201/201` checks passed。
+- legacy `full-regression`：`19` 个 profile 全部 PASS。
+
+本轮发现并固化的流程规则：
+
+- Playwright `workers` 本地固定为 `4`、CI 固定为 `2`，避免 Nuxt dev server 在
+  高并发 hydration 下出现偶发页面半加载。
+- 不要把 Playwright runtime checks 和 `pnpm typecheck` 并行跑。`nuxi typecheck`
+  会触碰 `.nuxt` / content 状态，可能让正在运行的 dev server 回到 404。
+- 如果 typecheck 后 `pnpm dev:health` 返回 404，先 `pnpm dev:restart` 再跑
+  Playwright 或 legacy parity。
+- 旧 runner 的程序化 click 可能点到真实用户点不到的隐藏/遮挡元素。Sidebar
+  floating pin 的 Playwright 迁移已改成真实用户流程：先 hover 展开预览并确认
+  floating 隐藏，再移出预览让 floating 重新出现，最后点击 pin。
+- 后续已补齐移动端 layout tabs：`DocsLayoutShell -> DocsMobileNav ->
+  DocsSidebar` 现在会传递同一份 `nav.tabs` contract，Playwright 可以直接验证
+  visible mobile drawer，不再依赖旧 runner 检查隐藏桌面 DOM。
+
+### Playwright migration closeout
+
+本轮完成 Playwright 本地验证迁移收口：
+
+- `DocsMobileNav` 已接收并转发 `nav`，移动端 drawer 内的 `DocsSidebar` 现在和桌面
+  sidebar 消费同一份 layout tabs contract。
+- `layout-provider` 和 `sidebar` Playwright specs 已移除移动端 tabs skip，改为验证
+  visible mobile drawer 的真实交互。
+- `DocCalloutTitle` 从 `<p>` 改为 block wrapper，避免 MDC slot 内容被 paragraph
+  包裹后形成不稳定的嵌套段落；对应 Playwright spec 也改为按可见文本定位
+  `Container API` callout，而不是依赖固定数组下标。
+- 最终 Playwright entrypoints 验证：
+  - `pnpm test:e2e:layout`：`18 passed`。
+  - `pnpm test:e2e:shell`：`46 passed`、`8 skipped`。
+  - `pnpm test:e2e:components`：`30 passed`。
+  - `pnpm test:e2e:full`：`91 passed`、`8 skipped`。
+  - `pnpm test:e2e:fast`：`39 passed`、`6 skipped`。
+  - `pnpm test:e2e:content`：`39 passed`。
+  - `pnpm test:e2e:toc`：`10 passed`、`5 skipped`。
+  - `pnpm test:e2e:page`：`6 passed`。
+- legacy `layout-provider` probe 仍通过：`72/72` checks passed。旧 runner 继续作为
+  reference/probe 层保留，不再作为日常本地回归主入口。
+- 静态收口：
+  - `pnpm typecheck` 通过。
+  - `pnpm validate:links` 通过：`25` pages，`11` links。
+  - `git diff --check` 通过。
+
+流程经验：
+
+- Playwright 迁移不只是“少写 probe”，还会暴露旧 CDP runner 看不到的真实 DOM 和
+  actionability 问题。
+- 对 MDC 渲染出来的内容组件，契约卡和 spec 都应优先按可见文本、ARIA 和稳定 class
+  取目标，避免用“第几个节点”表达语义。
+- `pnpm typecheck` 后 dev server 仍可能回到 404；运行任何后续 runtime check 前要先
+  `pnpm dev:health`，失败则 `pnpm dev:restart`。
+
+### Playwright route and worker tuning
+
+本轮继续优化 Playwright 验证耗时和高并发稳定性，结论是：默认 worker 不放宽，
+但允许显式压测。
+
+实现调整：
+
+- 新增 `app/plugins/docs-ready.client.ts`，把测试侧 ready 信号从“Vue root 已存在”
+  提升到 Nuxt hydration / page suspense 生命周期。
+- `waitForNuxtHydration()` 删除固定 `500ms` 等待，改为等待
+  `data-docs-hydrated="true"`。
+- ready marker 最终采用 `app:suspense:resolve` + `page:start/page:finish` +
+  version guard + 两帧 `requestAnimationFrame`。
+- 曾短暂验证 `requestIdleCallback`，但 full regression 明显变慢，因此未保留。
+- viewport-only skip 已前移到导航前，避免已知会 skip 的 viewport 仍加载页面。
+- `content-components` 删除 file-level `beforeEach` 导航，改成每个测试在本地 setup
+  后显式调用一次 fixture helper。
+- `playwright.config.ts` 支持 `PLAYWRIGHT_WORKERS` 显式覆盖，默认仍是本地 `4`、CI
+  `2`。
+
+实测结论：
+
+- 在最终 ready marker 前，`pnpm test:e2e:components -- --workers=6` 曾出现
+  mobile TypeTable 首次点击未展开：`29 passed / 1 failed`。
+- 最终 ready marker 后：
+  - `pnpm test:e2e:components -- --workers=6`：`30 passed`，`34.8s`。
+  - `pnpm test:e2e:components -- --workers=10`：`30 passed`，`38.1s`。
+  - `pnpm test:e2e:full -- --workers=6`：`91 passed / 8 skipped`，`1.5m`。
+  - `pnpm test:e2e:full -- --workers=10`：`91 passed / 8 skipped`，`2.5m`。
+  - 热身后的默认 `pnpm test:e2e:full`：`91 passed / 8 skipped`，`1.3m`。
+
+规则更新：
+
+- 不能用“机器能同时跑 10 workers”直接推导默认并发；Nuxt dev、Chrome 页面数和内容
+  hydration 会互相争资源。
+- 默认保持 `4`，因为本轮 full warm run 最快且稳定。
+- `6 / 10` 只作为显式压力验证使用；其中 `10` 虽然已稳定通过，但不带来速度收益。
+- 路由复用不作为当前优化方向。Playwright 每个 test 独立页面能保护状态隔离；后续提速
+  优先靠 focused command、warm dev server、影响面分层和必要时的 preview/build
+  server 验证。
+
+### Mobile sidebar and TOC ownership
+
+本轮对比 Fumadocs 移动端源码后确认：移动端存在两套独立入口，不能合并成一个
+“移动目录条”。
+
+- 左侧 docs sidebar 的触发器属于 header。Fumadocs 在
+  `layouts/docs/slots/header.tsx` 中通过 `slots.sidebar.trigger` 渲染
+  `SidebarIcon`，点击后驱动 sidebar provider 的 drawer open state。
+- `#nd-sidebar-mobile` 是左侧 sidebar 的移动抽屉边界。Fumadocs 在
+  `components/sidebar/base.tsx` 中固定使用这个 id 和 `data-state="open|closed"`，
+  在 `layouts/docs/slots/sidebar.tsx` 中将 drawer 固定到右侧，宽度为 `85%` 且
+  `max-width: 380px`。
+- 正文顶部的移动端横条属于 page TOC popover。Fumadocs 在
+  `layouts/docs/page/slots/toc.tsx` 中把它放在 `grid-area: toc-popover`，它只负责
+  当前页面右侧目录/大纲的展开收起，不应该打开左侧 sidebar。
+
+流程规则更新：
+
+- 移动端响应式 parity 采集时必须先标注控件 ownership：`header sidebar trigger`
+  和 `page toc popover trigger` 分别建 contract，不再用截图中的“顶部目录条”笼统命名。
+- DOM 契约卡必须包含触发器所在组件、目标 panel id、`aria-controls`、`data-state`
+  和关闭后的 focus return target。
+- CSS 中不保留无 DOM 消费的旧 trigger 选择器，避免后续实现继续沿用错误契约。

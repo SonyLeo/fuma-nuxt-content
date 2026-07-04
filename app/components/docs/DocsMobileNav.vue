@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { DocsNavLink, DocsNode } from '~/types/docs'
+import { PanelLeft } from '@lucide/vue'
+import type { DocsNavLink, DocsNavOptions, DocsNode } from '~/types/docs'
 import { isDocsLinkActive } from '~/utils/docs-link'
 
 const props = withDefaults(
@@ -8,20 +9,22 @@ const props = withDefaults(
     items?: DocsNode[]
     currentPath: string
     links?: DocsNavLink[]
+    nav?: DocsNavOptions
   }>(),
   {
     headline: 'Documentation',
     items: () => [],
     links: () => [],
+    nav: undefined,
   },
 )
 
 const route = useRoute()
 const sidebarState = useDocsSidebarState()
 const { open, close, toggle } = useDocsOverlay({
-  id: 'docs-mobile-nav-panel',
-  triggerId: 'docs-mobile-nav-trigger',
-  returnFocusId: 'docs-mobile-nav-trigger',
+  id: 'nd-sidebar-mobile',
+  triggerId: 'docs-header-sidebar-trigger',
+  returnFocusId: 'docs-header-sidebar-trigger',
   lockScroll: true,
 })
 
@@ -62,53 +65,48 @@ function isActive(link: DocsNavLink) {
 
 <template>
   <div class="docs-mobile-nav" :data-open="open ? 'true' : 'false'">
-    <button
-      id="docs-mobile-nav-trigger"
-      type="button"
-      class="docs-mobile-nav-trigger"
-      :aria-expanded="open"
-      aria-controls="docs-mobile-nav-panel"
-      @click="toggle"
-    >
-      Browse docs
-    </button>
-
     <div
-      v-if="open"
-      id="docs-mobile-nav-panel"
-      ref="docs-mobile-nav-panel"
+      class="docs-mobile-nav-overlay"
+      :data-state="open ? 'open' : 'closed'"
+      aria-hidden="true"
+      @click="close"
+    />
+
+    <aside
+      id="nd-sidebar-mobile"
+      ref="nd-sidebar-mobile"
       class="docs-mobile-nav-panel"
+      :data-state="open ? 'open' : 'closed'"
+      :aria-label="`${props.headline} sidebar`"
+      :aria-hidden="open ? 'false' : 'true'"
+      :inert="open ? undefined : true"
       tabindex="-1"
     >
       <div class="docs-mobile-nav-header">
-        <p class="docs-mobile-nav-label">
-          {{ props.headline }}
-        </p>
+        <div class="docs-mobile-nav-tools">
+          <slot name="theme-switch" />
+          <slot name="language-select" />
+        </div>
         <button
           type="button"
           class="docs-mobile-nav-close"
           aria-label="Close navigation"
           @click="close"
         >
-          Close
+          <PanelLeft class="docs-mobile-nav-close-icon" aria-hidden="true" />
         </button>
       </div>
 
       <DocsSidebar
+        :sidebar-id="null"
+        :allow-collapse="false"
+        :show-header="false"
         :headline="props.headline"
         :items="props.items"
         :current-path="props.currentPath"
+        :nav="props.nav"
         @navigate="close"
       >
-        <template #search-trigger>
-          <slot name="search-trigger" />
-        </template>
-        <template #theme-switch>
-          <slot name="theme-switch" />
-        </template>
-        <template #language-select>
-          <slot name="language-select" />
-        </template>
       </DocsSidebar>
 
       <nav
@@ -134,8 +132,8 @@ function isActive(link: DocsNavLink) {
           <span v-if="link.description" class="docs-mobile-menu-description">
             {{ link.description }}
           </span>
-        </DocsLink>
-      </nav>
-    </div>
+          </DocsLink>
+        </nav>
+    </aside>
   </div>
 </template>

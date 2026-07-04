@@ -103,21 +103,9 @@
   margin-top: 0;
 }
 
-.docs-page-body p,
-.docs-page-body ul,
-.docs-page-body ol,
-.docs-page-body dl {
-  margin: 1.25rem 0;
-}
-
 .docs-page-body strong {
   color: var(--docs-color-foreground);
   font-weight: 600;
-}
-
-.docs-page-body ul,
-.docs-page-body ol {
-  padding-left: 1.45rem;
 }
 
 .docs-page-body ul {
@@ -169,14 +157,8 @@
 }
 
 .docs-page-body dt {
-  margin-top: 1.25rem;
   color: var(--docs-color-foreground);
   font-weight: 600;
-}
-
-.docs-page-body dd {
-  margin: 0.5rem 0 0;
-  padding-left: 1.5rem;
 }
 
 .docs-page-body a:not([data-card]) {

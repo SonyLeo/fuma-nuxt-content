@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ChevronDown } from '@lucide/vue'
 import type { DocsNode } from '~/types/docs'
 import { isDocsLinkActive } from '~/utils/docs-link'
 
@@ -31,11 +32,24 @@ function resolveItemPath(item: DocsNode) {
   return item.index?.path
 }
 
+function resolveItemHref(item: DocsNode) {
+  if (item.type === 'link') {
+    return item.href
+  }
+
+  return resolveItemPath(item) ?? item.index?.href
+}
+
+function isItemExternal(item: DocsNode) {
+  if (item.type === 'link') {
+    return item.external
+  }
+
+  return item.index?.external
+}
+
 function hasActiveDescendant(item: DocsNode): boolean {
-  if (
-    item.path === props.currentPath ||
-    item.index?.path === props.currentPath
-  ) {
+  if (isCurrent(item) || isLinkCurrent(item)) {
     return true
   }
 
@@ -63,11 +77,63 @@ function isCurrent(item: DocsNode) {
 }
 
 function isLinkCurrent(item: DocsNode) {
-  return item.type === 'link' && isDocsLinkActive(item.href, props.currentPath)
+  if (item.type === 'link') {
+    return isDocsLinkActive(item.href, props.currentPath)
+  }
+
+  if (item.index?.type === 'link' && item.index.href) {
+    return isDocsLinkActive(item.index.href, props.currentPath)
+  }
+
+  return false
 }
 
 function emitNavigate() {
   emit('navigate')
+}
+
+function createFolderContentId(item: DocsNode) {
+  const raw = item.id || item.path || item.href || item.title || 'item'
+  const id = raw.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-|-$/g, '')
+
+  return `docs-sidebar-folder-${id || 'item'}`
+}
+
+const itemHasChildren = computed(() => hasChildren(props.item))
+const itemHref = computed(() => resolveItemHref(props.item))
+const itemExternal = computed(() => isItemExternal(props.item))
+const itemIsCurrent = computed(() => isCurrent(props.item))
+const itemIsLinkCurrent = computed(() => isLinkCurrent(props.item))
+const itemIsActive = computed(() => itemIsCurrent.value || itemIsLinkCurrent.value)
+const itemIsCollapsible = computed(() => props.item.collapsible !== false)
+const itemDefaultExpanded = computed(() => isExpanded(props.item))
+const folderContentId = computed(() => createFolderContentId(props.item))
+const folderOpen = shallowRef(itemDefaultExpanded.value)
+const folderState = computed(() => (folderOpen.value ? 'open' : 'closed'))
+
+watch(
+  () => [props.item.id, props.currentPath] as const,
+  () => {
+    if (itemDefaultExpanded.value) {
+      folderOpen.value = true
+    }
+  },
+)
+
+function toggleFolder() {
+  if (!itemHasChildren.value || !itemIsCollapsible.value) {
+    return
+  }
+
+  folderOpen.value = !folderOpen.value
+}
+
+function handleFolderLinkClick() {
+  if (itemIsCollapsible.value) {
+    folderOpen.value = itemIsActive.value ? !folderOpen.value : true
+  }
+
+  emitNavigate()
 }
 </script>
 
@@ -85,6 +151,119 @@ function emitNavigate() {
     >
       {{ item.title }}
     </p>
+
+    <div
+      v-else-if="itemHasChildren"
+      class="docs-sidebar-folder"
+      :data-state="folderState"
+      :data-active="hasActiveDescendant(item) ? 'true' : 'false'"
+      :data-collapsible="itemIsCollapsible ? 'true' : 'false'"
+    >
+      <DocsLink
+        v-if="itemHref"
+        :href="itemHref"
+        :external="itemExternal"
+        class="docs-sidebar-link docs-sidebar-folder-link"
+        :class="{ 'is-active': itemIsActive }"
+        :data-level="level"
+        :data-visual-level="visualLevel"
+        :data-state="folderState"
+        :data-collapsible="itemIsCollapsible ? 'true' : 'false'"
+        :aria-current="itemIsActive ? 'page' : undefined"
+        :aria-expanded="folderOpen ? 'true' : 'false'"
+        :aria-controls="folderContentId"
+        @click="handleFolderLinkClick"
+      >
+        <DocsNavIcon v-if="item.icon" :name="item.icon" />
+        <span class="docs-sidebar-link-label">
+          {{ item.title }}
+        </span>
+        <span class="docs-sidebar-link-meta">
+          <span v-if="item.status" class="docs-sidebar-status">
+            {{ item.status }}
+          </span>
+          <span v-if="item.badge" class="docs-sidebar-badge">
+            {{ item.badge }}
+          </span>
+        </span>
+        <ChevronDown
+          v-if="itemIsCollapsible"
+          class="docs-sidebar-folder-chevron"
+          data-sidebar-folder-icon
+          aria-hidden="true"
+          @click.prevent.stop="toggleFolder"
+        />
+      </DocsLink>
+
+      <button
+        v-else-if="itemIsCollapsible"
+        type="button"
+        class="docs-sidebar-link docs-sidebar-folder-trigger"
+        :data-level="level"
+        :data-visual-level="visualLevel"
+        :data-state="folderState"
+        :data-collapsible="itemIsCollapsible ? 'true' : 'false'"
+        :aria-expanded="folderOpen ? 'true' : 'false'"
+        :aria-controls="folderContentId"
+        @click="toggleFolder"
+      >
+        <DocsNavIcon v-if="item.icon" :name="item.icon" />
+        <span class="docs-sidebar-link-label">
+          {{ item.title }}
+        </span>
+        <span class="docs-sidebar-link-meta">
+          <span v-if="item.status" class="docs-sidebar-status">
+            {{ item.status }}
+          </span>
+          <span v-if="item.badge" class="docs-sidebar-badge">
+            {{ item.badge }}
+          </span>
+        </span>
+        <ChevronDown
+          class="docs-sidebar-folder-chevron"
+          data-sidebar-folder-icon
+          aria-hidden="true"
+        />
+      </button>
+
+      <div
+        v-else
+        class="docs-sidebar-link docs-sidebar-folder-trigger"
+        :data-level="level"
+        :data-visual-level="visualLevel"
+        :data-state="folderState"
+        data-collapsible="false"
+        :aria-expanded="folderOpen ? 'true' : 'false'"
+        :aria-controls="folderContentId"
+      >
+        <DocsNavIcon v-if="item.icon" :name="item.icon" />
+        <span class="docs-sidebar-link-label">
+          {{ item.title }}
+        </span>
+        <span class="docs-sidebar-link-meta">
+          <span v-if="item.status" class="docs-sidebar-status">
+            {{ item.status }}
+          </span>
+          <span v-if="item.badge" class="docs-sidebar-badge">
+            {{ item.badge }}
+          </span>
+        </span>
+      </div>
+
+      <div
+        v-show="folderOpen"
+        :id="folderContentId"
+        class="docs-sidebar-folder-content"
+        :data-state="folderState"
+      >
+        <DocsSidebarTree
+          :items="item.children"
+          :current-path="currentPath"
+          :level="level + 1"
+          @navigate="emit('navigate')"
+        />
+      </div>
+    </div>
 
     <DocsLink
       v-else-if="resolveItemPath(item)"
@@ -148,12 +327,5 @@ function emitNavigate() {
       </span>
     </div>
 
-    <DocsSidebarTree
-      v-if="hasChildren(item) && isExpanded(item)"
-      :items="item.children"
-      :current-path="currentPath"
-      :level="level + 1"
-      @navigate="emit('navigate')"
-    />
   </li>
 </template>

@@ -55,6 +55,7 @@ const sidebarState = provideDocsSidebarState({
           :items="navigation"
           :current-path="currentPath"
           :links="links"
+          :nav="nav"
         >
           <template #search-trigger>
             <slot name="search-trigger" />

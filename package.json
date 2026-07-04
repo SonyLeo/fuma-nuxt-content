@@ -17,6 +17,15 @@
     "format:check": "prettier . --check",
     "postinstall": "nuxt prepare",
     "preview": "nuxt preview",
+    "test:e2e": "playwright test",
+    "test:e2e:components": "playwright test tests/e2e/content-components.spec.ts",
+    "test:e2e:content": "playwright test tests/e2e/prose-defaults.spec.ts tests/e2e/code-block.spec.ts tests/e2e/content-components.spec.ts",
+    "test:e2e:fast": "playwright test tests/e2e/theme.spec.ts tests/e2e/prose-defaults.spec.ts tests/e2e/code-block.spec.ts tests/e2e/toc-responsive.spec.ts tests/e2e/sidebar.spec.ts tests/e2e/page-actions.spec.ts",
+    "test:e2e:full": "playwright test",
+    "test:e2e:layout": "playwright test tests/e2e/layout-provider.spec.ts",
+    "test:e2e:page": "playwright test tests/e2e/page-actions.spec.ts",
+    "test:e2e:shell": "playwright test tests/e2e/layout-provider.spec.ts tests/e2e/theme.spec.ts tests/e2e/toc.spec.ts tests/e2e/toc-responsive.spec.ts tests/e2e/sidebar.spec.ts",
+    "test:e2e:toc": "playwright test tests/e2e/toc.spec.ts tests/e2e/toc-responsive.spec.ts",
     "typecheck": "nuxi typecheck",
     "validate:links": "node scripts/validate-docs-links.mjs"
   },
@@ -31,6 +40,7 @@
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.16.0",
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/vite": "^4.3.1",
     "eslint": "^10.6.0",
     "prettier": "^3.8.5",

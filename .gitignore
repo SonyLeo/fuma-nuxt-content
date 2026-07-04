@@ -5,6 +5,9 @@
 .nitro
 .cache
 .parity
+.playwright
+playwright-report
+test-results
 dist
 
 # Node dependencies

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PanelLeft } from '@lucide/vue'
 import type { DocsBrandOptions, DocsNavLink } from '~/types/docs'
 import { isDocsLinkActive } from '~/utils/docs-link'
 
@@ -22,6 +23,7 @@ const props = withDefaults(
 const brandLabel = computed(() => props.brand?.label ?? 'Documentation')
 const brandMark = computed(() => props.brand?.mark ?? brandLabel.value.charAt(0))
 const brandHref = computed(() => props.brand?.href ?? '/')
+const sidebarState = useDocsSidebarState()
 const navLinks = computed(() => {
   return props.links.filter((link) => {
     return (link.on ?? 'all') === 'all' || link.on === 'nav'
@@ -90,6 +92,17 @@ function isActive(link: DocsNavLink) {
         >
           <DocsNavIcon name="github" />
         </DocsLink>
+        <button
+          id="docs-header-sidebar-trigger"
+          type="button"
+          class="docs-header-sidebar-trigger"
+          aria-label="Open sidebar"
+          :aria-expanded="sidebarState.mobileOpen.value ? 'true' : 'false'"
+          aria-controls="nd-sidebar-mobile"
+          @click="sidebarState.toggleMobile"
+        >
+          <PanelLeft class="docs-header-sidebar-icon" aria-hidden="true" />
+        </button>
       </div>
     </div>
   </header>
