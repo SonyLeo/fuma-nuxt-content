@@ -179,6 +179,13 @@ export type DocsNavOptions = {
   title?: string
   enabled?: boolean
   tabs?: DocsNavLink[]
+  tabMode?: DocsLayoutTabMode
+}
+
+export type DocsLayoutTabMode = 'auto' | 'sidebar' | 'top' | 'none'
+
+export type DocsLayoutTab = DocsNavLink & {
+  href: string
 }
 
 export type DocsBrandOptions = {
@@ -196,6 +203,17 @@ export type DocsLayoutProps = {
   githubUrl?: string
   links?: DocsNavLink[]
   nav?: DocsNavOptions
+}
+
+export type DocsDirection = 'ltr' | 'rtl'
+
+export type DocsRootSearchOptions = {
+  enabled?: boolean
+}
+
+export type DocsRootLanguageOptions = {
+  enabled?: boolean
+  label?: string
 }
 
 export type DocsTocProps = {

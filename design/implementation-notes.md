@@ -1715,3 +1715,77 @@ Fumadocs 证据：
   `settleMs` 会把所有 profile 的每个 viewport 都强制拉长。
 - typecheck 后如果 dev server health 变成 404，先 `pnpm dev:restart` 再跑
   parity profile；不要把 Nuxt Content dev DB 中间态误判成 UI 回归。
+
+### Stage 7.10 Root provider / layout variants implementation
+
+本轮开始按 Stage 7.10 推进 Root Provider / Layout Variants Gate：
+
+- `DocsRootProvider` 作为 Nuxt/Vue 等价 root provider boundary，负责提供
+  `dir`、search enabled、language enabled 等 root context，并在 `<html>` 上
+  暴露可采集的 provider attributes。
+- Theme runtime 继续由 Stage 7.9 的 `useDocsTheme()`、client plugin 和
+  first-paint script 负责，Root Provider 只做 provider boundary，不重复写主题
+  source of truth。
+- `useDocsLayoutSlots()` 作为 `baseSlots()` 的 Vue 等价集中点，负责判断
+  search/theme/language slot replacement 和默认 ThemeSwitch。
+- `useDocsSidebarState()` 作为 sidebar provider/state contract，集中管理
+  desktop collapsed、hover preview、mobile drawer open、tabs dropdown open 和
+  close-on-navigation。
+- `DocsLayoutShell` 开始提供 sidebar state，`DocsSidebar` 和 `DocsMobileNav`
+  消费同一份 provider state。
+- `DocsHomeLayout` 把首页从 ad hoc page composition 收到 shared layout surface；
+  `DocsNotFound` 和 `app/error.vue` 补 basic not-found shell。
+- 新增 `layout-provider` suite，包含 `root-provider`、`layout-slots`、
+  `sidebar-state`、`layout-tabs`、`home-layout`、`not-found`。
+
+决策：
+
+- Banner 本轮保留为 foundation layout slot 和高度 token，不实现 dismiss/storage。
+- Notebook / Flux 本轮只做 deferred variant decision，不实现全量 variant。
+
+流程经验：
+
+- Vue layout 的 pass-through slot 会让下游误以为 replacement slot 存在。默认
+  slot 决策要放在最接近真实调用方 slot 的地方，并复用同一份 helper。
+- Sidebar 旧 profile 适合保护视觉和几何；provider ownership 应拆成
+  `sidebar-state` profile，避免旧 profile 继续无限增长。
+
+### Stage 7.10 validation closeout
+
+本轮完成 Stage 7.10 第一轮实现和回归收口：
+
+- `pnpm typecheck` 通过。
+- `git diff --check` 通过。
+- `pnpm dev:restart` 后 health OK。
+- `layout-provider` focused suite：
+  - 命令：`node scripts\parity\run.mjs --suite=layout-provider --viewports=1440x1000,994x935,390x844 --chromePort=9371 --retries=1 --dump`
+  - 结果：`root-provider / layout-slots / sidebar-state / layout-tabs / home-layout / not-found` 全部通过，`72/72` checks passed。
+- `docs-shell` impact suite：
+  - 命令：`node scripts\parity\run.mjs --suite=docs-shell --url=http://127.0.0.1:8888/guide/component-detail --viewports=1440x1000,994x935,390x844 --chromePort=9372 --retries=1 --dump`
+  - 结果：`theme / toc / toc-responsive / sidebar` 全部通过，`118/118` checks passed。
+- `fast-regression`：
+  - 命令：`node scripts\parity\run.mjs --suite=fast-regression --viewports=1440x1000,994x935,390x844 --chromePort=9373 --retries=1 --dump`
+  - 结果：`theme / prose-defaults / code-block / toc-responsive / sidebar / page-actions` 全部通过，`201/201` checks passed。
+- `pnpm validate:links` 通过：`25` pages，`11` links。
+
+修正项：
+
+- `DocsSidebar` 的 optional Boolean `collapsed` 必须默认 `undefined`，否则 Vue
+  Boolean casting 会把 provider 的 collapsed state 覆盖成 `false`。
+- `sidebar-state` profile 的 Escape 事件应派发到 `document`，因为组件监听源是
+  `document.addEventListener('keydown')`。
+- profile 点击移动端 trigger 前必须判断真实可见性，不能只看 `display`；父级
+  `display: none` 时，子节点的 computed display 仍可能不是 `none`。
+- parity HTTP preflight 统一加 `Accept: text/html`。否则 Nuxt dev 在 expected
+  404 route 上会返回 JSON error payload，导致 SSR selector 和 html size 假失败。
+- home layout profile 不再使用“至少 4 个卡片”这类内容数量阈值，改为检查
+  shared options、正文 composable root 和当前 fixture 的稳定入口数量。
+
+流程经验：
+
+- provider 类改造要同时检查 layout root attribute 和具体 consumer attribute；
+  只检查其中一个会漏掉 source-of-truth 分裂。
+- profile 的失败先分类：实现缺陷、fixture 假设、工具请求语义。不要把工具层
+  的 `Accept`/selector 问题误修成组件逻辑。
+- 内容数量不是契约。契约卡应采集 DOM ownership、state、slot/default 行为、
+  SSR selector、ARIA 和 responsive visibility。

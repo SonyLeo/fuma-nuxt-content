@@ -5,6 +5,9 @@ withDefaults(defineProps<DocsLayoutProps>(), {
   navigation: () => [],
   currentPath: '/',
 })
+
+const slots = useSlots()
+const layoutSlots = useDocsLayoutSlots(slots)
 </script>
 
 <template>
@@ -22,15 +25,20 @@ withDefaults(defineProps<DocsLayoutProps>(), {
       <slot name="banner" />
     </template>
     <template #search-trigger>
-      <slot name="search-trigger" />
+      <slot v-if="layoutSlots.hasSearchTrigger.value" name="search-trigger" />
     </template>
     <template #theme-switch>
-      <slot name="theme-switch">
-        <DocsThemeSwitch />
-      </slot>
+      <slot
+        v-if="layoutSlots.hasThemeSwitchReplacement.value"
+        name="theme-switch"
+      />
+      <DocsThemeSwitch v-else-if="layoutSlots.showDefaultThemeSwitch.value" />
     </template>
     <template #language-select>
-      <slot name="language-select" />
+      <slot
+        v-if="layoutSlots.hasLanguageSelect.value"
+        name="language-select"
+      />
     </template>
     <slot />
   </DocsLayoutShell>

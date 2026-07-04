@@ -254,6 +254,8 @@ foundation 已有：
 
 ## Phase 1.5：Theme Config / Preset Adapter
 
+当前状态：已完成第一轮。
+
 ### 目标
 
 在 Foundation Theme Runtime / Preset Gate 完成后，把站点配置接入主题系统。
@@ -274,9 +276,9 @@ foundation 已有：
 
 ### 需要完成
 
-1. 在 `app/types/docs-site.ts` 暴露 `theme?: DocsThemeConfig`。
-2. 在 `app/config/docs-site.ts` 配置默认 theme。
-3. 在 route/layout composition surface 中把 site config theme 转成 foundation props。
+1. 已在 `app/types/docs-site.ts` 暴露 `theme?: DocsThemeConfig`。
+2. 已在 `app/config/docs-site.ts` 配置默认 theme。
+3. 已通过 theme client plugin 和 first-paint script 把 site config theme 转成 foundation runtime 输入。
 4. 允许 site config 选择 preset，但不允许组件读取 site config 后局部改色。
 5. 为未来品牌主题预留 `preset` 扩展，不实现在线颜色编辑器。
 
@@ -617,10 +619,8 @@ Stage 7.5：Fumadocs-Aligned UI Primitives Gate 已完成第一轮。
 
 推荐执行顺序：
 
-1. Theme Runtime / Preset Gate：先补 foundation runtime，再接 theme config / preset adapter。
-2. Root Provider / Layout Variants Gate：provider、baseSlots、sidebar state、Home/not-found、layout tabs、Banner/Notebook/Flux decisions。
-3. ImageZoom：先补 foundation UI，再接 CDN/image adapter。
-4. Markdown transform pipeline：heading id/custom id、code meta、line/diff/highlight、structured data extraction。
-5. 集成层 P1：remote search provider / search API、feedback backend、RSS、llms-full.txt / per-page markdown export。
-6. Multi source baseline：定义 docs/blog/changelog/api 的 loader、route、metadata 和 nav contract。
-7. 站点产品组合层：blog/changelog/API 页面体验、story/playground、AI/MCP/docs assistant、versioning/i18n。
+1. ImageZoom：先补 foundation UI，再接 CDN/image adapter。
+2. Markdown transform pipeline：heading id/custom id、code meta、line/diff/highlight、structured data extraction。
+3. 集成层 P1：remote search provider / search API、feedback backend、RSS、llms-full.txt / per-page markdown export。
+4. Multi source baseline：定义 docs/blog/changelog/api 的 loader、route、metadata 和 nav contract。
+5. 站点产品组合层：blog/changelog/API 页面体验、story/playground、AI/MCP/docs assistant、versioning/i18n。

@@ -569,7 +569,7 @@ P2 / Product-aware:
 
 ### Phase 5.5：Theme Runtime / Preset Gate
 
-当前状态：计划补齐。
+当前状态：已完成第一轮并纳入回归。
 
 定位：
 
@@ -579,10 +579,10 @@ P2 / Product-aware:
 
 需要完成：
 
-1. 按 [`theme-runtime-parity-plan`](./theme-runtime-parity-plan.md) 完成契约卡。
-2. 完成 theme runtime / provider / first-paint / switch / preset 实现。
-3. 完成 `theme` focused profile。
-4. 将 theme profile 纳入 shell 或 full regression。
+1. 已按 [`theme-runtime-parity-plan`](./theme-runtime-parity-plan.md) 完成契约卡。
+2. 已完成 theme runtime / provider / first-paint / switch / preset 实现。
+3. 已完成 `theme` focused profile。
+4. 已将 theme profile 纳入 shell、fast regression 和 full regression。
 
 验收：
 
@@ -592,7 +592,7 @@ P2 / Product-aware:
 
 ### Phase 5.6：Root Provider / Layout Variants Gate
 
-当前状态：计划补齐。
+当前状态：已完成第一轮并纳入回归。
 
 定位：
 
@@ -602,10 +602,10 @@ P2 / Product-aware:
 
 需要完成：
 
-1. 按 [`layout-provider-parity-plan`](./layout-provider-parity-plan.md) 完成契约卡。
-2. 完成 RootProvider / layout slots / sidebar state / layout tabs / home / not-found 的 focused profiles。
-3. 完成 Banner decision card。
-4. 完成 Notebook / Flux deferred variant decision cards。
+1. 已按 [`layout-provider-parity-plan`](./layout-provider-parity-plan.md) 完成契约卡。
+2. 已完成 RootProvider / layout slots / sidebar state / layout tabs / home / not-found 的 focused profiles。
+3. 已完成 Banner decision card。
+4. 已完成 Notebook / Flux deferred variant decision cards。
 
 验收：
 
@@ -645,9 +645,8 @@ P2 / Product-aware:
 
 Foundation UI Gate 已完成第一轮。
 
-下一步优先补 Theme Runtime / Preset Gate，再继续 foundation P1 与集成层 P1：
+下一步继续 foundation P1 与集成层 P1：
 
-1. Theme Runtime / Preset Gate
-2. Root Provider / Layout Variants Gate
-3. ImageZoom
-4. Markdown transform pipeline
+1. ImageZoom
+2. Markdown transform pipeline
+3. 集成层 P1：remote search provider / feedback backend / RSS / markdown export

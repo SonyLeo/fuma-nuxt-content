@@ -3,6 +3,7 @@ import { contentComponentsSuite } from './content-components.mjs'
 import { docsShellSuite } from './docs-shell.mjs'
 import { fastRegressionSuite } from './fast-regression.mjs'
 import { fullRegressionSuite } from './full-regression.mjs'
+import { layoutProviderSuite } from './layout-provider.mjs'
 import { pageActionsSuite } from './page-actions.mjs'
 import { pageTailSuite } from './page-tail.mjs'
 
@@ -12,6 +13,7 @@ export const suites = new Map([
   [docsShellSuite.name, docsShellSuite],
   [fastRegressionSuite.name, fastRegressionSuite],
   [fullRegressionSuite.name, fullRegressionSuite],
+  [layoutProviderSuite.name, layoutProviderSuite],
   [pageActionsSuite.name, pageActionsSuite],
   [pageTailSuite.name, pageTailSuite],
 ])

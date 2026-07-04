@@ -17,6 +17,7 @@ const props = withDefaults(
 )
 
 const route = useRoute()
+const sidebarState = useDocsSidebarState()
 const { open, close, toggle } = useDocsOverlay({
   id: 'docs-mobile-nav-panel',
   triggerId: 'docs-mobile-nav-trigger',
@@ -31,6 +32,23 @@ watch(
   },
 )
 
+watch(open, (value) => {
+  sidebarState.setMobileOpen(value)
+})
+
+watch(sidebarState.mobileOpen, (value) => {
+  if (value === open.value) {
+    return
+  }
+
+  if (value) {
+    toggle()
+    return
+  }
+
+  close()
+})
+
 const menuLinks = computed(() => {
   return props.links.filter((link) => {
     return (link.on ?? 'all') === 'all' || link.on === 'menu'
@@ -43,7 +61,7 @@ function isActive(link: DocsNavLink) {
 </script>
 
 <template>
-  <div class="docs-mobile-nav">
+  <div class="docs-mobile-nav" :data-open="open ? 'true' : 'false'">
     <button
       id="docs-mobile-nav-trigger"
       type="button"
@@ -86,9 +104,7 @@ function isActive(link: DocsNavLink) {
           <slot name="search-trigger" />
         </template>
         <template #theme-switch>
-          <slot name="theme-switch">
-            <DocsThemeSwitch />
-          </slot>
+          <slot name="theme-switch" />
         </template>
         <template #language-select>
           <slot name="language-select" />

@@ -27,6 +27,28 @@ page shell:
 It does not implement all Fumadocs layout variants in the current foundation
 phase.
 
+## Current Status
+
+Stage 7.10 is complete for the first foundation pass and is now covered by
+focused and regression profiles.
+
+Implemented:
+
+- `DocsRootProvider` and `useDocsRootProvider()`
+- `useDocsLayoutSlots()` as the Vue equivalent of shared default slots
+- `useDocsSidebarState()` as the sidebar provider/state contract
+- `nav.tabs` normalization and active tab selection
+- `DocsHomeLayout`
+- `DocsNotFound` and Nuxt error shell integration
+- focused profiles: `root-provider`, `layout-slots`, `sidebar-state`,
+  `layout-tabs`, `home-layout`, `not-found`
+- `layout-provider` parity suite
+
+Kept deferred:
+
+- Banner remains a foundation layout slot plus height token.
+- Notebook and Flux remain deferred layout variant decision cards.
+
 ## Fumadocs Evidence
 
 Reference files:
@@ -266,6 +288,16 @@ Possible outcomes:
 - foundation component: add `DocBanner` or `DocsBanner` plus `banner` profile
 - product feature: keep only layout top slot and height token in foundation
 
+Current Stage 7.10 decision:
+
+- Keep Banner as a foundation layout slot plus `--fd-banner-height` ownership
+  for now.
+- Do not implement dismiss/persistence in this gate.
+- Revisit as a foundation component only when a real docs-wide announcement or
+  version banner needs storage, sticky offsets, and profile coverage.
+- Any future implementation must update sidebar/header/TOC sticky offsets in the
+  same change.
+
 Profile:
 
 - `banner-decision` before implementation
@@ -291,6 +323,16 @@ Checks:
 - deferral is explicit
 - future compact/docs variants can reuse the decision card
 
+Current Stage 7.10 decision:
+
+- Notebook is deferred. Its main value is a compact docs variant with different
+  nav/sidebar assumptions; current product need is still the default Docs
+  layout.
+- Flux is deferred. Its floating navigation panel and search-coupled motion are
+  product-composition-heavy and should not be pulled into the foundation gate.
+- This gate only keeps the common provider/slots/sidebar state contract strong
+  enough that a future variant can reuse it.
+
 ## Verification Matrix
 
 Use the common shell viewport set:
@@ -312,6 +354,34 @@ Run order:
 3. `full-regression` after focused checks are clean.
 4. Static checks: `git diff --check`.
 5. Type checks only when runtime code changes.
+
+Current verified commands:
+
+- `pnpm typecheck`
+- `git diff --check`
+- `pnpm dev:restart`
+- `node scripts\parity\run.mjs --suite=layout-provider --viewports=1440x1000,994x935,390x844 --chromePort=9371 --retries=1 --dump`
+- `node scripts\parity\run.mjs --suite=docs-shell --url=http://127.0.0.1:8888/guide/component-detail --viewports=1440x1000,994x935,390x844 --chromePort=9372 --retries=1 --dump`
+- `node scripts\parity\run.mjs --suite=fast-regression --viewports=1440x1000,994x935,390x844 --chromePort=9373 --retries=1 --dump`
+- `pnpm validate:links`
+
+Current results:
+
+- `layout-provider`: 72/72 checks passed.
+- `docs-shell`: 118/118 checks passed.
+- `fast-regression`: 201/201 checks passed.
+- docs link validation passed: 25 pages, 11 links.
+
+Validation lessons:
+
+- HTTP preflight must request `Accept: text/html`; otherwise Nuxt dev returns a
+  JSON error payload for expected 404 routes and hides the custom SSR shell.
+- Fixture profiles should avoid arbitrary content-count thresholds. Prefer
+  stable contract checks such as shared layout options, content root presence,
+  and expected body ownership.
+- Optional Boolean props that fall back to provider state must default to
+  `undefined`; otherwise Vue Boolean casting can shadow provider state with
+  `false`.
 
 ## Linked Planning Entries
 

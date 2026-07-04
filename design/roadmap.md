@@ -665,6 +665,8 @@ P0 只实现当前 Docs Layout。
 
 ### Stage 7.10：Root Provider / Layout Variants Gate
 
+当前状态：已完成第一轮并纳入回归。
+
 目标：补齐 Fumadocs layout 层的 provider、默认 slots、sidebar state、
 Home/not-found 和 layout variant 决策，不在 roadmap 展开具体 contract。
 
@@ -727,6 +729,10 @@ Home/not-found 和 layout variant 决策，不在 roadmap 展开具体 contract�
 - shared layout options
 - nav links contract
 - root provider / theme shell / search trigger slot
+- baseSlots / layout slots default provider
+- sidebar provider/state contract
+- layout tabs / root section switcher
+- Home layout / basic not-found shell
 - prose table / image / media
 - code highlight / code tabs / copy button
 - preview / code preview
@@ -749,11 +755,6 @@ Stage 6：集成 / 插件层起步已完成第一轮。
 仍后置为 P1，不阻塞集成 / 插件层起步：
 
 - ImageZoom
-- Home layout / not-found shell 深化
-- sidebar layout tabs / root section switcher
-- RootProvider / baseSlots / sidebar provider contract
-- Banner contract decision
-- Notebook / Flux layout variant decision cards
 - 完整 page-tree transformer/plugin runtime
 - 完整 markdown transform pipeline
 
@@ -815,10 +816,8 @@ Cards / Steps / Heading 开始。
 
 建议优先顺序：
 
-1. Theme Runtime / Preset Gate：补真实 light/dark/system、ThemeSwitch、首屏防闪和 preset contract。
-2. Root Provider / Layout Variants Gate：补 provider、baseSlots、sidebar provider、Home/not-found、layout tabs、banner decision、Notebook/Flux decision card。
-3. ImageZoom：先补 foundation UI，再接 image pipeline adapter。
-4. Markdown transform pipeline：heading id/custom id、code meta、line/diff highlight、structured data extraction。
-5. 集成层 P1：remote search provider / search API、feedback backend、RSS、llms-full.txt / per-page markdown export。
-6. Multi source baseline：先建立 docs/blog/changelog/api 的 loader/route/content contract，再做具体页面体验。
-7. 站点产品组合层：story/playground、AI/MCP/docs assistant、versioning/i18n、OpenAPI/AsyncAPI/type generation。
+1. ImageZoom：先补 foundation UI，再接 image pipeline adapter。
+2. Markdown transform pipeline：heading id/custom id、code meta、line/diff highlight、structured data extraction。
+3. 集成层 P1：remote search provider / search API、feedback backend、RSS、llms-full.txt / per-page markdown export。
+4. Multi source baseline：先建立 docs/blog/changelog/api 的 loader/route/content contract，再做具体页面体验。
+5. 站点产品组合层：story/playground、AI/MCP/docs assistant、versioning/i18n、OpenAPI/AsyncAPI/type generation。

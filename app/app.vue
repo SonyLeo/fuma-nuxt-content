@@ -22,8 +22,13 @@ useHead({
 </script>
 
 <template>
-  <NuxtRouteAnnouncer />
-  <NuxtLayout>
-    <NuxtPage />
-  </NuxtLayout>
+  <DocsRootProvider
+    dir="ltr"
+    :search="{ enabled: docsSiteConfig.search?.enabled !== false }"
+  >
+    <NuxtRouteAnnouncer />
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
+  </DocsRootProvider>
 </template>

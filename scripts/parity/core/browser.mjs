@@ -20,14 +20,19 @@ export async function httpPreflight(options) {
   const checks = []
   let body = ''
   let status = 0
+  const expectedStatus = Number(options.expectedStatus || 200)
 
   try {
-    const response = await fetch(options.url)
+    const response = await fetch(options.url, {
+      headers: {
+        accept: 'text/html',
+      },
+    })
     status = response.status
     body = await response.text()
     checks.push({
-      label: 'http 200',
-      pass: response.ok,
+      label: `http ${expectedStatus}`,
+      pass: response.status === expectedStatus,
       message: `received ${response.status}`,
     })
   } catch (error) {

@@ -1,18 +1,25 @@
 <script setup lang="ts">
 import type { DocsLayoutProps } from '~/types/docs'
 
-withDefaults(defineProps<DocsLayoutProps>(), {
+const props = withDefaults(defineProps<DocsLayoutProps>(), {
   navigation: () => [],
   currentPath: '/',
   links: () => [],
   nav: undefined,
 })
 
-const sidebarCollapsed = shallowRef(false)
+const root = useDocsRootProvider()
+const sidebarState = provideDocsSidebarState({
+  currentPath: computed(() => props.currentPath),
+})
 </script>
 
 <template>
-  <div class="docs-shell">
+  <div
+    class="docs-shell"
+    :data-docs-dir="root.dir.value"
+    data-docs-layout-provider="true"
+  >
     <slot name="banner" />
 
     <slot name="header">
@@ -27,9 +34,7 @@ const sidebarCollapsed = shallowRef(false)
           <slot name="search-trigger" />
         </template>
         <template #theme-switch>
-          <slot name="theme-switch">
-            <DocsThemeSwitch />
-          </slot>
+          <slot name="theme-switch" />
         </template>
         <template #language-select>
           <slot name="language-select" />
@@ -40,7 +45,9 @@ const sidebarCollapsed = shallowRef(false)
     <div
       id="nd-docs-layout"
       class="docs-shell-body"
-      :data-sidebar-collapsed="sidebarCollapsed ? 'true' : 'false'"
+      :data-sidebar-collapsed="sidebarState.collapsed.value ? 'true' : 'false'"
+      :data-sidebar-mobile-open="sidebarState.mobileOpen.value ? 'true' : 'false'"
+      data-sidebar-provider="true"
     >
       <slot name="mobile-nav">
         <DocsMobileNav
@@ -53,9 +60,7 @@ const sidebarCollapsed = shallowRef(false)
             <slot name="search-trigger" />
           </template>
           <template #theme-switch>
-            <slot name="theme-switch">
-              <DocsThemeSwitch />
-            </slot>
+            <slot name="theme-switch" />
           </template>
           <template #language-select>
             <slot name="language-select" />
@@ -72,16 +77,12 @@ const sidebarCollapsed = shallowRef(false)
           :items="navigation"
           :current-path="currentPath"
           :nav="nav"
-          :collapsed="sidebarCollapsed"
-          @update:collapsed="sidebarCollapsed = $event"
         >
           <template #search-trigger>
             <slot name="search-trigger" />
           </template>
           <template #theme-switch>
-            <slot name="theme-switch">
-              <DocsThemeSwitch />
-            </slot>
+            <slot name="theme-switch" />
           </template>
           <template #language-select>
             <slot name="language-select" />

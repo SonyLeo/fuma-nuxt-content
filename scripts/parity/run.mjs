@@ -74,6 +74,7 @@ async function writeDump(options, reports) {
 async function runProfile(profile, options) {
   const profileOptions = {
     ...options,
+    expectedStatus: options.expectedStatus || profile.expectedStatus,
     selector: options.selector || profile.selector,
     url: options.url || profile.fixture,
   }

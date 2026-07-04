@@ -8,7 +8,7 @@ import { createDocsCanonicalUrl, createDocsSeoTitle } from '~/utils/docs-seo'
 
 const route = useRoute()
 const requestUrl = useRequestURL()
-const { site } = useDocsSite()
+const { site, layout: siteLayout } = useDocsSite()
 
 const { data: page } = await useAsyncData('page-home', () => {
   return queryCollection('docs').path('/').first()
@@ -135,7 +135,13 @@ useHead({
 </script>
 
 <template>
-  <main class="docs-home">
+  <DocsHomeLayout
+    :title="siteLayout.title"
+    :brand="siteLayout.brand"
+    :links="siteLayout.links"
+    :github-url="siteLayout.githubUrl"
+    :current-path="route.path"
+  >
     <section class="docs-home-hero">
       <p class="docs-home-kicker">{{ site.name }}</p>
       <h1 class="docs-home-title">{{ site.title }}</h1>
@@ -189,5 +195,5 @@ useHead({
     <section class="docs-home-content">
       <ContentRenderer v-if="page" :value="page" />
     </section>
-  </main>
+  </DocsHomeLayout>
 </template>

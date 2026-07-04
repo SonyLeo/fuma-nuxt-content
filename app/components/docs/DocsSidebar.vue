@@ -6,6 +6,10 @@ import type {
   DocsNavOptions,
   DocsNode,
 } from '~/types/docs'
+import {
+  findActiveDocsLayoutTab,
+  resolveDocsLayoutTabs,
+} from '~/utils/docs-layout-tabs'
 import { isDocsLinkActive } from '~/utils/docs-link'
 
 const props = withDefaults(
@@ -28,7 +32,7 @@ const props = withDefaults(
     items: () => [],
     navigationLabel: 'Documentation navigation',
     nav: undefined,
-    collapsed: false,
+    collapsed: undefined,
   },
 )
 
@@ -39,28 +43,20 @@ const emit = defineEmits<{
 
 const slots = useSlots()
 const tabsRef = useTemplateRef<HTMLElement>('tabs')
-const tabsOpen = shallowRef(false)
-const sidebarHovered = shallowRef(false)
-const hoverCloseTimer = shallowRef<ReturnType<typeof window.setTimeout> | null>(
-  null,
-)
+const sidebarState = useDocsSidebarState()
 const brandLabel = computed(() => props.brand?.label ?? props.headline)
 const brandMark = computed(() => props.brand?.mark ?? brandLabel.value.charAt(0))
 const brandHref = computed(() => props.brand?.href ?? '/')
-const sidebarTabs = computed(() => props.nav?.tabs ?? [])
+const sidebarTabs = computed(() => resolveDocsLayoutTabs(props.nav))
 const selectedTab = computed(() => {
-  return (
-    [...sidebarTabs.value].reverse().find((tab) =>
-      isDocsLinkActive(tab.href, props.currentPath, tab.active ?? 'url'),
-    ) ?? sidebarTabs.value[0]
-  )
+  return findActiveDocsLayoutTab(sidebarTabs.value, props.currentPath)
 })
+const isCollapsed = computed(() => props.collapsed ?? sidebarState.collapsed.value)
 const sidebarLinks = computed(() => {
   return props.links.filter((link) => {
     return (link.on ?? 'all') === 'all' || link.on === 'menu'
   })
 })
-const theme = useDocsTheme()
 const showGithubShortcut = computed(() => {
   return Boolean(
     props.githubUrl &&
@@ -72,8 +68,7 @@ const showSidebarFooter = computed(() => {
     sidebarLinks.value.length > 0 ||
       showGithubShortcut.value ||
       slots['theme-switch'] ||
-      slots['language-select'] ||
-      theme.config.value.enabled,
+      slots['language-select'],
   )
 })
 
@@ -86,58 +81,28 @@ function isTabActive(tab: DocsNavLink) {
 }
 
 function setCollapsed(value: boolean) {
+  sidebarState.setCollapsed(value)
   emit('update:collapsed', value)
-  closeTabs()
-
-  if (!value) {
-    sidebarHovered.value = false
-    return
-  }
-
-  if (document.activeElement instanceof HTMLElement) {
-    document.activeElement.blur()
-  }
 }
 
 function toggleCollapsed() {
-  setCollapsed(!props.collapsed)
-}
-
-function clearHoverCloseTimer() {
-  if (hoverCloseTimer.value) {
-    window.clearTimeout(hoverCloseTimer.value)
-    hoverCloseTimer.value = null
-  }
+  setCollapsed(!isCollapsed.value)
 }
 
 function openHoverPreview(event: PointerEvent) {
-  if (!props.collapsed || event.pointerType === 'touch') {
-    return
-  }
-
-  clearHoverCloseTimer()
-  sidebarHovered.value = true
+  sidebarState.openHoverPreview(event)
 }
 
 function closeHoverPreview(event?: PointerEvent) {
-  if (!props.collapsed || event?.pointerType === 'touch') {
-    return
-  }
-
-  clearHoverCloseTimer()
-  hoverCloseTimer.value = window.setTimeout(() => {
-    sidebarHovered.value = false
-  }, event && Math.min(event.clientX, document.body.clientWidth - event.clientX) > 100
-    ? 0
-    : 500)
+  sidebarState.closeHoverPreview(event)
 }
 
 function toggleTabs() {
-  tabsOpen.value = !tabsOpen.value
+  sidebarState.toggleTabs()
 }
 
 function closeTabs() {
-  tabsOpen.value = false
+  sidebarState.closeTabs()
 }
 
 function handleTabNavigate() {
@@ -147,7 +112,7 @@ function handleTabNavigate() {
 
 function handleDocumentPointerDown(event: PointerEvent) {
   if (
-    tabsOpen.value &&
+    sidebarState.tabsOpen.value &&
     tabsRef.value &&
     event.target instanceof Node &&
     !tabsRef.value.contains(event.target)
@@ -175,7 +140,6 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  clearHoverCloseTimer()
   document.removeEventListener('pointerdown', handleDocumentPointerDown)
   document.removeEventListener('keydown', handleDocumentKeydown)
 })
@@ -185,11 +149,11 @@ onBeforeUnmount(() => {
   <aside
     id="nd-sidebar"
     class="docs-sidebar"
-    :data-collapsed="collapsed ? 'true' : 'false'"
-    :data-hovered="collapsed && sidebarHovered ? 'true' : 'false'"
+    :data-collapsed="isCollapsed ? 'true' : 'false'"
+    :data-hovered="isCollapsed && sidebarState.hovered.value ? 'true' : 'false'"
   >
     <div
-      v-if="collapsed"
+      v-if="isCollapsed"
       class="docs-sidebar-hover-zone"
       aria-hidden="true"
       @pointerenter="openHoverPreview"
@@ -211,8 +175,8 @@ onBeforeUnmount(() => {
         <button
           class="docs-sidebar-collapse"
           type="button"
-          :aria-label="collapsed ? 'Pin sidebar' : 'Collapse sidebar'"
-          :aria-pressed="collapsed ? 'false' : 'true'"
+          :aria-label="isCollapsed ? 'Pin sidebar' : 'Collapse sidebar'"
+          :aria-pressed="isCollapsed ? 'false' : 'true'"
           @click="toggleCollapsed"
         >
           <PanelLeft class="docs-sidebar-collapse-icon" aria-hidden="true" />
@@ -226,9 +190,9 @@ onBeforeUnmount(() => {
       <div v-if="selectedTab" ref="tabs" class="docs-sidebar-tabs">
         <button
           class="docs-sidebar-tab-trigger"
-          :class="{ 'is-open': tabsOpen }"
+          :class="{ 'is-open': sidebarState.tabsOpen.value }"
           type="button"
-          :aria-expanded="tabsOpen ? 'true' : 'false'"
+          :aria-expanded="sidebarState.tabsOpen.value ? 'true' : 'false'"
           aria-haspopup="menu"
           @click="toggleTabs"
         >
@@ -237,7 +201,11 @@ onBeforeUnmount(() => {
           <ChevronsUpDown class="docs-sidebar-tab-chevron" aria-hidden="true" />
         </button>
 
-        <div v-if="tabsOpen" class="docs-sidebar-tab-panel" role="menu">
+        <div
+          v-if="sidebarState.tabsOpen.value"
+          class="docs-sidebar-tab-panel"
+          role="menu"
+        >
           <DocsLink
             v-for="tab in sidebarTabs"
             :key="`${tab.title}:${tab.href}`"
@@ -276,10 +244,7 @@ onBeforeUnmount(() => {
         />
       </nav>
 
-      <div
-        v-if="showSidebarFooter"
-        class="docs-sidebar-footer"
-      >
+      <div v-if="showSidebarFooter" class="docs-sidebar-footer">
         <nav
           v-if="sidebarLinks.length > 0 || showGithubShortcut"
           class="docs-sidebar-footer-links"
@@ -315,15 +280,14 @@ onBeforeUnmount(() => {
         <div class="docs-sidebar-footer-controls">
           <slot name="theme-switch" />
           <slot name="language-select" />
-          <DocsThemeSwitch v-if="!$slots['theme-switch']" />
         </div>
       </div>
       </div>
 
     <div
-      v-if="collapsed"
+      v-if="isCollapsed"
       class="docs-sidebar-floating"
-      :class="{ 'is-hidden': sidebarHovered }"
+      :class="{ 'is-hidden': sidebarState.hovered.value }"
     >
       <button
         class="docs-sidebar-floating-button"
