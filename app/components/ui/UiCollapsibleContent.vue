@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { CollapsibleContent } from 'reka-ui'
 import { inject } from 'vue'
 import { uiCollapsibleKey } from '~/utils/ui-collapsible'
 
@@ -16,6 +17,7 @@ const collapsibleContext = collapsible
 </script>
 
 <template>
+  <CollapsibleContent as-child>
   <div
     v-bind="$attrs"
     :id="collapsibleContext.contentId.value"
@@ -25,4 +27,5 @@ const collapsibleContext = collapsible
   >
     <slot :open="collapsibleContext.open.value" />
   </div>
+  </CollapsibleContent>
 </template>

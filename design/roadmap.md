@@ -65,6 +65,10 @@ sectionLabel: Plan
   - Theme runtime / theme switch / preset 的详细契约卡
   - 作为 Stage 7.9 的执行设计，不作为总路线图
 
+- [`design/reka-primitive-migration-plan.md`](./reka-primitive-migration-plan.md)
+  - Reka UI primitive 迁移治理、组件清单、sidebar 替换决策和排期
+  - 作为 Stage 7.5 后续 primitive migration 的执行设计，不在 roadmap 展开
+
 - [`design/fumadocs-gap-audit.md`](./fumadocs-gap-audit.md)
   - 定期对比 Fumadocs 源码、当前实现和现有规划
   - 记录剩余差异、分类和排期建议
@@ -588,6 +592,10 @@ P0 只实现当前 Docs Layout。
 目标不是创建通用业务组件库，而是让当前 Vue docs UI 拥有与 Fumadocs
 `@fumadocs/base-ui` 尽量一致的行为和设计底座。
 
+当前第一轮 Vue-native primitive baseline 已完成；后续 Reka UI 迁移不在 roadmap
+展开，执行设计见
+[`design/reka-primitive-migration-plan.md`](./reka-primitive-migration-plan.md)。
+
 必须完成：
 
 - `UiButton` / button variants：
@@ -735,6 +743,9 @@ Home/not-found 和 layout variant 决策，不在 roadmap 展开具体 contract�
 - Home layout / basic not-found shell
 - prose table / image / media
 - code highlight / code tabs / copy button
+- ImageZoom
+- markdown transform pipeline 第一版：custom heading id、code meta、Shiki
+  notation、structured data extraction
 - preview / code preview
 - Files / InlineTOC / TypeTable
 
@@ -754,9 +765,9 @@ Stage 6：集成 / 插件层起步已完成第一轮。
 
 仍后置为 P1，不阻塞集成 / 插件层起步：
 
-- ImageZoom
 - 完整 page-tree transformer/plugin runtime
-- 完整 markdown transform pipeline
+- markdown transform pipeline 后续增强：steps/package-manager command tabs、
+  richer structured component extraction
 
 仍可后续增强但不阻塞 Stage 7：
 
@@ -781,20 +792,30 @@ Stage 7：集成 / 插件层增强已完成第一轮。
 - remote search provider / search API
 - feedback backend 或 GitHub issue 模板提交
 - RSS
-- image CDN / ImageZoom
+- image CDN adapter
 - llms-full.txt / per-page markdown export
 
-Stage 7.5：Fumadocs-Aligned UI Primitives Gate 已完成第一轮。
+Stage 7.5：Fumadocs-Aligned UI Primitives Gate 已完成第一轮 Vue-native baseline。
 
 已完成：
 
 1. 对照 Fumadocs 审计当前重复交互。
 2. 实现 `UiButton` / `useCopyState()` / docs action wrappers。
-3. 实现 `UiPopover` / `UiDialog` / `UiCommandDialog`。
-4. 实现 `UiTabs` / `UiAccordion` / `UiCollapsible`。
+3. 实现 `UiPopover` / `UiDialog` / `UiCommandDialog` 的本地 wrapper baseline。
+4. 实现 `UiTabs` / `UiAccordion` / `UiCollapsible` 的本地 wrapper baseline。
 5. 实现 `UiScrollArea`。
 6. 迁移现有 docs/content/product 消费者。
 7. 完成 primitive boundary、CSS token、类型、构建和链接校验。
+
+后续 Reka UI 迁移状态：
+
+- `UiPopover`、`UiDialog`、mobile sidebar drawer、sidebar tabs dropdown、
+  `UiCollapsible`、`UiAccordion`、`UiTabs`、`UiScrollArea`、`DocsTocPopover`
+  已完成当前 wrapper 迁移批次，状态记录在
+  [`design/reka-primitive-migration-plan.md`](./reka-primitive-migration-plan.md)。
+- 左侧 sidebar 暂不整棵替换为 Reka Tree；当前 drawer、dropdown 和
+  disclosure 交互层已替换。只有在后续仍出现明显 hierarchy/keyboard 缺口时，
+  才进入 Tree POC 决策门。
 
 Stage 7.7：Fumadocs component parity 当前批次已完成。
 
@@ -806,18 +827,19 @@ Stage 7.7：Fumadocs component parity 当前批次已完成。
 - Files
 - InlineTOC
 - TypeTable
+- ImageZoom
 - PageActions / Feedback / Pager 当前合同
 
 后续基础组件 parity 按
 `design/fumadocs-component-parity-inventory.md` 分批推进，下一批建议从
-Cards / Steps / Heading 开始。
+Banner decision 和 advanced/product backlog 中明确进入 foundation 的项开始。
 
 下一步先回补 foundation 和集成层 P1 缺口，再进入站点产品组合层。
 
 建议优先顺序：
 
-1. ImageZoom：先补 foundation UI，再接 image pipeline adapter。
-2. Markdown transform pipeline：heading id/custom id、code meta、line/diff highlight、structured data extraction。
-3. 集成层 P1：remote search provider / search API、feedback backend、RSS、llms-full.txt / per-page markdown export。
+1. 收口 page-tree transformer/plugin runtime，避免 tree/layout 继续依赖零散适配。
+2. 集成层 P1：remote search provider / search API、feedback backend、RSS、llms-full.txt / per-page markdown export。
+3. Image pipeline adapter：在已有 ImageZoom foundation 上补 CDN/尺寸/源适配。
 4. Multi source baseline：先建立 docs/blog/changelog/api 的 loader/route/content contract，再做具体页面体验。
 5. 站点产品组合层：story/playground、AI/MCP/docs assistant、versioning/i18n、OpenAPI/AsyncAPI/type generation。

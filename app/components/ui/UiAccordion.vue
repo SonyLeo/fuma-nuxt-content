@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { AccordionRoot } from 'reka-ui'
 import { computed, provide, shallowRef, watch } from 'vue'
 import {
   type UiAccordionType,
@@ -41,6 +42,13 @@ const collapsible = computed(() => props.collapsible)
 const openValues = computed(() =>
   isControlled.value ? normalize(props.value) : internalValues.value,
 )
+const rekaValue = computed({
+  get: () =>
+    props.type === 'single' ? openValues.value[0] : openValues.value,
+  set: (value: string | string[] | undefined) => {
+    setValues(normalize(value))
+  },
+})
 
 watch(type, (nextType) => {
   if (nextType === 'single' && openValues.value.length > 1) {
@@ -101,7 +109,15 @@ provide(uiAccordionKey, {
 </script>
 
 <template>
+  <AccordionRoot
+    v-model="rekaValue"
+    :type="type"
+    :collapsible="collapsible"
+    :unmount-on-hide="false"
+    as-child
+  >
   <div class="ui-accordion" :data-type="type">
     <slot />
   </div>
+  </AccordionRoot>
 </template>

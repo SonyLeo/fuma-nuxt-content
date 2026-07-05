@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { TabsContent } from 'reka-ui'
 import { computed, inject, onMounted } from 'vue'
 import { uiTabsKey } from '~/utils/ui-tabs'
 
@@ -33,6 +34,7 @@ onMounted(() => {
 </script>
 
 <template>
+  <TabsContent :value="value" as-child>
   <div
     v-bind="$attrs"
     :id="panelId"
@@ -44,4 +46,5 @@ onMounted(() => {
   >
     <slot />
   </div>
+  </TabsContent>
 </template>

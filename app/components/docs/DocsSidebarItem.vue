@@ -110,9 +110,12 @@ const itemDefaultExpanded = computed(() => isExpanded(props.item))
 const folderContentId = computed(() => createFolderContentId(props.item))
 const folderOpen = shallowRef(itemDefaultExpanded.value)
 const folderState = computed(() => (folderOpen.value ? 'open' : 'closed'))
+const folderToggleLabel = computed(
+  () => `${folderOpen.value ? 'Collapse' : 'Expand'} ${props.item.title}`,
+)
 
 watch(
-  () => [props.item.id, props.currentPath] as const,
+  itemDefaultExpanded,
   () => {
     if (itemDefaultExpanded.value) {
       folderOpen.value = true
@@ -120,19 +123,7 @@ watch(
   },
 )
 
-function toggleFolder() {
-  if (!itemHasChildren.value || !itemIsCollapsible.value) {
-    return
-  }
-
-  folderOpen.value = !folderOpen.value
-}
-
 function handleFolderLinkClick() {
-  if (itemIsCollapsible.value) {
-    folderOpen.value = itemIsActive.value ? !folderOpen.value : true
-  }
-
   emitNavigate()
 }
 </script>
@@ -152,60 +143,67 @@ function handleFolderLinkClick() {
       {{ item.title }}
     </p>
 
-    <div
+    <UiCollapsible
       v-else-if="itemHasChildren"
+      v-model:open="folderOpen"
       class="docs-sidebar-folder"
+      :content-id="folderContentId"
+      :disabled="!itemIsCollapsible"
       :data-state="folderState"
       :data-active="hasActiveDescendant(item) ? 'true' : 'false'"
       :data-collapsible="itemIsCollapsible ? 'true' : 'false'"
     >
-      <DocsLink
-        v-if="itemHref"
-        :href="itemHref"
-        :external="itemExternal"
-        class="docs-sidebar-link docs-sidebar-folder-link"
-        :class="{ 'is-active': itemIsActive }"
-        :data-level="level"
-        :data-visual-level="visualLevel"
-        :data-state="folderState"
-        :data-collapsible="itemIsCollapsible ? 'true' : 'false'"
-        :aria-current="itemIsActive ? 'page' : undefined"
-        :aria-expanded="folderOpen ? 'true' : 'false'"
-        :aria-controls="folderContentId"
-        @click="handleFolderLinkClick"
-      >
-        <DocsNavIcon v-if="item.icon" :name="item.icon" />
-        <span class="docs-sidebar-link-label">
-          {{ item.title }}
-        </span>
-        <span class="docs-sidebar-link-meta">
-          <span v-if="item.status" class="docs-sidebar-status">
-            {{ item.status }}
+      <div v-if="itemHref" class="docs-sidebar-folder-row">
+        <DocsLink
+          :href="itemHref"
+          :external="itemExternal"
+          class="docs-sidebar-link docs-sidebar-folder-link"
+          :class="{ 'is-active': itemIsActive }"
+          :data-level="level"
+          :data-visual-level="visualLevel"
+          :data-state="folderState"
+          :data-collapsible="itemIsCollapsible ? 'true' : 'false'"
+          :aria-current="itemIsActive ? 'page' : undefined"
+          :aria-expanded="folderOpen ? 'true' : 'false'"
+          :aria-controls="folderContentId"
+          @click="handleFolderLinkClick"
+        >
+          <DocsNavIcon v-if="item.icon" :name="item.icon" />
+          <span class="docs-sidebar-link-label">
+            {{ item.title }}
           </span>
-          <span v-if="item.badge" class="docs-sidebar-badge">
-            {{ item.badge }}
+          <span class="docs-sidebar-link-meta">
+            <span v-if="item.status" class="docs-sidebar-status">
+              {{ item.status }}
+            </span>
+            <span v-if="item.badge" class="docs-sidebar-badge">
+              {{ item.badge }}
+            </span>
           </span>
-        </span>
-        <ChevronDown
-          v-if="itemIsCollapsible"
-          class="docs-sidebar-folder-chevron"
-          data-sidebar-folder-icon
-          aria-hidden="true"
-          @click.prevent.stop="toggleFolder"
-        />
-      </DocsLink>
+        </DocsLink>
 
-      <button
+        <UiCollapsibleTrigger
+          v-if="itemIsCollapsible"
+          class="docs-sidebar-folder-trigger docs-sidebar-folder-toggle"
+          :aria-label="folderToggleLabel"
+          :data-level="level"
+          :data-visual-level="visualLevel"
+          :data-collapsible="itemIsCollapsible ? 'true' : 'false'"
+        >
+          <ChevronDown
+            class="docs-sidebar-folder-chevron"
+            data-sidebar-folder-icon
+            aria-hidden="true"
+          />
+        </UiCollapsibleTrigger>
+      </div>
+
+      <UiCollapsibleTrigger
         v-else-if="itemIsCollapsible"
-        type="button"
         class="docs-sidebar-link docs-sidebar-folder-trigger"
         :data-level="level"
         :data-visual-level="visualLevel"
-        :data-state="folderState"
         :data-collapsible="itemIsCollapsible ? 'true' : 'false'"
-        :aria-expanded="folderOpen ? 'true' : 'false'"
-        :aria-controls="folderContentId"
-        @click="toggleFolder"
       >
         <DocsNavIcon v-if="item.icon" :name="item.icon" />
         <span class="docs-sidebar-link-label">
@@ -224,7 +222,7 @@ function handleFolderLinkClick() {
           data-sidebar-folder-icon
           aria-hidden="true"
         />
-      </button>
+      </UiCollapsibleTrigger>
 
       <div
         v-else
@@ -250,20 +248,15 @@ function handleFolderLinkClick() {
         </span>
       </div>
 
-      <div
-        v-show="folderOpen"
-        :id="folderContentId"
-        class="docs-sidebar-folder-content"
-        :data-state="folderState"
-      >
+      <UiCollapsibleContent class="docs-sidebar-folder-content">
         <DocsSidebarTree
           :items="item.children"
           :current-path="currentPath"
           :level="level + 1"
           @navigate="emit('navigate')"
         />
-      </div>
-    </div>
+      </UiCollapsibleContent>
+    </UiCollapsible>
 
     <DocsLink
       v-else-if="resolveItemPath(item)"

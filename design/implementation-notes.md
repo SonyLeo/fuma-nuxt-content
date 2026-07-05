@@ -17,7 +17,8 @@ sectionLabel: Record
 - CSS 框架路线是：CSS tokens 作为设计语言源头，Tailwind CSS v4 作为 utility / `@theme` 编译层
 - 已实际引入基础质量工具、`@lucide/vue` 和 Tailwind CSS v4 Vite 插件
 - Tailwind CSS v4 使用 `@tailwindcss/vite` 接入，不走当前仍绑定 Tailwind v3 的 `@nuxtjs/tailwindcss`
-- 当前不引入 Nuxt UI、shadcn-vue、Reka UI、VueUse，避免 foundation 阶段过早扩大依赖面
+- 当前不引入 Nuxt UI、shadcn-vue、VueUse；Reka UI 已通过 `UiPopover` POC
+  验证，后续只通过本地 `Ui*` wrapper 分阶段迁移 interaction primitives
 - 按当前项目偏好，`.gitignore` 已加入 `pnpm-lock.yaml`；由于该文件已被 Git 跟踪，本次只保持不纳入提交范围，是否 untrack 需单独处理
 
 ## 已验证结论
@@ -157,7 +158,7 @@ sectionLabel: Record
   - 当前 props 已先覆盖：
     - root: `type / defaultValue / collapsible`
     - item: `title / id / value / defaultOpen`
-  - 当前实现保持 Vue 原生状态，不引入 `Reka UI`
+  - 当时实现保持 Vue 原生状态，未引入 `Reka UI`
   - `content/guide/components.md` 已补真实使用样本
 
 ## 本轮对照 Fumadocs 的新增结论
@@ -544,7 +545,7 @@ Fumadocs 证据：
 
 实现判断：
 
-- 当前继续 Vue-native primitives，不引入 Reka UI / shadcn-vue。
+- 当时继续 Vue-native primitives，未引入 Reka UI / shadcn-vue。
 - 旧 `tiny-robot-docs-ui` 的可复用内容组件经验已吸收，但没有倒灌 VitePress runtime。
 - `DocImageZoom` 后置为 P1，不阻塞产品层起步。
 - 完整 markdown transform pipeline、page-tree transformer/plugin runtime 后置，不阻塞产品层起步。
@@ -810,8 +811,8 @@ Fumadocs-aligned UI primitives 第一轮闭环。
 
 实现判断：
 
-- 当前 Vue-native primitives 足够支撑下一阶段产品开发，暂不引入
-  Reka UI / shadcn-vue / Nuxt UI。
+- 当时判断 Vue-native primitives 足够支撑下一阶段产品开发，暂不引入
+  Reka UI / shadcn-vue / Nuxt UI；该判断已被后续 `UiPopover` Reka POC 更新。
 - `components/ui/*` 只依赖 Vue 和 `utils/ui-*` context，不读取 docs tree、
   route、site config、search index 或产品配置。
 - docs authoring 语义保留在 content/docs wrapper 层：
@@ -2029,3 +2030,262 @@ POC 暴露并修复的问题：
 - DOM 契约卡必须包含触发器所在组件、目标 panel id、`aria-controls`、`data-state`
   和关闭后的 focus return target。
 - CSS 中不保留无 DOM 消费的旧 trigger 选择器，避免后续实现继续沿用错误契约。
+
+### Reka UI primitive layer POC
+
+本轮完成 Reka UI POC，先选择 `UiPopover` 而不是直接大面积迁移。原因是 page actions 的
+`Open` 菜单能同时覆盖 trigger、portal、floating positioning、outside dismiss、
+Escape close、focus return 和 viewport collision，是最容易验证收益的基础交互面。
+
+实现结论：
+
+- 新增依赖 `reka-ui@2.10.1`。
+- `UiPopover` 继续保留原有外部 API：`open/defaultOpen/contentId/align/sideOffset`、
+  `update:open`、默认 slot `{ open, close, toggle }`。
+- `UiPopoverTrigger`、`UiPopoverContent`、`UiPopoverClose` 继续保留原组件名、class
+  透传和 slot contract，内部改用 Reka `PopoverRoot / Trigger / Portal / Content /
+  Close`。
+- 原先手写的 window `keydown`、`pointerdown`、resize/scroll 监听和弹层定位逻辑已从
+  `UiPopover` / `UiPopoverContent` 移除，底层行为交给 Reka + Floating UI。
+
+验证结论：
+
+- `pnpm typecheck` 通过。
+- `pnpm dev:restart` 后 dev server 健康检查通过。
+- `pnpm test:e2e -- tests/e2e/page-actions.spec.ts` 通过：`6 passed`。
+- `pnpm test:e2e -- tests/e2e/theme.spec.ts` 通过：`9 passed`。
+- `pnpm test:e2e:fast` 通过：`40 passed`、`11 skipped`。
+
+POC 过程中额外暴露的问题：
+
+- 移动端 theme 控件已收敛到 mobile drawer，旧测试仍直接点击 header/全局可见按钮，
+  导致窄屏下找不到 `.docs-theme-button[data-theme-mode="dark"]`。已把 theme
+  runtime 测试调整为窄屏先打开 mobile nav，再点击真实可见控件。
+
+后续建议：
+
+- POC 结果正向。下一批可以继续按同样模式迁移 `UiDialog`、`UiTabs`、`UiCollapsible`，
+  但每次只迁一个 primitive，并保持 `Ui*` 外部 contract 不变。
+- 每迁一个 primitive 都要补一条 focused Playwright 行为验证，避免只通过类型检查却漏掉
+  focus、dismiss、portal 或键盘行为。
+
+### Reka UI migration governance
+
+本轮将 Reka UI 迁移从“临时 POC 结论”提升为独立执行计划：
+
+- 新增 `design/reka-primitive-migration-plan.md` 作为 Reka primitive migration
+  source of truth。
+- Reka 只接管交互 primitive：focus trap、Escape、outside dismiss、positioning、
+  drawer modality、dropdown roving focus、tabs/accordion/collapsible keyboard。
+- 本项目继续拥有 `DocsNode[]`、route path、active path、sidebar tree mapping、
+  docs content contract、tokens 和 CSS。
+- 后续迁移必须先改本地 `Ui*` wrapper，再让 docs/content/layout 消费者保持原 API
+  继续工作。
+- `UiPopover` 是参考 POC；下一批优先顺序是 `UiDialog`、mobile sidebar drawer、
+  sidebar tabs dropdown、folder disclosure、`UiAccordion`、`UiTabs`。
+
+Sidebar 决策：
+
+- 不把整个 sidebar 直接替换成 Reka NavigationMenu；NavigationMenu 更适合站点导航
+  和子菜单，不适合完整 docs page-tree。
+- 不立即把整个 sidebar 替换成 Reka Tree；Tree 当前是 Alpha，并且会牵动
+  `DocsNode[]` 到 selected/expanded/tree item 的完整映射。
+- 先替换移动端 drawer、layout tabs dropdown 和 folder disclosure 交互层。
+- 只有在这些交互层替换后，层级切换、键盘导航或 active ancestry 仍不达标时，
+  才进入隔离的 Reka Tree POC。
+
+### Reka UI primitive migration batch 1
+
+本轮按 `design/reka-primitive-migration-plan.md` 推进第一批 primitive 替换：
+
+- `UiDialog*` 改用 Reka `DialogRoot / Portal / Overlay / Content / Close`。
+  本地继续保留 `open/defaultOpen/contentId/titleId/closeOnEscape/trapFocus` 和
+  slot contract；新增 `unmountOnHide` 供 mobile drawer 保留关闭态 DOM。
+- `DocsMobileNav` 改为 Dialog-backed drawer。Reka 负责 modal、Escape、outside
+  dismiss 和 body scroll lock；由于它不是通过 Reka `DialogTrigger` 打开，仍保留一小段
+  本地 focus return，把关闭后的焦点还给 `#docs-header-sidebar-trigger`。
+- 新增 `UiDropdownMenu*` wrapper。Sidebar layout tabs 采用本地 wrapper trigger +
+  Reka Root/Content/Item 的组合；trigger 主动注册到 Reka root 的 `triggerElement`，
+  content/item 负责 menu role、Escape、outside dismiss 和 menuitem 行为。
+- `UiCollapsible*` 改用 Reka `CollapsibleRoot / Trigger / Content`，保留
+  `hidden="until-found"`、`data-state` 和 slot props。
+- `UiAccordion*` 改用 Reka `AccordionRoot / Item / Trigger / Content`，保留
+  standalone fallback、`hidden="until-found"`、`beforematch` fallback 和 expose
+  方法。
+- `UiTabs*` 改用 Reka `TabsRoot / List / Trigger / Content`，保留 `groupId`、
+  `persist`、`updateAnchor`、inactive panel 常驻 DOM 和 `[hidden]` contract。
+
+实现过程中沉淀的规则：
+
+- Dialog / Popper 一旦 portal 到 body，原先依赖父选择器的移动端 CSS 必须补 panel
+  作用域。例如 `.docs-mobile-nav .docs-sidebar` 需要同步覆盖
+  `.docs-mobile-nav-panel .docs-sidebar`。
+- Reka Popper 即使 `portal=false` 也会插入 `[data-reka-popper-content-wrapper]`。
+  对 sidebar tabs 这类已有 absolute 定位的 surface，要把定位落在 wrapper 上，
+  panel 自身恢复为静态填满，避免被 Popper wrapper 压成 0 宽。
+- 不能在 dev server 正运行时把 `pnpm typecheck` 和 Playwright 连着跑。`typecheck`
+  会动 `.nuxt`，可能让 Nuxt Content dev DB 丢表。新的顺序是：
+  `pnpm typecheck` -> `pnpm dev:restart` -> Playwright。
+- Reka primitive 迁移优先保持本地 `Ui*` API 和 DOM/CSS contract，不为了“纯 Reka”
+  牺牲已验证的 docs shell 行为。
+
+验证结论：
+
+- `pnpm typecheck` 通过。
+- `pnpm dev:restart` 健康检查通过。
+- `pnpm test:e2e -- tests/e2e/sidebar.spec.ts tests/e2e/content-components.spec.ts tests/e2e/page-actions.spec.ts tests/e2e/theme.spec.ts`
+  通过：`55 passed / 8 skipped`。
+- `pnpm test:e2e:fast` 通过：`40 passed / 11 skipped`。
+- `pnpm test:e2e:full` 通过：`92 passed / 13 skipped`。
+- `git diff --check` 通过。
+
+### Reka sidebar folder disclosure closeout
+
+本轮继续补齐 `design/reka-primitive-migration-plan.md` 中的 S3 / Phase 6 尾项：
+
+- `DocsSidebarItem` 的 folder disclosure 改为消费本地 `UiCollapsible`，由 Reka
+  `CollapsibleRoot / Trigger / Content` 承接 open state、trigger 与 content 关联。
+- `UiCollapsible` 新增 `contentId` 透传能力，并把 `class/data-*` 等外部契约属性落到
+  实际 collapsible DOM，方便 sidebar 等场景保留稳定 id 和 selector。
+- 有 index page 的 folder 拆成标题 `DocsLink` 与独立 chevron trigger；标题点击只导航并
+  触发 `navigate`，chevron 点击只折叠/展开，不再混用同一 click path。
+- 无 index page 的 folder 继续使用整行 trigger；`collapsible: false` 的 folder 保持常开。
+- `Protocol Playground` 目录被纳入可见 sidebar fixture，用真实内容覆盖 folder 协议，避免
+  Playwright folder case 因“当前页面没有 folder”继续 skip。
+- `useDocsOverlay` 已无运行时消费者，正式删除。移动端 drawer 的 overlay、Escape、outside
+  dismiss、scroll lock 与 focus trap 现在由 Reka Dialog-backed drawer 承担。
+- 修复 `pagesIndex + slug` 场景下的目录 meta 命中：group 节点在 `meta.pages` 匹配与
+  `reorderNodesByMeta()` 中都应优先按目录 `dirname` 找 `meta.json`，再退回 index page
+  stem。否则目录会被 index page 的 source stem 偷换标题、默认展开、`pagesIndex` 和排除规则。
+
+流程规则更新：
+
+- folder 类交互不能只检查 DOM 是否存在，必须拆开验证“纯 disclosure 不导航”和“link
+  navigation 才关闭 mobile drawer”。
+- fixture 缺失时优先复用现有真实内容目录补足覆盖，不再接受关键契约长期
+  `test.skip(folderCount === 0)`。
+- 对照 Fumadocs 源码时借语义和 ownership，不强行复刻 React 里的 link 内 chevron click
+  handler；本项目按计划卡采用更清晰的 link / trigger 分离契约。
+- 对目录 fixture 不能只验证最终页面 200；还要验证该目录是否作为可见 sidebar folder
+  承接自己的 `meta.json`，尤其是 `pagesIndex`、`slug`、`!item` 和 rest 排序同时存在时。
+
+验证结论：
+
+- `pnpm typecheck` 通过。
+- `pnpm dev:restart` 健康检查通过。
+- `pnpm test:e2e -- tests/e2e/sidebar.spec.ts` 通过：`13 passed / 8 skipped`。
+- `pnpm test:e2e -- tests/e2e/content-components.spec.ts tests/e2e/page-actions.spec.ts tests/e2e/theme.spec.ts`
+  首轮 `44 passed / 1 failed`，失败为 tablet 单测在 `page.goto` 阶段
+  `net::ERR_ABORTED`；重跑失败用例通过：`3 passed`。
+- `pnpm test:e2e:fast` 通过：`43 passed / 11 skipped`。
+- `pnpm test:e2e:full` 通过：`95 passed / 13 skipped`。
+- `pnpm validate:links` 通过：`25 pages / 11 links`。
+- `git diff --check` 通过。
+
+### Reka TOC popover and ScrollArea closeout
+
+本轮继续补齐 `design/reka-primitive-migration-plan.md` 的 Phase 6：
+
+- `DocsTocPopover` 对照 Fumadocs docs page TOC 源码后确认：顶部 TOC 条不是
+  floating popover，而是 sticky row 内的 in-flow `Collapsible`。
+- 因此本地不把它强行迁到 `UiPopover`。Reka Popper 即使 `portal=false` 也会插入
+  floating wrapper，容易破坏当前已验证的 `position: static` 和正文上方展开节奏。
+- `DocsTocPopover` 已改为消费 `UiCollapsible / UiCollapsibleTrigger /
+  UiCollapsibleContent`，保留原 `docs-toc-popover*` 类名、`docs-toc-popover-panel`
+  id、`v-show` display contract，以及点击 TOC item 后关闭。
+- `UiCollapsible` 新增 opt-in dismiss contract：`closeOnEscape` 和
+  `closeOnOutside`。监听只在对应 prop 开启时注册，避免 sidebar/tree 内每个
+  collapsible 都挂 window listener。
+- `UiScrollArea / UiScrollViewport / UiScrollBar / UiScrollThumb` 已改用 Reka
+  `ScrollAreaRoot / Viewport / Scrollbar / Thumb`，继续保留本地 wrapper、类名和
+  tokenized visuals。
+- `ui.css` 的 scroll area 样式补齐 Reka custom scrollbar 需要的 `overflow:
+  hidden`、viewport height、`touch-action: none`、显示态 pointer events 和 thumb
+  flex contract。
+- 新增 `layout-provider.spec.ts` 的 search dialog 回归：打开搜索、输入 query、
+  验证 `.ui-scroll-viewport` 可见、有高度、结果可键盘选择并可 Escape 关闭。
+
+流程规则更新：
+
+- Fumadocs 名称里带 popover 的 surface 不一定应迁到 Popover primitive；先看源码
+  ownership 和布局模型，TOC 顶栏这类 in-flow 展开面优先使用 Collapsible。
+- Reka wrapper 迁移不能只看交互能力，也要检查生成 DOM wrapper 是否会改变
+  positioning / grid / sticky contract。
+- shared primitive 的可选增强必须按需注册副作用，尤其是 sidebar item 这类会大量
+  实例化的组件。
+
+验证结论：
+
+- 首次在 dev server 仍运行时执行 `pnpm typecheck` 超时；执行 `pnpm dev:stop`
+  后重跑通过。后续复验流程应更明确为：停止 dev server 或确认无运行态干扰 ->
+  `pnpm typecheck` -> `pnpm dev:restart` / `pnpm dev:health` -> Playwright。
+- `pnpm typecheck` 通过。
+- `pnpm dev:restart` 首次健康检查早于 Nuxt 完全启动而失败；随后
+  `pnpm dev:health` 通过。
+- `pnpm test:e2e:toc` 通过：`10 passed / 5 skipped`。
+- `pnpm test:e2e:layout` 通过：`21 passed`。
+- `pnpm test:e2e -- tests/e2e/sidebar.spec.ts tests/e2e/content-components.spec.ts`
+  通过：`43 passed / 8 skipped`。
+- `pnpm test:e2e:fast` 通过：`43 passed / 11 skipped`。
+- `pnpm test:e2e:full` 通过：`98 passed / 13 skipped`。
+- `pnpm validate:links` 通过：`25 pages / 11 links`。
+- `git diff --check` 通过。
+
+### ImageZoom and markdown transform closeout
+
+本轮按 roadmap 的下一步顺序收口 Foundation Gate、ImageZoom 和 Markdown
+transform pipeline 第一版：
+
+- `design/reka-primitive-migration-plan.md` 已把 Reka wrapper 当前批次从
+  “Migrate Next” 收口为 “Already Migrated”，避免后续继续误读旧状态。
+- `DocImageZoom` 成为 foundation content component。它保留 `figure/img/figcaption`
+  的 Markdown 图片合同，同时用 Dialog-backed overlay 承接 zoom open/close、Escape、
+  close button、focus return 和 viewport-bounded image sizing。
+- `ProseImg` 默认接入 `DocImageZoom`，让普通 Markdown 图片也具备可检查能力；已有
+  `.fd-doc-image`、caption、lazy loading 和 decoding contract 保持不变。
+- Markdown transform pipeline 第一版落在 `app/utils/docs-markdown-pipeline.ts`，
+  并通过 `nuxt.config.ts` 的 `content.build.markdown.rehypePlugins` 接入。这里必须同时
+  提供 `instance` 和 `src`：`instance` 供 `@nuxt/content` parser 运行，`src` 供
+  `@nuxtjs/mdc` 生成的 `#mdc-imports` 解析；`mdc.config.ts` 保持 Shiki transformer
+  fallback，不再作为本项目 Nuxt 4 `srcDir` 结构下的 Markdown pipeline 入口：
+  - heading 支持 Fumadocs 风格 `[#custom-id]`，并在渲染文本中移除该后缀；
+  - heading id 在 Nuxt compiler 前生成，TOC 和 DOM 共享同一 id；
+  - code block meta 结构化为 title/icon/lineNumbers/keepBackground 等 props；
+  - `structuredData` 写入 Nuxt Content page data，供 local search index 优先消费。
+- `ProsePre` 改为消费结构化 code meta props，同时保留对 raw `meta` 的兼容解析。
+- `createDocsSearchIndex()` 优先使用 `structuredData.headings/contents`，缺失时才回退
+  到 TOC 和 body AST 扫描。
+
+流程规则更新：
+
+- Markdown transform 能在 MDC rehype hook 中完成的，不要推迟到视觉组件里做
+  ad hoc 字符串处理；组件只保留兼容 fallback。
+- 新增 foundation 组件时，fixture 不能继续是 placeholder-only route；必须有真实
+  Markdown 和组件样例，并进入 focused Playwright 覆盖。
+- Dialog-backed 组件如果不是通过 primitive trigger 打开，需要自行保证 focus return。
+- Search 的结构化输入属于 foundation/integration 边界的连接点；先让 local search
+  消费同一结构，再排 remote search API。
+- Markdown transform plugin 文件变更后，不能只热更新 dev server。Nuxt Content dev
+  cache 不会把 plugin 文件内容计入当前解析 checksum；需要先停止 dev server，删除
+  `.data/content/contents.sqlite`，再重新启动，确认日志出现 `0 cached` / 全量 parsed。
+- Playwright 出现 `page.goto net::ERR_ABORTED` 时先按导航级 flaky 处理，单测 focused
+  重跑仍失败时才归类为组件或页面回归。
+
+验证结论：
+
+- `pnpm typecheck` 通过。
+- 停止 dev server 后删除 `.data/content/contents.sqlite`，再执行 `pnpm dev:start`，
+  Nuxt Content 重新解析 `28 files`，页面 HTML 验证通过：
+  - `/guide/code-block` 生成 `id="custom-keep-background"` 和对应 heading anchor；
+  - 渲染文本不再残留 `Keep Background #custom-keep-background`；
+  - code block 结构化属性包含 `data-line-numbers-start="5"` 与 `keep-background.tsx`；
+  - `/guide/zoomable-image` 生成 `data-zoomable="true"` 与 `fd-doc-image-trigger`。
+- `pnpm test:e2e -- tests/e2e/markdown-transform.spec.ts tests/e2e/image-zoom.spec.ts`
+  通过：`9 passed`。
+- `pnpm test:e2e:content` 首轮仅遇到 tablet case 的 `page.goto net::ERR_ABORTED`；
+  focused 重跑通过，按导航级 flaky 记录，不视为本轮组件回归。
+- `pnpm test:e2e:fast` 首轮仅遇到 desktop page-actions case 的
+  `page.goto net::ERR_ABORTED`；focused 重跑通过，按导航级 flaky 记录。
+- `pnpm validate:links` 通过：`25 pages / 11 links`。
+- `pnpm dev:health` 通过。
+- `git diff --check` 通过。

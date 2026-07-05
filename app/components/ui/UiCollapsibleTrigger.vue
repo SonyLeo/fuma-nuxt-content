@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { CollapsibleTrigger } from 'reka-ui'
 import { inject } from 'vue'
 import { uiCollapsibleKey } from '~/utils/ui-collapsible'
 
@@ -16,6 +17,7 @@ const collapsibleContext = collapsible
 </script>
 
 <template>
+  <CollapsibleTrigger as-child>
   <button
     v-bind="$attrs"
     type="button"
@@ -24,8 +26,8 @@ const collapsibleContext = collapsible
     :aria-controls="collapsibleContext.contentId.value"
     :disabled="collapsibleContext.disabled.value"
     :data-state="collapsibleContext.open.value ? 'open' : 'closed'"
-    @click="collapsibleContext.toggle"
   >
     <slot :open="collapsibleContext.open.value" />
   </button>
+  </CollapsibleTrigger>
 </template>

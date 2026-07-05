@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { AccordionItem } from 'reka-ui'
 import { computed, inject, provide, shallowRef, useId } from 'vue'
 import {
   uiAccordionItemKey,
@@ -27,6 +28,7 @@ const itemValue = computed(() => props.value)
 const isOpen = computed(() =>
   accordion ? accordion.isOpen(props.value) : localOpen.value,
 )
+const rekaEnabled = computed(() => Boolean(accordion))
 const triggerId = computed(() => `ui-accordion-${fallbackId}-trigger`)
 const contentId = computed(() => `ui-accordion-${fallbackId}-content`)
 
@@ -66,6 +68,7 @@ defineExpose({
 provide(uiAccordionItemKey, {
   value: itemValue,
   open: isOpen,
+  rekaEnabled,
   triggerId,
   contentId,
   toggle,
@@ -73,7 +76,24 @@ provide(uiAccordionItemKey, {
 </script>
 
 <template>
+  <AccordionItem
+    v-if="accordion"
+    :value="value"
+    :unmount-on-hide="false"
+    as-child
+  >
   <div
+    v-bind="$attrs"
+    class="ui-accordion-item"
+    :data-state="isOpen ? 'open' : 'closed'"
+    :data-value="value"
+  >
+    <slot :open="isOpen" :toggle="toggle" />
+  </div>
+  </AccordionItem>
+
+  <div
+    v-else
     v-bind="$attrs"
     class="ui-accordion-item"
     :data-state="isOpen ? 'open' : 'closed'"

@@ -83,8 +83,13 @@ export function createDocsSearchIndex(
       const sourcePath = resolveDocsRecordSourcePath(page)
       const node = nodeBySourcePath.get(sourcePath)
       const routePath = resolveDocsRoutePath(sourcePath, page)
-      const headings = collectHeadingsFromToc(page.body?.toc?.links)
-      const body = collectTextFromBody(page.body).join(' ')
+      const headings =
+        page.structuredData?.headings.map((heading) => heading.content) ??
+        collectHeadingsFromToc(page.body?.toc?.links)
+      const body =
+        page.structuredData?.contents
+          .map((content) => content.content)
+          .join(' ') || collectTextFromBody(page.body).join(' ')
 
       return {
         id: sourcePath,

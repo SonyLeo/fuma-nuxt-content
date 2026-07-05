@@ -39,7 +39,9 @@ test.describe('@fast @content prose defaults', () => {
     await expect(table.locator('td').first()).toHaveCSS('min-width', '128px')
 
     const image = page.getByRole('img', { name: 'TinyRobot docs favicon' })
-    const figure = image.locator('xpath=ancestor::*[contains(@class, "fd-doc-image")]')
+    const figure = image.locator(
+      'xpath=ancestor::figure[contains(concat(" ", normalize-space(@class), " "), " fd-doc-image ")]',
+    )
 
     await expect(figure).toHaveCSS('overflow-x', 'auto')
     await expect(image).toHaveAttribute('src', '/favicon.ico')

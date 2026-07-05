@@ -1,8 +1,18 @@
 ---
 title: Zoomable Image
-description: Component placeholder for sidebar parity testing.
+description: Inspect documentation images without leaving the page.
 sectionLabel: Components
-toc: false
+toc: true
 ---
 
-This fixture page keeps the component navigation route valid.
+Image zoom keeps diagrams inspectable while preserving the ordinary Markdown
+figure and caption contract.
+
+## Markdown Image
+
+![Docs layout sample diagram](/docs-image-zoom-sample.svg)
+
+## Component Image
+
+::doc-image-zoom{src="/docs-image-zoom-sample.svg" alt="Docs layout sample diagram with sidebar content and TOC regions" width=720 height=405}
+::

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { expectAttributeOneOf, expectCountAtLeast } from './helpers/assertions'
 import {
   gotoDocsFixture,
@@ -44,8 +44,15 @@ test.describe('@fast @shell theme runtime', () => {
     }
   })
 
+  async function revealThemeControls(page: Page) {
+    if (isNarrowViewport(page)) {
+      await openMobileNav(page)
+    }
+  }
+
   test('syncs dark, light, and system modes across switches', async ({ page }) => {
     await gotoDocsFixture(page, '/guide/code-block')
+    await revealThemeControls(page)
 
     await clickFirstVisible(page, '.docs-theme-button[data-theme-mode="dark"]')
     await expect(page.locator('html')).toHaveAttribute('data-docs-theme-mode', 'dark')
@@ -84,6 +91,7 @@ test.describe('@fast @shell theme runtime', () => {
 
   test('keeps code theme tokens reachable in dark mode', async ({ page }) => {
     await gotoDocsFixture(page, '/guide/code-block')
+    await revealThemeControls(page)
 
     await clickFirstVisible(page, '.docs-theme-button[data-theme-mode="dark"]')
 

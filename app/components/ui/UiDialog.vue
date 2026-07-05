@@ -1,14 +1,6 @@
 <script setup lang="ts">
-import {
-  computed,
-  nextTick,
-  onBeforeUnmount,
-  onMounted,
-  provide,
-  shallowRef,
-  useId,
-  watch,
-} from 'vue'
+import { DialogRoot } from 'reka-ui'
+import { computed, provide, shallowRef, useId } from 'vue'
 import { uiDialogKey } from '~/utils/ui-dialog'
 
 const props = withDefaults(
@@ -19,6 +11,7 @@ const props = withDefaults(
     titleId?: string
     closeOnEscape?: boolean
     trapFocus?: boolean
+    unmountOnHide?: boolean
   }>(),
   {
     open: undefined,
@@ -27,6 +20,7 @@ const props = withDefaults(
     titleId: undefined,
     closeOnEscape: true,
     trapFocus: true,
+    unmountOnHide: true,
   },
 )
 
@@ -37,14 +31,17 @@ const emit = defineEmits<{
 const fallbackId = useId()
 const internalOpen = shallowRef(props.defaultOpen)
 const contentRef = shallowRef<HTMLElement | null>(null)
-const previouslyFocused = shallowRef<HTMLElement | null>(null)
 
 const isControlled = computed(() => props.open !== undefined)
-const openState = computed(() =>
-  isControlled.value ? props.open === true : internalOpen.value,
-)
+const openState = computed({
+  get: () => (isControlled.value ? props.open === true : internalOpen.value),
+  set: (value: boolean) => setOpen(value),
+})
 const contentId = computed(() => props.contentId ?? `ui-dialog-${fallbackId}`)
 const titleId = computed(() => props.titleId ?? `${contentId.value}-title`)
+const closeOnEscape = computed(() => props.closeOnEscape)
+const trapFocus = computed(() => props.trapFocus)
+const unmountOnHide = computed(() => props.unmountOnHide)
 
 function setOpen(nextOpen: boolean) {
   if (!isControlled.value) {
@@ -58,96 +55,12 @@ function close() {
   setOpen(false)
 }
 
-function getFocusableElements(container: HTMLElement) {
-  return Array.from(
-    container.querySelectorAll<HTMLElement>(
-      [
-        'a[href]',
-        'button:not([disabled])',
-        'textarea:not([disabled])',
-        'input:not([disabled])',
-        'select:not([disabled])',
-        '[tabindex]:not([tabindex="-1"])',
-      ].join(','),
-    ),
-  ).filter((element) => !element.hasAttribute('disabled'))
-}
-
-function onWindowKeydown(event: KeyboardEvent) {
-  if (!openState.value) {
-    return
-  }
-
-  if (event.key === 'Escape' && props.closeOnEscape) {
-    event.preventDefault()
-    close()
-    return
-  }
-
-  if (event.key !== 'Tab' || !props.trapFocus) {
-    return
-  }
-
-  const content = contentRef.value
-  if (!content) {
-    return
-  }
-
-  const focusable = getFocusableElements(content)
-  if (focusable.length === 0) {
-    event.preventDefault()
-    content.focus()
-    return
-  }
-
-  const first = focusable[0]
-  const last = focusable.at(-1)
-
-  if (event.shiftKey && document.activeElement === first) {
-    event.preventDefault()
-    last?.focus()
-    return
-  }
-
-  if (!event.shiftKey && document.activeElement === last) {
-    event.preventDefault()
-    first?.focus()
-  }
-}
-
-onMounted(() => {
-  window.addEventListener('keydown', onWindowKeydown)
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('keydown', onWindowKeydown)
-})
-
-watch(openState, async (isOpen) => {
-  if (isOpen) {
-    previouslyFocused.value =
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null
-
-    await nextTick()
-    const content = contentRef.value
-    const firstFocusable = content ? getFocusableElements(content)[0] : null
-    firstFocusable?.focus()
-    if (!firstFocusable) {
-      content?.focus()
-    }
-    return
-  }
-
-  await nextTick()
-  previouslyFocused.value?.focus()
-})
-
 provide(uiDialogKey, {
   open: openState,
   contentId,
   titleId,
+  closeOnEscape,
+  unmountOnHide,
   contentRef,
   setOpen,
   close,
@@ -155,5 +68,11 @@ provide(uiDialogKey, {
 </script>
 
 <template>
-  <slot :open="openState" :close="close" />
+  <DialogRoot
+    v-model:open="openState"
+    :modal="trapFocus"
+    :unmount-on-hide="unmountOnHide"
+  >
+    <slot :open="openState" :close="close" />
+  </DialogRoot>
 </template>

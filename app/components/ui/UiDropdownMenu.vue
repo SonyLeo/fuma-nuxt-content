@@ -1,22 +1,30 @@
 <script setup lang="ts">
-import { PopoverRoot } from 'reka-ui'
+import { DropdownMenuRoot } from 'reka-ui'
 import { computed, provide, shallowRef, useId } from 'vue'
-import { type UiPopoverAlign, uiPopoverKey } from '~/utils/ui-popover'
+import {
+  type UiDropdownMenuAlign,
+  type UiDropdownMenuSide,
+  uiDropdownMenuKey,
+} from '~/utils/ui-dropdown-menu'
 
 const props = withDefaults(
   defineProps<{
     open?: boolean
     defaultOpen?: boolean
     contentId?: string
-    align?: UiPopoverAlign
+    align?: UiDropdownMenuAlign
+    side?: UiDropdownMenuSide
     sideOffset?: number
+    modal?: boolean
   }>(),
   {
     open: undefined,
     defaultOpen: false,
     contentId: undefined,
-    align: 'center',
+    align: 'start',
+    side: 'bottom',
     sideOffset: 4,
+    modal: false,
   },
 )
 
@@ -28,19 +36,31 @@ const fallbackId = useId()
 const internalOpen = shallowRef(props.defaultOpen)
 const triggerRef = shallowRef<HTMLElement | null>(null)
 const contentRef = shallowRef<HTMLElement | null>(null)
+const ignoreCloseUntil = shallowRef(0)
 
 const isControlled = computed(() => props.open !== undefined)
 const openState = computed({
   get: () => (isControlled.value ? props.open === true : internalOpen.value),
   set: (value: boolean) => setOpen(value),
 })
-const contentId = computed(() => props.contentId ?? `ui-popover-${fallbackId}`)
+const contentId = computed(
+  () => props.contentId ?? `ui-dropdown-menu-${fallbackId}`,
+)
 const align = computed(() => props.align)
+const side = computed(() => props.side)
 const sideOffset = computed(() => props.sideOffset)
 
 function setOpen(nextOpen: boolean) {
+  if (!nextOpen && Date.now() < ignoreCloseUntil.value) {
+    return
+  }
+
   if (!isControlled.value) {
     internalOpen.value = nextOpen
+  }
+
+  if (nextOpen) {
+    ignoreCloseUntil.value = Date.now() + 120
   }
 
   emit('update:open', nextOpen)
@@ -54,21 +74,25 @@ function toggle() {
   setOpen(!openState.value)
 }
 
-provide(uiPopoverKey, {
+provide(uiDropdownMenuKey, {
   open: openState,
   contentId,
   triggerRef,
   contentRef,
   align,
+  side,
   sideOffset,
   setOpen,
-  toggle,
   close,
+  toggle,
 })
 </script>
 
 <template>
-  <PopoverRoot v-model:open="openState">
+  <DropdownMenuRoot
+    v-model:open="openState"
+    :modal="modal"
+  >
     <slot :open="openState" :close="close" :toggle="toggle" />
-  </PopoverRoot>
+  </DropdownMenuRoot>
 </template>

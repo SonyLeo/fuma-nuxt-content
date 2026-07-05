@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PopoverClose } from 'reka-ui'
 import { inject } from 'vue'
 import { uiPopoverKey } from '~/utils/ui-popover'
 
@@ -20,12 +21,12 @@ const popover = inject(uiPopoverKey)
 if (!popover) {
   throw new Error('UiPopoverClose must be used inside UiPopover.')
 }
-
-const popoverContext = popover
 </script>
 
 <template>
-  <button v-bind="$attrs" :type="type" @click="popoverContext.close">
-    <slot />
-  </button>
+  <PopoverClose as-child>
+    <button v-bind="$attrs" :type="type">
+      <slot />
+    </button>
+  </PopoverClose>
 </template>

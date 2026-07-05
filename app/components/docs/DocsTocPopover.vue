@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import { ChevronDown } from '@lucide/vue'
-import {
-  computed,
-  onBeforeUnmount,
-  onMounted,
-  shallowRef,
-  useTemplateRef,
-} from 'vue'
+import { computed, shallowRef } from 'vue'
 import type { DocsTocPopoverProps } from '~/types/docs'
 
 const props = withDefaults(defineProps<DocsTocPopoverProps>(), {
@@ -20,69 +14,30 @@ const progressCircleRadius =
   progressCircleSize / 2 - progressCircleStrokeWidth
 const progressCircleCircumference = 2 * Math.PI * progressCircleRadius
 const open = shallowRef(false)
-const rootRef = useTemplateRef<HTMLElement>('root')
 const progressValue = computed(() => Math.max(0, Math.min(props.progress ?? 0, 1)))
 const progressDashOffset = computed(
   () => progressCircleCircumference - progressValue.value * progressCircleCircumference,
 )
 
-function setOpen(value: boolean) {
-  open.value = value
-}
-
-function toggleOpen() {
-  setOpen(!open.value)
-}
-
 function close() {
-  setOpen(false)
+  open.value = false
 }
-
-function onWindowClick(event: MouseEvent) {
-  if (!open.value || !(event.target instanceof Node)) {
-    return
-  }
-
-  if (!rootRef.value?.contains(event.target)) {
-    close()
-  }
-}
-
-function onWindowKeydown(event: KeyboardEvent) {
-  if (open.value && event.key === 'Escape') {
-    event.preventDefault()
-    close()
-  }
-}
-
-onMounted(() => {
-  window.addEventListener('click', onWindowClick)
-  window.addEventListener('keydown', onWindowKeydown)
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('click', onWindowClick)
-  window.removeEventListener('keydown', onWindowKeydown)
-})
 </script>
 
 <template>
-  <div
+  <UiCollapsible
     v-if="items.length > 0"
-    ref="root"
+    v-model:open="open"
     class="docs-toc-popover"
-    :data-state="open ? 'open' : 'closed'"
+    content-id="docs-toc-popover-panel"
+    close-on-escape
+    close-on-outside
   >
     <header class="docs-toc-popover-surface" :class="{ 'is-open': open }">
-      <button
+      <UiCollapsibleTrigger
         id="docs-toc-popover-trigger"
         class="docs-toc-popover-trigger"
         :class="{ 'is-open': open }"
-        type="button"
-        :aria-expanded="open"
-        aria-controls="docs-toc-popover-panel"
-        :data-state="open ? 'open' : 'closed'"
-        @click="toggleOpen"
       >
         <svg
           class="docs-toc-popover-progress"
@@ -128,14 +83,11 @@ onBeforeUnmount(() => {
           </span>
         </span>
         <ChevronDown class="docs-toc-popover-chevron" aria-hidden="true" />
-      </button>
+      </UiCollapsibleTrigger>
 
-      <div
-        id="docs-toc-popover-panel"
+      <UiCollapsibleContent
         v-show="open"
         class="docs-toc-popover-panel"
-        :hidden="!open"
-        :data-state="open ? 'open' : 'closed'"
       >
         <UiScrollArea class="docs-toc-popover-scroll">
           <UiScrollViewport>
@@ -150,7 +102,7 @@ onBeforeUnmount(() => {
             <UiScrollThumb />
           </UiScrollBar>
         </UiScrollArea>
-      </div>
+      </UiCollapsibleContent>
     </header>
-  </div>
+  </UiCollapsible>
 </template>

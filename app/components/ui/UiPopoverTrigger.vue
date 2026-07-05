@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PopoverTrigger } from 'reka-ui'
 import { inject } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
 import { uiPopoverKey } from '~/utils/ui-popover'
@@ -35,17 +36,18 @@ function setTriggerRef(element: Element | ComponentPublicInstance | null) {
 </script>
 
 <template>
-  <button
-    v-bind="$attrs"
-    :id="id"
-    :ref="setTriggerRef"
-    :type="type"
-    :disabled="disabled"
-    :aria-expanded="popoverContext.open.value"
-    :aria-controls="popoverContext.contentId.value"
-    :data-state="popoverContext.open.value ? 'open' : 'closed'"
-    @click="popoverContext.toggle"
-  >
-    <slot :open="popoverContext.open.value" />
-  </button>
+  <PopoverTrigger as-child>
+    <button
+      v-bind="$attrs"
+      :id="id"
+      :ref="setTriggerRef"
+      :type="type"
+      :disabled="disabled"
+      :aria-expanded="popoverContext.open.value"
+      :aria-controls="popoverContext.contentId.value"
+      :data-state="popoverContext.open.value ? 'open' : 'closed'"
+    >
+      <slot :open="popoverContext.open.value" />
+    </button>
+  </PopoverTrigger>
 </template>

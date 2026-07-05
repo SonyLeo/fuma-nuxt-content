@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { TabsTrigger } from 'reka-ui'
 import { computed, inject } from 'vue'
 import { uiTabsKey } from '~/utils/ui-tabs'
 
@@ -29,6 +30,7 @@ const panelId = computed(
 </script>
 
 <template>
+  <TabsTrigger :value="value" as-child>
   <button
     v-bind="$attrs"
     :id="triggerId"
@@ -39,8 +41,8 @@ const panelId = computed(
     :aria-controls="panelId"
     :tabindex="isActive ? 0 : -1"
     :data-state="isActive ? 'active' : 'inactive'"
-    @click="tabsContext.setValue(value)"
   >
     <slot :active="isActive" />
   </button>
+  </TabsTrigger>
 </template>

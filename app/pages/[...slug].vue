@@ -70,6 +70,7 @@ const { data: docsSearchPages } = await useAsyncData('docs-search-pages', () => 
       'sectionLabel',
       'hidden',
       'slug',
+      'structuredData',
       'body',
     )
     .all()

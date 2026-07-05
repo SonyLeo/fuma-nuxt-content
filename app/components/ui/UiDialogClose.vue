@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { DialogClose } from 'reka-ui'
 import { inject } from 'vue'
 import { uiDialogKey } from '~/utils/ui-dialog'
 
@@ -20,12 +21,12 @@ const dialog = inject(uiDialogKey)
 if (!dialog) {
   throw new Error('UiDialogClose must be used inside UiDialog.')
 }
-
-const dialogContext = dialog
 </script>
 
 <template>
-  <button v-bind="$attrs" :type="type" @click="dialogContext.close">
+  <DialogClose as-child>
+  <button v-bind="$attrs" :type="type">
     <slot />
   </button>
+  </DialogClose>
 </template>

@@ -14,6 +14,7 @@ export type UiAccordionContext = {
 export type UiAccordionItemContext = {
   value: ComputedRef<string>
   open: ComputedRef<boolean>
+  rekaEnabled: ComputedRef<boolean>
   triggerId: ComputedRef<string>
   contentId: ComputedRef<string>
   toggle: () => void

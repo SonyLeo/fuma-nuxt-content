@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { AccordionContent } from 'reka-ui'
 import { inject, onMounted, useTemplateRef, watch } from 'vue'
 import { uiAccordionItemKey } from '~/utils/ui-accordion'
 
@@ -35,6 +36,10 @@ function syncHiddenUntilFound(open: boolean) {
 }
 
 function onBeforeMatch() {
+  if (itemContext.rekaEnabled.value) {
+    return
+  }
+
   if (!itemContext.open.value) {
     itemContext.toggle()
   }
@@ -51,7 +56,23 @@ onMounted(() => {
 </script>
 
 <template>
+  <AccordionContent v-if="itemContext.rekaEnabled.value" as-child>
   <div
+    v-bind="$attrs"
+    :id="id ?? itemContext.contentId.value"
+    ref="content"
+    class="ui-accordion-content"
+    :data-state="itemContext.open.value ? 'open' : 'closed'"
+    role="region"
+    :aria-labelledby="labelledby ?? itemContext.triggerId.value"
+    @beforematch="onBeforeMatch"
+  >
+    <slot />
+  </div>
+  </AccordionContent>
+
+  <div
+    v-else
     v-bind="$attrs"
     :id="id ?? itemContext.contentId.value"
     ref="content"

@@ -53,6 +53,49 @@ test.describe('@layout-provider Playwright POC', () => {
     }
   })
 
+  test('search dialog keeps result scroll area usable', async ({ page }) => {
+    await gotoDocsFixture(page)
+
+    await page
+      .locator('.docs-search-trigger')
+      .filter({ visible: true })
+      .first()
+      .click()
+
+    const dialog = page.locator('.docs-search-dialog')
+    const input = page.locator('.docs-search-input')
+
+    await expect(dialog).toBeVisible()
+    await expect(input).toBeFocused()
+
+    await input.fill('component')
+
+    const viewport = page.locator('.docs-search-results .ui-scroll-viewport')
+    const metrics = await viewport.evaluate((element) => {
+      const styles = getComputedStyle(element)
+
+      return {
+        clientHeight: element.clientHeight,
+        overflowY: styles.overflowY,
+        scrollHeight: element.scrollHeight,
+      }
+    })
+
+    await expect(viewport).toBeVisible()
+    expect(metrics.clientHeight).toBeGreaterThan(0)
+    expect(metrics.scrollHeight).toBeGreaterThanOrEqual(metrics.clientHeight)
+    expect(['auto', 'scroll']).toContain(metrics.overflowY)
+    await expectCountAtLeast(page.locator('.docs-search-result-link'), 1)
+
+    await page.keyboard.press('ArrowDown')
+    await expect(
+      page.locator('.docs-search-result-link[data-active="true"]').first(),
+    ).toBeVisible()
+
+    await page.keyboard.press('Escape')
+    await expect(dialog).toBeHidden()
+  })
+
   test('sidebar provider synchronizes collapse, hover, and mobile state', async ({
     page,
   }) => {

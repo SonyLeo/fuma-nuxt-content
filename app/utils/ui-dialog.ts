@@ -4,6 +4,8 @@ export type UiDialogContext = {
   open: ComputedRef<boolean>
   contentId: ComputedRef<string>
   titleId: ComputedRef<string>
+  closeOnEscape: ComputedRef<boolean>
+  unmountOnHide: ComputedRef<boolean>
   contentRef: ShallowRef<HTMLElement | null>
   setOpen: (open: boolean) => void
   close: () => void

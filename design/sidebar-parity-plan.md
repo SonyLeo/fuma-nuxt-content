@@ -10,6 +10,11 @@ sectionLabel: Plan
 This plan tracks the left sidebar parity loop against Fumadocs. It is a focused
 contract card, not a new roadmap.
 
+Reka UI interaction primitive migration for this surface is governed by
+`design/reka-primitive-migration-plan.md`. This sidebar card keeps the
+Fumadocs parity contract; the Reka plan decides which local interaction
+wrappers should replace hand-written sidebar behavior.
+
 Target surface:
 
 - Remote reference: Fumadocs docs sidebar on a component page.
@@ -207,6 +212,16 @@ Runtime checks:
 6. Update `shell.css` for mobile overlay/drawer and folder controls.
 7. Run focused validation, then shell impact validation.
 8. Record durable lessons in `design/implementation-notes.md`.
+
+Reka-specific execution order is now:
+
+1. Keep `DocsNode[]` and active path logic project-owned.
+2. Replace mobile drawer behavior through a local Dialog-backed sheet wrapper.
+3. Replace sidebar layout tabs dropdown through `UiDropdownMenu`.
+4. Replace folder disclosure through `UiCollapsible` or equivalent local
+   wrapper.
+5. Evaluate Reka Tree only after those changes, and only through an isolated
+   fixture POC.
 
 ## Durable Rules
 

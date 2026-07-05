@@ -1,75 +1,71 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { parseDocsCodeBlockMeta } from '~/utils/docs-code-meta'
 
 const props = withDefaults(
   defineProps<{
     code?: string
     language?: string
+    title?: string
     filename?: string
+    icon?: string
     highlights?: Array<number | string>
     meta?: string
+    keepBackground?: boolean | 'true' | 'false'
+    dataLineNumbers?: boolean | 'true' | 'false'
+    dataLineNumbersStart?: number | string
     class?: string
   }>(),
   {
     code: '',
     language: undefined,
+    title: undefined,
     filename: undefined,
+    icon: undefined,
     highlights: () => [],
     meta: undefined,
+    keepBackground: false,
+    dataLineNumbers: false,
+    dataLineNumbersStart: undefined,
     class: undefined,
   },
 )
 
-const codeMeta = computed(() => parseCodeBlockMeta(props.meta))
-const displayTitle = computed(() => codeMeta.value.title ?? props.filename)
+const codeMeta = computed(() => parseDocsCodeBlockMeta(props.meta))
+const displayTitle = computed(
+  () => props.title ?? codeMeta.value.title ?? props.filename,
+)
 const displayMeta = computed(() => codeMeta.value.rest || undefined)
-const shouldShowLineNumbers = computed(() => codeMeta.value.lineNumbers)
-const lineNumbersStart = computed(() => codeMeta.value.lineNumbersStart)
-
-function parseCodeBlockMeta(meta?: string) {
-  const attributes: Record<string, string | true> = {}
-  let rest = (meta ?? '').replace(
-    /(^|\s)([a-zA-Z0-9_-]+)(?:=(?:"([^"]*)"|'([^']*)'|([^\s]+)))?/g,
-    (match, prefix: string, name: string, doubleValue?: string, singleValue?: string, bareValue?: string) => {
-      if (!['title', 'filename', 'lineNumbers'].includes(name)) {
-        return match
-      }
-
-      attributes[name] = doubleValue ?? singleValue ?? bareValue ?? true
-
-      return prefix
-    },
+const shouldShowLineNumbers = computed(
+  () =>
+    props.dataLineNumbers === true ||
+    props.dataLineNumbers === 'true' ||
+    codeMeta.value.lineNumbers,
+)
+const lineNumbersStart = computed(() => {
+  const value = Number(
+    props.dataLineNumbersStart ?? codeMeta.value.lineNumbersStart,
   )
 
-  rest = rest.replace(/\s+/g, ' ').trim()
-
-  const lineNumbers = attributes.lineNumbers !== undefined
-  const lineNumbersStart =
-    typeof attributes.lineNumbers === 'string'
-      ? Number(attributes.lineNumbers)
-      : 1
-
-  return {
-    title:
-      typeof attributes.title === 'string'
-        ? attributes.title
-        : typeof attributes.filename === 'string'
-          ? attributes.filename
-          : undefined,
-    lineNumbers,
-    lineNumbersStart: Number.isFinite(lineNumbersStart) ? lineNumbersStart : 1,
-    rest,
-  }
-}
+  return Number.isFinite(value) ? value : 1
+})
+const resolvedIcon = computed(() => props.icon ?? codeMeta.value.icon ?? props.language)
+const shouldKeepBackground = computed(
+  () =>
+    props.keepBackground === true ||
+    props.keepBackground === 'true' ||
+    codeMeta.value.keepBackground,
+)
 </script>
 
 <template>
   <DocCodeBlock
     :code="props.code"
     :language="props.language"
-    :icon="props.language"
+    :icon="resolvedIcon"
     :filename="displayTitle"
     :meta="displayMeta"
+    :keep-background="shouldKeepBackground"
     :data-line-numbers="shouldShowLineNumbers"
     :data-line-numbers-start="lineNumbersStart"
     :class="props.class"

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { DialogOverlay, DialogPortal } from 'reka-ui'
 import { inject } from 'vue'
 import { uiDialogKey } from '~/utils/ui-dialog'
 
@@ -16,15 +17,16 @@ const dialogContext = dialog
 </script>
 
 <template>
-  <Teleport to="body">
-    <div
-      v-if="dialogContext.open.value"
-      v-bind="$attrs"
-      class="ui-dialog-overlay"
-      data-state="open"
-      @click.self="dialogContext.close"
-    >
-      <slot />
-    </div>
-  </Teleport>
+  <DialogPortal>
+    <DialogOverlay as-child>
+      <div
+        v-bind="$attrs"
+        class="ui-dialog-overlay"
+        :data-state="dialogContext.open.value ? 'open' : 'closed'"
+        @click.self="dialogContext.close"
+      >
+        <slot />
+      </div>
+    </DialogOverlay>
+  </DialogPortal>
 </template>

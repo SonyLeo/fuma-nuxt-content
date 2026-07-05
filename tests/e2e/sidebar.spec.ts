@@ -61,39 +61,62 @@ test.describe('@fast @shell sidebar', () => {
     await gotoDocsFixture(page, '/guide/component-detail')
 
     const scope = await activeSidebarScope(page)
-    const folders = scope.locator('.docs-sidebar-folder')
-    const folderCount = await folders.count()
-
-    test.skip(
-      folderCount === 0,
-      'The current public sidebar fixture has no visible folder nodes yet.',
-    )
-
-    const folder = folders.first()
-    const control = folder
-      .locator('.docs-sidebar-folder-trigger, .docs-sidebar-folder-link')
+    const folderLink = scope
+      .locator('.docs-sidebar-folder-link', {
+        hasText: 'Protocol Playground',
+      })
       .first()
-    const contentId = await control.getAttribute('aria-controls')
+    const folder = folderLink.locator(
+      'xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " docs-sidebar-folder ")][1]',
+    )
+    const trigger = folderLink.locator(
+      'xpath=following-sibling::button[contains(concat(" ", normalize-space(@class), " "), " docs-sidebar-folder-trigger ")][1]',
+    )
+    const contentId = await trigger.getAttribute('aria-controls')
 
+    await expect(folder).toBeVisible()
     await expect(folder).toHaveAttribute('data-state', /^(open|closed)$/)
-    await expect(control).toHaveAttribute('aria-expanded', /^(true|false)$/)
+    await expect(folderLink).toHaveAttribute('aria-expanded', /^(true|false)$/)
+    await expect(trigger).toHaveAttribute('aria-expanded', /^(true|false)$/)
+    await expect(trigger).toHaveAttribute(
+      'aria-label',
+      /^(Collapse|Expand) Protocol Playground$/,
+    )
     expect(contentId).toBeTruthy()
+    await expect(folderLink).toHaveAttribute('aria-controls', contentId ?? '')
 
     const content = scope.locator(`#${contentId}`)
 
     await expect(content).toHaveCount(1)
     await expect(content).toHaveAttribute('data-state', /^(open|closed)$/)
 
-    if ((await folder.locator('.docs-sidebar-folder-trigger').count()) > 0) {
-      const trigger = folder.locator('.docs-sidebar-folder-trigger').first()
-      const previousState = await trigger.getAttribute('aria-expanded')
+    const urlBeforeToggle = page.url()
+    const previousState = await trigger.getAttribute('aria-expanded')
 
-      await trigger.click()
-      await expect(trigger).not.toHaveAttribute(
-        'aria-expanded',
-        previousState ?? '',
-      )
-    }
+    await trigger.click()
+    await expect(trigger).not.toHaveAttribute(
+      'aria-expanded',
+      previousState ?? '',
+    )
+    expect(page.url()).toBe(urlBeforeToggle)
+
+    await folderLink.click()
+    await expect(page).toHaveURL(/\/guide\/protocol-playground\/entry-contract$/)
+
+    const nextScope = await activeSidebarScope(page)
+    const nextFolderLink = nextScope
+      .locator('.docs-sidebar-folder-link', {
+        hasText: 'Protocol Playground',
+      })
+      .first()
+    const nextFolder = nextFolderLink.locator(
+      'xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " docs-sidebar-folder ")][1]',
+    )
+
+    await expect(nextFolder).toHaveAttribute('data-state', 'open')
+    await expect(
+      nextFolder.locator('.docs-sidebar-link[aria-current="page"]'),
+    ).toContainText('Protocol Playground')
   })
 
   test('supports collapse, hover preview, and floating pin on desktop', async ({
@@ -184,6 +207,45 @@ test.describe('@fast @shell sidebar', () => {
       },
     })
 
+    await expect(panel).toHaveAttribute('data-state', 'closed')
+    await expect(page.locator('#nd-docs-layout')).toHaveAttribute(
+      'data-sidebar-mobile-open',
+      'false',
+    )
+  })
+
+  test('keeps mobile drawer open for folder disclosure and closes on folder link navigation', async ({
+    page,
+  }) => {
+    test.skip(!isNarrowViewport(page), 'Desktop uses the persistent sidebar.')
+
+    await gotoDocsFixture(page, '/guide/component-detail')
+
+    const panel = await openMobileNav(page)
+    const folderLink = panel
+      .locator('.docs-sidebar-folder-link', {
+        hasText: 'Protocol Playground',
+      })
+      .first()
+    const folder = folderLink.locator(
+      'xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " docs-sidebar-folder ")][1]',
+    )
+    const trigger = folderLink.locator(
+      'xpath=following-sibling::button[contains(concat(" ", normalize-space(@class), " "), " docs-sidebar-folder-trigger ")][1]',
+    )
+    const urlBeforeToggle = page.url()
+
+    await expect(folder).toBeVisible()
+    await trigger.click()
+    await expect(panel).toHaveAttribute('data-state', 'open')
+    await expect(page.locator('#nd-docs-layout')).toHaveAttribute(
+      'data-sidebar-mobile-open',
+      'true',
+    )
+    expect(page.url()).toBe(urlBeforeToggle)
+
+    await folderLink.click()
+    await expect(page).toHaveURL(/\/guide\/protocol-playground\/entry-contract$/)
     await expect(panel).toHaveAttribute('data-state', 'closed')
     await expect(page.locator('#nd-docs-layout')).toHaveAttribute(
       'data-sidebar-mobile-open',

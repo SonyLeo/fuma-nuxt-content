@@ -97,7 +97,8 @@ fixtures.
 | `Card`, `Cards` | `DocCard`, `DocCardGrid` | `cards`, `content-components` | Second-pass contract now covers `data-card`, link/non-link roots, icon, external links, slot body, local badge extension, grid columns, and mobile full-span behavior. | Keep as regression baseline. |
 | `Steps`, `Step` | `DocSteps`, `DocStep` | `steps`, `content-components` | Second-pass contract now covers list-based compatibility and explicit step authoring, marker/counter/rail geometry, prose reset, inline link/code content, and responsive wrapping. | Keep as regression baseline. Consider remark-style transform only if authoring ergonomics requires it later. |
 | `Heading` | `DocHeading`, `ProseH1-H6` | `heading`, `content-components` | Second-pass contract now covers text anchor, independent copy anchor button, copied state, hash URL copying, flex rhythm, scroll margin, and prose/TOC compatibility. | Keep as regression baseline. |
-| Default MDX/prose mapping | `ProseA`, `ProseCode`, `ProseImg`, `ProseTable`, `ProseH1-H6` | `prose-defaults`, `content-components` | Second-pass contract now covers internal/external links, external rel safety merge, inline code, table overflow wrapper, Markdown image/caption, and heading rhythm. | Keep as regression baseline. ImageZoom remains a separate boundary. |
+| Default MDX/prose mapping | `ProseA`, `ProseCode`, `ProseImg`, `ProseTable`, `ProseH1-H6` | `prose-defaults`, `content-components` | Second-pass contract now covers internal/external links, external rel safety merge, inline code, table overflow wrapper, Markdown image/caption, zoomable image mapping, and heading rhythm. | Keep as regression baseline. |
+| `ImageZoom` | `DocImageZoom`, `ProseImg` opt-in default | `image-zoom`, `content` | Foundation contract covers figure/caption preservation, click/keyboard reachable trigger, Dialog-backed zoom layer, Escape/close behavior, focus return, and viewport-bounded desktop/mobile image sizing. | Keep as regression baseline. |
 | `Preview`, Install card | `DocPreview`, `DocInstallCard` | `preview`, `content-components` | Local docs primitives now cover preview shell/canvas/description/source, source copy action, install card title/description/command, code-block ownership, and responsive width. | Keep as local docs-components regression baseline. |
 | Feedback, Pager | `DocsFeedback`, `DocsPager` | `feedback`, `pager`, `page-tail` | Page-tail contract now covers feedback selected/thanks state, live region, button sizing, pager next-only and previous-only states, text truncation, and mobile one-column behavior. | Keep as page-tail regression baseline. |
 | `Callout` | `DocCallout`, `DocCalloutContainer`, `DocCalloutTitle`, `DocCalloutDescription` | `callout`, `content-components` | Second-pass contract covers `type`, legacy `tone`, aliases, low-level composition, tone matrix, no-title branch, icon/rail layout, and responsive behavior. | Keep as regression baseline. |
@@ -114,14 +115,12 @@ fixtures.
 
 | Fumadocs surface | Local equivalent | Gap | Recommended profile |
 | --- | --- | --- | --- |
-| Default image mapping | `ProseImg` | Local image is plain `figure/img/figcaption`. Fumadocs can use ImageZoom and image options from remark processing. | Add `image` profile after ImageZoom decision. |
 | `EditOnGitHub`, `PageLastUpdate` | Page header/actions/footer data | Some behavior is represented through page actions and metadata, but there is no direct parity card. | Decide whether to model directly or keep as product-layer page metadata. |
 
 ## Missing / Decision Required
 
 | Fumadocs surface | Current local state | Classification recommendation | Notes |
 | --- | --- | --- | --- |
-| `ImageZoom` | No `DocImageZoom`; `ProseImg` is plain image output. | Foundation P1 candidate. | It affects common docs reading UX and image inspection. Add only after image contract is clear. |
 | `Banner` | `content/guide/banner.md` is only a placeholder route. No `DocBanner`. | Decision required. | Fumadocs banner has dismiss state, localStorage, sticky behavior, and layout-height side effects. It may be shell/product rather than content. |
 | `GitHubInfo` | No local equivalent. | Product / advanced. | Fetches repository stars/forks; network-backed and not required for foundation reading parity. |
 | `DynamicCodeBlock` | No local dynamic runtime Shiki component. | Advanced. | Current foundation should keep static fenced-code path as the primary contract. |
@@ -218,23 +217,38 @@ Verification:
 - verified desktop, constrained-width, tablet-ish, and mobile viewport matrix
 - added `toc-responsive` to `docs-shell` and `full-regression`
 
-### Future Batch 4: ImageZoom / Banner Decision
+### Completed Batch 4A: ImageZoom
 
-Goal: decide whether these are foundation P1 components or product-layer
-features.
+Goal: add the foundation image inspection primitive without turning the banner
+decision into layout work.
+
+Targets:
+
+- `DocImageZoom.vue`
+- prose image mapping
+
+Verification:
+
+- replaced the placeholder-only `zoomable-image` page with real Markdown and
+  component fixtures
+- added `image-zoom` Playwright coverage for desktop, tablet, and mobile
+- verified open/close, Escape, focus return, caption preservation, and viewport
+  bounds
+
+### Future Batch 4B: Banner Decision
+
+Goal: decide whether Banner belongs to foundation shell or product layer.
 
 Targets if accepted:
 
-- `DocImageZoom.vue`
 - `DocBanner.vue`
-- prose image mapping
 - shell layout height behavior if banner is sticky
 
 Verification:
 
-- add explicit fixture pages instead of placeholder-only routes
-- include desktop and mobile behavior
-- include interaction state: zoom open/close, banner dismiss/reappear rules
+- replace placeholder-only Banner fixture if Banner enters foundation
+- include dismiss/reappear rules, persistence, sticky offsets, and responsive
+  shell collision checks
 
 ### Future Batch 5: Advanced / Product Backlog
 
@@ -1097,7 +1111,8 @@ to prevent partial-regression false confidence.
 - [x] Add Feedback and Pager profiles or a page-tail suite.
 - [x] Add TOC responsive profile coverage for right TOC, TOC popover, shell
       collisions, and common constrained-width layouts.
-- [ ] Decide ImageZoom foundation/product classification.
+- [x] Decide ImageZoom foundation/product classification.
+- [x] Add ImageZoom component and Playwright profile.
 - [ ] Decide Banner foundation/product classification.
 - [ ] Add RootProvider / baseSlots parity card and profile.
 - [ ] Add sidebar provider/state contract card and profile.

@@ -700,6 +700,23 @@
   box-shadow: var(--docs-shadow-card);
 }
 
+.docs-sidebar-tabs > [data-reka-popper-content-wrapper] {
+  position: absolute !important;
+  top: calc(100% - 0.5rem) !important;
+  right: 1rem !important;
+  left: 1rem !important;
+  z-index: 45 !important;
+  width: auto !important;
+  min-width: 0 !important;
+  transform: none !important;
+}
+
+.docs-sidebar-tabs > [data-reka-popper-content-wrapper] .docs-sidebar-tab-panel {
+  position: static;
+  width: auto;
+  max-width: none;
+}
+
 .docs-sidebar-tab-option {
   display: grid;
   grid-template-columns: 1.25rem minmax(0, 1fr) 1rem;
@@ -840,6 +857,14 @@
   gap: 0.08rem;
 }
 
+.docs-sidebar-folder-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
 .docs-sidebar-folder-trigger {
   width: 100%;
   border: 0;
@@ -857,6 +882,26 @@
   width: 100%;
 }
 
+.docs-sidebar-folder-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  min-height: 2.25rem;
+  padding: 0;
+  color: var(--docs-color-muted-foreground);
+}
+
+.docs-sidebar-folder-toggle:hover {
+  color: var(--docs-color-primary);
+  background: var(--docs-link-active-bg);
+}
+
+.docs-sidebar-folder-toggle:focus-visible {
+  outline: 2px solid var(--docs-color-ring);
+  outline-offset: 2px;
+}
+
 .docs-sidebar-folder-content {
   min-width: 0;
 }
@@ -871,8 +916,13 @@
 }
 
 .docs-sidebar-folder-link[data-state='closed'] .docs-sidebar-folder-chevron,
-.docs-sidebar-folder-trigger[data-state='closed'] .docs-sidebar-folder-chevron {
+.docs-sidebar-folder-trigger[data-state='closed'] .docs-sidebar-folder-chevron,
+.docs-sidebar-folder-toggle[data-state='closed'] .docs-sidebar-folder-chevron {
   transform: rotate(-90deg);
+}
+
+.docs-sidebar-folder-toggle .docs-sidebar-folder-chevron {
+  margin-left: 0;
 }
 
 .docs-sidebar-link[data-visual-level='1'] {
@@ -2449,11 +2499,13 @@
     padding-bottom: 0.35rem;
   }
 
-  .docs-mobile-nav .docs-sidebar {
+  .docs-mobile-nav .docs-sidebar,
+  .docs-mobile-nav-panel .docs-sidebar {
     display: block;
   }
 
-  .docs-mobile-nav .docs-sidebar-inner {
+  .docs-mobile-nav .docs-sidebar-inner,
+  .docs-mobile-nav-panel .docs-sidebar-inner {
     position: static;
     width: auto;
     height: auto;
@@ -2465,20 +2517,24 @@
     box-shadow: none;
   }
 
-  .docs-mobile-nav .docs-sidebar-header {
+  .docs-mobile-nav .docs-sidebar-header,
+  .docs-mobile-nav-panel .docs-sidebar-header {
     padding: 0 0 0.75rem;
   }
 
-  .docs-mobile-nav .docs-sidebar-search {
+  .docs-mobile-nav .docs-sidebar-search,
+  .docs-mobile-nav-panel .docs-sidebar-search {
     padding: 0 0 0.75rem;
   }
 
-  .docs-mobile-nav .docs-sidebar-nav {
+  .docs-mobile-nav .docs-sidebar-nav,
+  .docs-mobile-nav-panel .docs-sidebar-nav {
     overflow: visible;
     padding: 0;
   }
 
-  .docs-mobile-nav .docs-sidebar-footer {
+  .docs-mobile-nav .docs-sidebar-footer,
+  .docs-mobile-nav-panel .docs-sidebar-footer {
     padding: 0.75rem 0 0;
     border-top: 0;
   }

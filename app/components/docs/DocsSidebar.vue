@@ -48,7 +48,6 @@ const emit = defineEmits<{
 }>()
 
 const slots = useSlots()
-const tabsRef = useTemplateRef<HTMLElement>('tabs')
 const sidebarState = useDocsSidebarState()
 const brandLabel = computed(() => props.brand?.label ?? props.headline)
 const brandMark = computed(() => props.brand?.mark ?? brandLabel.value.charAt(0))
@@ -109,10 +108,6 @@ function closeHoverPreview(event?: PointerEvent) {
   sidebarState.closeHoverPreview(event)
 }
 
-function toggleTabs() {
-  sidebarState.toggleTabs()
-}
-
 function closeTabs() {
   sidebarState.closeTabs()
 }
@@ -122,39 +117,12 @@ function handleTabNavigate() {
   emit('navigate')
 }
 
-function handleDocumentPointerDown(event: PointerEvent) {
-  if (
-    sidebarState.tabsOpen.value &&
-    tabsRef.value &&
-    event.target instanceof Node &&
-    !tabsRef.value.contains(event.target)
-  ) {
-    closeTabs()
-  }
-}
-
-function handleDocumentKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape') {
-    closeTabs()
-  }
-}
-
 watch(
   () => props.currentPath,
   () => {
     closeTabs()
   },
 )
-
-onMounted(() => {
-  document.addEventListener('pointerdown', handleDocumentPointerDown)
-  document.addEventListener('keydown', handleDocumentKeydown)
-})
-
-onBeforeUnmount(() => {
-  document.removeEventListener('pointerdown', handleDocumentPointerDown)
-  document.removeEventListener('keydown', handleDocumentKeydown)
-})
 </script>
 
 <template>
@@ -200,54 +168,63 @@ onBeforeUnmount(() => {
         <slot name="search-trigger" />
       </div>
 
-      <div v-if="selectedTab" ref="tabs" class="docs-sidebar-tabs">
-        <button
-          class="docs-sidebar-tab-trigger"
-          :class="{ 'is-open': sidebarState.tabsOpen.value }"
-          type="button"
-          :aria-expanded="sidebarState.tabsOpen.value ? 'true' : 'false'"
-          aria-haspopup="menu"
-          @click="toggleTabs"
-        >
-          <DocsNavIcon :name="selectedTab.icon" />
-          <span>{{ selectedTab.title }}</span>
-          <ChevronsUpDown class="docs-sidebar-tab-chevron" aria-hidden="true" />
-        </button>
-
-        <div
-          v-if="sidebarState.tabsOpen.value"
-          class="docs-sidebar-tab-panel"
-          role="menu"
-        >
-          <DocsLink
-            v-for="tab in sidebarTabs"
-            :key="`${tab.title}:${tab.href}`"
-            :href="tab.href || '#'"
-            :external="tab.external"
-            class="docs-sidebar-tab-option"
-            :class="{ 'is-active': isTabActive(tab) }"
-            :aria-current="isTabActive(tab) ? 'page' : undefined"
-            role="menuitem"
-            @click="handleTabNavigate"
+      <UiDropdownMenu
+        v-if="selectedTab"
+        :key="currentPath"
+        :modal="false"
+        align="start"
+        :side-offset="4"
+        v-slot="{ open }"
+      >
+        <div class="docs-sidebar-tabs">
+          <UiDropdownMenuTrigger
+            class="docs-sidebar-tab-trigger"
+            :class="{ 'is-open': open }"
           >
-            <DocsNavIcon :name="tab.icon" />
-            <span class="docs-sidebar-tab-option-copy">
-              <span class="docs-sidebar-tab-option-title">{{ tab.title }}</span>
-              <span
-                v-if="tab.description"
-                class="docs-sidebar-tab-option-description"
+            <DocsNavIcon :name="selectedTab.icon" />
+            <span>{{ selectedTab.title }}</span>
+            <ChevronsUpDown class="docs-sidebar-tab-chevron" aria-hidden="true" />
+          </UiDropdownMenuTrigger>
+
+          <UiDropdownMenuContent
+            id="docs-sidebar-tab-panel"
+            class="docs-sidebar-tab-panel"
+            :portal="false"
+          >
+            <UiDropdownMenuItem
+              v-for="tab in sidebarTabs"
+              :key="`${tab.title}:${tab.href}`"
+              as-child
+              :text-value="tab.title"
+              @select="handleTabNavigate"
+            >
+              <DocsLink
+                :href="tab.href || '#'"
+                :external="tab.external"
+                class="docs-sidebar-tab-option"
+                :class="{ 'is-active': isTabActive(tab) }"
+                :aria-current="isTabActive(tab) ? 'page' : undefined"
               >
-                {{ tab.description }}
-              </span>
-            </span>
-            <Check
-              class="docs-sidebar-tab-option-check"
-              :class="{ 'is-visible': isTabActive(tab) }"
-              aria-hidden="true"
-            />
-          </DocsLink>
+                <DocsNavIcon :name="tab.icon" />
+                <span class="docs-sidebar-tab-option-copy">
+                  <span class="docs-sidebar-tab-option-title">{{ tab.title }}</span>
+                  <span
+                    v-if="tab.description"
+                    class="docs-sidebar-tab-option-description"
+                  >
+                    {{ tab.description }}
+                  </span>
+                </span>
+                <Check
+                  class="docs-sidebar-tab-option-check"
+                  :class="{ 'is-visible': isTabActive(tab) }"
+                  aria-hidden="true"
+                />
+              </DocsLink>
+            </UiDropdownMenuItem>
+          </UiDropdownMenuContent>
         </div>
-      </div>
+      </UiDropdownMenu>
 
       <nav class="docs-sidebar-nav" :aria-label="navigationLabel">
         <DocsSidebarTree

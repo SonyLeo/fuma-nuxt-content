@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { TabsRoot } from 'reka-ui'
 import { computed, onMounted, provide, shallowRef, useId } from 'vue'
 import { uiTabsKey } from '~/utils/ui-tabs'
 
@@ -28,9 +29,10 @@ const internalValue = shallowRef(props.defaultValue)
 const valueToId = new Map<string, string>()
 
 const isControlled = computed(() => props.value !== undefined)
-const activeValue = computed(() =>
-  isControlled.value ? props.value ?? '' : internalValue.value,
-)
+const activeValue = computed({
+  get: () => (isControlled.value ? props.value ?? '' : internalValue.value),
+  set: (value: string) => setValue(value),
+})
 const updateAnchor = computed(() => props.updateAnchor)
 
 function setValue(value: string) {
@@ -84,7 +86,13 @@ provide(uiTabsKey, {
 </script>
 
 <template>
+  <TabsRoot
+    v-model="activeValue"
+    :unmount-on-hide="false"
+    as-child
+  >
   <div class="ui-tabs" :data-value="activeValue">
     <slot :value="activeValue" />
   </div>
+  </TabsRoot>
 </template>

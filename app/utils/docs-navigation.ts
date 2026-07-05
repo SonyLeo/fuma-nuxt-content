@@ -316,6 +316,14 @@ function getMetaEntryKey(node: DocsNode) {
     return normalizeName(node.title)
   }
 
+  if (node.type === 'group') {
+    const dirname = getPathSegments(node.dirname).at(-1)
+
+    if (dirname) {
+      return normalizeName(dirname)
+    }
+  }
+
   const sourcePath = node.sourcePath ?? node.path
 
   return getPathSegments(sourcePath).at(-1)
@@ -427,8 +435,11 @@ function createNodeFromNavigation(
     createNodeFromNavigation(child, pageMetaByPath, directoryMetaByStem),
   )
   const normalizedStem = normalizeStem(stem)
-  const directoryMeta = directoryMetaByStem.get(normalizedStem)
   const isGroup = children.length > 0 || item.page === false
+  const directoryMeta = isGroup
+    ? (directoryMetaByStem.get(normalizeStem(getDirnameFromPath(sourcePath))) ??
+      directoryMetaByStem.get(normalizedStem))
+    : directoryMetaByStem.get(normalizedStem)
 
   const baseNode: DocsNode = {
     id: createDocsNodeId([
@@ -697,9 +708,19 @@ function reorderNodesByMeta(
         directoryMetaByStem,
         options,
       )
-      const meta = node.stem
-        ? directoryMetaByStem.get(normalizeStem(node.stem))
-        : undefined
+      const nodeDirectoryStem =
+        node.type === 'group'
+          ? normalizeStem(
+              getDirnameFromPath(node.sourcePath ?? node.path ?? node.stem),
+            )
+          : ''
+      const meta =
+        (nodeDirectoryStem
+          ? directoryMetaByStem.get(nodeDirectoryStem)
+          : undefined) ??
+        (node.stem
+          ? directoryMetaByStem.get(normalizeStem(node.stem))
+          : undefined)
 
       const currentNode = resolveMetaIndexNode(
         {

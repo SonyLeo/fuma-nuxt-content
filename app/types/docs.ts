@@ -101,7 +101,19 @@ export type DocsTocTreeItem = {
   children?: DocsTocTreeItem[]
 }
 
+export type DocsStructuredData = {
+  headings: Array<{
+    id: string
+    content: string
+  }>
+  contents: Array<{
+    heading?: string
+    content: string
+  }>
+}
+
 export type DocsContentPage = DocsPageLike & {
+  structuredData?: DocsStructuredData
   body?: {
     toc?: {
       links?: DocsTocTreeItem[]
