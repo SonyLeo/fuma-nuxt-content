@@ -2,6 +2,7 @@
 import { Check, Copy } from '@lucide/vue'
 import { computed, nextTick, onMounted, onUpdated, useSlots, useTemplateRef } from 'vue'
 import { writeDocsClipboardText } from '~/utils/docs-clipboard'
+import { createHighlightedCodeLines } from '~/utils/docs-code-highlight'
 
 const bodyRef = useTemplateRef<HTMLElement>('body')
 const slots = useSlots()
@@ -81,6 +82,11 @@ const hasHeader = computed(() => {
 const shouldShowLineNumbers = computed(
   () => props.dataLineNumbers === true || props.dataLineNumbers === 'true',
 )
+const directCodeLines = computed(() => {
+  return props.code
+    ? createHighlightedCodeLines(props.code, props.language)
+    : []
+})
 const lineNumberStartOffset = computed(() => {
   const value = Number(props.dataLineNumbersStart)
 
@@ -299,7 +305,16 @@ onUpdated(syncCodeBlockDom)
       <pre
         v-else-if="code"
         class="fd-doc-code-block-pre"
-      ><code>{{ code }}</code></pre>
+      ><code><span
+        v-for="(line, lineIndex) in directCodeLines"
+        :key="line.key"
+        class="line"
+      ><span
+        v-for="(token, tokenIndex) in line.tokens"
+        :key="`${lineIndex}:${tokenIndex}:${token.text}`"
+        class="fd-doc-code-token"
+        :style="token.style"
+      >{{ token.text }}</span></span></code></pre>
       <p v-else class="fd-doc-code-block-empty">No code provided.</p>
     </div>
   </figure>

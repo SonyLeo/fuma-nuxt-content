@@ -437,9 +437,17 @@ function createNodeFromNavigation(
   const normalizedStem = normalizeStem(stem)
   const isGroup = children.length > 0 || item.page === false
   const directoryMeta = isGroup
-    ? (directoryMetaByStem.get(normalizeStem(getDirnameFromPath(sourcePath))) ??
-      directoryMetaByStem.get(normalizedStem))
+    ? (directoryMetaByStem.get(normalizedStem) ??
+      directoryMetaByStem.get(normalizeStem(getDirnameFromPath(sourcePath))))
     : directoryMetaByStem.get(normalizedStem)
+  const groupCollapsible = isGroup
+    ? (directoryMeta?.collapsible ?? pageMeta?.collapsible)
+    : mergedMeta.collapsible
+  const groupDefaultOpen = isGroup
+    ? (directoryMeta?.defaultOpen ??
+      pageMeta?.defaultOpen ??
+      (groupCollapsible === false ? true : undefined))
+    : mergedMeta.defaultOpen
 
   const baseNode: DocsNode = {
     id: createDocsNodeId([
@@ -462,11 +470,8 @@ function createNodeFromNavigation(
     icon: directoryMeta?.icon ?? mergedMeta.icon,
     status: mergedMeta.status,
     root: directoryMeta?.root,
-    defaultOpen:
-      directoryMeta?.defaultOpen ??
-      mergedMeta.defaultOpen ??
-      (directoryMeta?.collapsible === false ? true : undefined),
-    collapsible: directoryMeta?.collapsible ?? mergedMeta.collapsible,
+    defaultOpen: groupDefaultOpen,
+    collapsible: groupCollapsible,
     full: mergedMeta.full,
     toc: mergedMeta.toc,
     tocPopover: mergedMeta.tocPopover,
@@ -554,6 +559,284 @@ function createLinkNode(
     level: (parent?.level ?? 0) + 1,
     rootPath: parent?.rootPath,
     children: [],
+  } satisfies DocsNode
+}
+
+function isVirtualMetaGroupEntry(
+  entry: DocsMetaPageEntry,
+): entry is Extract<DocsMetaPageEntry, { type: 'page' | 'group' }> & {
+  type: 'group'
+} {
+  return (
+    typeof entry === 'object' &&
+    entry.type === 'group' &&
+    (Boolean(entry.pages?.length) || Boolean(entry.pagesIndex))
+  )
+}
+
+function matchesMetaEntryName(node: DocsNode, name: string) {
+  const key = normalizeName(name)
+  const normalizedPath = name.startsWith('/')
+    ? normalizeDocsRoutePath(name)
+    : normalizeDocsRoutePath(`/${name}`)
+
+  return (
+    getMetaEntryKey(node) === key ||
+    normalizeName(node.stem) === key ||
+    normalizeName(node.dirname) === key ||
+    node.path === name ||
+    node.path === normalizedPath ||
+    node.href === name
+  )
+}
+
+function findUnconsumedMetaChild(
+  children: DocsNode[],
+  name: string,
+  consumed: Set<string>,
+) {
+  return children.find((child) => {
+    return (
+      !consumed.has(getNodeSortKey(child)) && matchesMetaEntryName(child, name)
+    )
+  })
+}
+
+function consumeNode(node: DocsNode | undefined, consumed: Set<string>) {
+  if (node) {
+    consumed.add(getNodeSortKey(node))
+  }
+}
+
+function createVirtualGroupBaseNode(
+  entry: Extract<DocsMetaPageEntry, { type: 'page' | 'group' }> & {
+    type: 'group'
+  },
+  parent: DocsNode,
+  keySuffix?: string | number,
+) {
+  return {
+    id: createDocsNodeId([
+      'group',
+      parent.sourcePath ?? parent.path ?? parent.title,
+      entry.name,
+      keySuffix,
+    ]),
+    type: 'group' as const,
+    title: entry.title ?? entry.name,
+    path: undefined,
+    sourcePath: undefined,
+    stem: undefined,
+    dirname: parent.dirname,
+    parentPath: parent.path,
+    level: (parent.level ?? 0) + 1,
+    description: undefined,
+    sectionLabel: undefined,
+    order: undefined,
+    hidden: entry.hidden,
+    badge: entry.badge,
+    icon: entry.icon,
+    status: entry.status,
+    root: undefined,
+    defaultOpen: entry.defaultOpen,
+    collapsible: entry.collapsible,
+    rootPath: parent.rootPath,
+    children: [],
+  } satisfies DocsNode
+}
+
+function createVirtualGroupIndexNode(
+  entry: Extract<DocsMetaPageEntry, { type: 'page' | 'group' }> & {
+    type: 'group'
+  },
+  group: DocsNode,
+  children: DocsNode[],
+  consumed: Set<string>,
+): DocsNode | undefined {
+  if (!entry.pagesIndex) {
+    return undefined
+  }
+
+  const match = findUnconsumedMetaChild(children, entry.pagesIndex, consumed)
+  if (!match) {
+    if (isLinkString(entry.pagesIndex)) {
+      const link = parseLinkString(entry.pagesIndex)
+
+      return link ? createLinkNode(link, group, 'index') : undefined
+    }
+
+    return undefined
+  }
+
+  consumeNode(match, consumed)
+
+  const indexSource = match.type === 'group' ? match.index : match
+  if (!indexSource || indexSource.type === 'separator') {
+    return undefined
+  }
+
+  const indexNode = cloneNode(indexSource)
+
+  return decorateNode(
+    {
+      ...indexNode,
+      type: indexNode.type === 'link' ? 'link' : 'page',
+      children: [],
+    },
+    {},
+  )
+}
+
+function createVirtualGroupChildren(
+  entries: DocsMetaPageEntry[],
+  sourceChildren: DocsNode[],
+  group: DocsNode,
+  consumed: Set<string>,
+  options: Pick<DocsTreeOptions, 'preserveExcluded'>,
+): DocsNode[] {
+  const orderedChildren: DocsNode[] = []
+
+  for (const entry of entries) {
+    if (typeof entry === 'string') {
+      if (isSeparatorString(entry)) {
+        const separator = parseSeparatorString(entry)
+        if (separator) {
+          orderedChildren.push({
+            ...createSeparatorNode(
+              separator.title,
+              group,
+              orderedChildren.length,
+            ),
+            icon: separator.icon,
+          })
+        }
+        continue
+      }
+
+      if (isLinkString(entry)) {
+        const link = parseLinkString(entry)
+        if (link) {
+          orderedChildren.push(
+            createLinkNode(link, group, orderedChildren.length),
+          )
+        }
+        continue
+      }
+
+      if (isExcludeString(entry)) {
+        if (options.preserveExcluded) {
+          continue
+        }
+
+        const target = parseExcludeTarget(entry)
+        const matches = collectMatchedChildren(sourceChildren, target)
+        for (const child of matches) {
+          consumeNode(child, consumed)
+        }
+        continue
+      }
+
+      if (isRestString(entry)) {
+        const reversed = isReversedRestString(entry)
+        const rest = reversed
+          ? sourceChildren
+              .filter((child) => !consumed.has(getNodeSortKey(child)))
+              .toSorted(compareNodes)
+              .reverse()
+          : (() => {
+              const target = parseRestTarget(entry)
+              return target
+                ? collectExtractedChildren(sourceChildren, target, consumed)
+                : sourceChildren.filter(
+                    (child) => !consumed.has(getNodeSortKey(child)),
+                  )
+            })()
+
+        orderedChildren.push(...(reversed ? rest : rest.toSorted(compareNodes)))
+        for (const child of rest) {
+          consumeNode(child, consumed)
+        }
+        continue
+      }
+
+      const match = findUnconsumedMetaChild(sourceChildren, entry, consumed)
+      if (match) {
+        orderedChildren.push(match)
+        consumeNode(match, consumed)
+      }
+      continue
+    }
+
+    if (entry.type === 'separator') {
+      orderedChildren.push({
+        ...createSeparatorNode(entry.title, group, orderedChildren.length),
+        icon: entry.icon,
+      })
+      continue
+    }
+
+    if (entry.type === 'link') {
+      orderedChildren.push(createLinkNode(entry, group, orderedChildren.length))
+      continue
+    }
+
+    if (isVirtualMetaGroupEntry(entry)) {
+      orderedChildren.push(
+        createVirtualMetaGroupNode(
+          entry,
+          group,
+          sourceChildren,
+          consumed,
+          orderedChildren.length,
+          options,
+        ),
+      )
+      continue
+    }
+
+    const match = findUnconsumedMetaChild(sourceChildren, entry.name, consumed)
+    if (match) {
+      orderedChildren.push(applyMetaEntryToNode(match, entry))
+      consumeNode(match, consumed)
+    }
+  }
+
+  return orderedChildren
+}
+
+function createVirtualMetaGroupNode(
+  entry: Extract<DocsMetaPageEntry, { type: 'page' | 'group' }> & {
+    type: 'group'
+  },
+  parent: DocsNode,
+  sourceChildren: DocsNode[],
+  consumed: Set<string>,
+  keySuffix?: string | number,
+  options: Pick<DocsTreeOptions, 'preserveExcluded'> = {},
+) {
+  const groupBase = createVirtualGroupBaseNode(entry, parent, keySuffix)
+  const index = createVirtualGroupIndexNode(
+    entry,
+    groupBase,
+    sourceChildren,
+    consumed,
+  )
+  const children = createVirtualGroupChildren(
+    entry.pages ?? [],
+    sourceChildren,
+    groupBase,
+    consumed,
+    options,
+  )
+
+  return {
+    ...groupBase,
+    path: index?.path,
+    sourcePath: index?.sourcePath,
+    stem: index?.stem,
+    description: index?.description,
+    index,
+    children,
   } satisfies DocsNode
 }
 
@@ -696,6 +979,36 @@ function applyMetaEntryToNode(node: DocsNode, entry: DocsMetaPageEntry) {
   )
 }
 
+function normalizeDirectoryMetaCandidate(value?: string) {
+  return normalizeStem(value?.replace(/^\//, '') ?? '')
+}
+
+function resolveDirectoryMetaForNode(
+  node: DocsNode,
+  directoryMetaByStem: Map<string, DocsDirectoryMeta>,
+) {
+  const candidates = [
+    node.stem,
+    node.sourcePath,
+    node.dirname,
+    getDirnameFromPath(node.sourcePath),
+    getDirnameFromPath(node.path),
+  ]
+    .map(normalizeDirectoryMetaCandidate)
+    .filter(Boolean)
+    .toSorted((left, right) => right.length - left.length)
+
+  for (const candidate of new Set(candidates)) {
+    const meta = directoryMetaByStem.get(candidate)
+
+    if (meta) {
+      return meta
+    }
+  }
+
+  return undefined
+}
+
 function reorderNodesByMeta(
   nodes: DocsNode[],
   directoryMetaByStem: Map<string, DocsDirectoryMeta>,
@@ -711,16 +1024,17 @@ function reorderNodesByMeta(
       const nodeDirectoryStem =
         node.type === 'group'
           ? normalizeStem(
-              getDirnameFromPath(node.sourcePath ?? node.path ?? node.stem),
+              (node.stem ?? node.sourcePath ?? '').replace(/^\//, ''),
             )
           : ''
       const meta =
-        (nodeDirectoryStem
-          ? directoryMetaByStem.get(nodeDirectoryStem)
-          : undefined) ??
-        (node.stem
-          ? directoryMetaByStem.get(normalizeStem(node.stem))
-          : undefined)
+        node.type === 'group'
+          ? resolveDirectoryMetaForNode(node, directoryMetaByStem)
+          : nodeDirectoryStem
+            ? directoryMetaByStem.get(nodeDirectoryStem)
+            : node.stem
+              ? directoryMetaByStem.get(normalizeStem(node.stem))
+              : undefined
 
       const currentNode = resolveMetaIndexNode(
         {
@@ -844,6 +1158,20 @@ function reorderNodesByMeta(
         if (entry.type === 'link') {
           orderedChildren.push(
             createLinkNode(entry, currentNode, orderedChildren.length),
+          )
+          continue
+        }
+
+        if (isVirtualMetaGroupEntry(entry)) {
+          orderedChildren.push(
+            createVirtualMetaGroupNode(
+              entry,
+              currentNode,
+              currentNode.children,
+              consumed,
+              orderedChildren.length,
+              options,
+            ),
           )
           continue
         }

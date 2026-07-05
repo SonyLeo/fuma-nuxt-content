@@ -393,10 +393,6 @@
   overflow-x: clip;
 }
 
-.docs-shell-body[data-sidebar-collapsed='true'] {
-  --docs-sidebar-column-width: 0px;
-}
-
 .docs-sidebar {
   grid-area: sidebar;
   position: relative;
@@ -558,7 +554,11 @@
   height: 1.25rem;
   border-radius: var(--docs-radius-pill);
   background:
-    radial-gradient(circle at 70% 25%, rgba(255, 255, 255, 0.92), transparent 28%),
+    radial-gradient(
+      circle at 70% 25%,
+      rgba(255, 255, 255, 0.92),
+      transparent 28%
+    ),
     linear-gradient(135deg, #d9ebff 0%, #2f7df6 100%);
   color: var(--docs-color-primary-foreground);
   font-size: 0.7rem;
@@ -626,11 +626,7 @@
   width: 100%;
   min-width: 0;
   min-height: 2.25rem;
-  background: color-mix(
-    in srgb,
-    var(--docs-color-secondary) 54%,
-    transparent
-  );
+  background: color-mix(in srgb, var(--docs-color-secondary) 54%, transparent);
   font-size: 0.875rem;
 }
 
@@ -711,7 +707,9 @@
   transform: none !important;
 }
 
-.docs-sidebar-tabs > [data-reka-popper-content-wrapper] .docs-sidebar-tab-panel {
+.docs-sidebar-tabs
+  > [data-reka-popper-content-wrapper]
+  .docs-sidebar-tab-panel {
   position: static;
   width: auto;
   max-width: none;
@@ -803,8 +801,9 @@
 }
 
 .docs-sidebar-list {
-  display: grid;
-  gap: 0.05rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
 }
 
 .docs-sidebar-item {
@@ -812,18 +811,19 @@
 }
 
 .docs-sidebar-children {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   position: relative;
-  gap: 0.08rem;
-  padding-left: 0.75rem;
-  margin-top: 0.12rem;
+  gap: 0.125rem;
+  padding-left: 0;
+  margin-top: 0.125rem;
 }
 
 .docs-sidebar-children::before {
   position: absolute;
   top: 0.25rem;
   bottom: 0.25rem;
-  left: 0.35rem;
+  left: 0.625rem;
   width: 1px;
   background: var(--docs-color-border);
   content: '';
@@ -838,7 +838,7 @@
   color: var(--docs-color-muted-foreground);
   text-decoration: none;
   font-size: 0.875rem;
-  line-height: 1.4;
+  line-height: 1.4285714286;
   transition:
     background-color var(--docs-motion-fast),
     color var(--docs-motion-fast);
@@ -855,14 +855,6 @@
 .docs-sidebar-folder {
   display: grid;
   gap: 0.08rem;
-}
-
-.docs-sidebar-folder-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.12rem;
-  min-width: 0;
 }
 
 .docs-sidebar-folder-trigger {
@@ -882,26 +874,6 @@
   width: 100%;
 }
 
-.docs-sidebar-folder-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  min-height: 2.25rem;
-  padding: 0;
-  color: var(--docs-color-muted-foreground);
-}
-
-.docs-sidebar-folder-toggle:hover {
-  color: var(--docs-color-primary);
-  background: var(--docs-link-active-bg);
-}
-
-.docs-sidebar-folder-toggle:focus-visible {
-  outline: 2px solid var(--docs-color-ring);
-  outline-offset: 2px;
-}
-
 .docs-sidebar-folder-content {
   min-width: 0;
 }
@@ -916,27 +888,23 @@
 }
 
 .docs-sidebar-folder-link[data-state='closed'] .docs-sidebar-folder-chevron,
-.docs-sidebar-folder-trigger[data-state='closed'] .docs-sidebar-folder-chevron,
-.docs-sidebar-folder-toggle[data-state='closed'] .docs-sidebar-folder-chevron {
+.docs-sidebar-folder-trigger[data-state='closed'] .docs-sidebar-folder-chevron {
   transform: rotate(-90deg);
 }
 
-.docs-sidebar-folder-toggle .docs-sidebar-folder-chevron {
-  margin-left: 0;
-}
-
-.docs-sidebar-link[data-visual-level='1'] {
+.docs-sidebar-link[data-level='1'],
+.docs-sidebar-separator[data-level='1'] {
   padding-left: 1.25rem;
 }
 
-.docs-sidebar-item.is-visual-nested::before {
-  position: absolute;
-  top: -0.05rem;
-  bottom: -0.05rem;
-  left: 0.6rem;
-  width: 1px;
-  background: var(--docs-color-border);
-  content: '';
+.docs-sidebar-link[data-level='2'],
+.docs-sidebar-separator[data-level='2'] {
+  padding-left: 2rem;
+}
+
+.docs-sidebar-link[data-level='3'],
+.docs-sidebar-separator[data-level='3'] {
+  padding-left: 2.75rem;
 }
 
 .docs-sidebar-link-meta,
@@ -986,39 +954,26 @@
 .docs-sidebar-separator {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: var(--docs-space-2);
-  min-height: 2rem;
-  margin: 0.75rem 0 0.15rem;
+  height: 1.25rem;
+  min-height: 0;
+  margin: 1.5rem 0 0.25rem;
   padding: 0 0.5rem;
-  color: var(--docs-color-muted-foreground);
+  color: var(--docs-color-foreground);
   font-size: 0.875rem;
   font-weight: 400;
   letter-spacing: 0;
   text-transform: none;
-}
-
-.docs-sidebar-separator::after {
-  flex: 0 0 auto;
-  width: 0.45rem;
-  height: 0.45rem;
-  border-right: 1.5px solid currentColor;
-  border-bottom: 1.5px solid currentColor;
-  content: '';
-  transform: translateY(-0.12rem) rotate(45deg);
+  line-height: 1.25rem;
 }
 
 .docs-sidebar-separator:first-child {
   margin-top: 0;
 }
 
-.docs-sidebar-item:last-child > .docs-sidebar-separator::after {
-  transform: rotate(-45deg);
-}
-
 .docs-sidebar-separator.is-nested {
-  padding-right: 0;
-  padding-left: 0;
+  padding-right: 0.5rem;
 }
 
 .docs-sidebar-link:hover,
@@ -1027,11 +982,13 @@
   background: var(--docs-link-active-bg);
 }
 
-.docs-sidebar-link.is-active[data-visual-level='1']::before {
+.docs-sidebar-link.is-active[data-level='1']::before,
+.docs-sidebar-link.is-active[data-level='2']::before,
+.docs-sidebar-link.is-active[data-level='3']::before {
   position: absolute;
   top: 0.625rem;
   bottom: 0.625rem;
-  left: 0.6rem;
+  left: 0.625rem;
   width: 1px;
   border-radius: var(--docs-radius-pill);
   background: var(--docs-color-primary);
@@ -1113,11 +1070,7 @@
   overflow: hidden;
   border: 1px solid var(--docs-color-border);
   border-radius: var(--docs-radius-pill);
-  background: color-mix(
-    in srgb,
-    var(--docs-color-card) 82%,
-    transparent
-  );
+  background: color-mix(in srgb, var(--docs-color-card) 82%, transparent);
   color: var(--docs-color-muted-foreground);
 }
 
@@ -2289,11 +2242,16 @@
   }
 
   .docs-shell-body {
+    --docs-mobile-shell-padding: 1.5rem;
+
     grid-template-areas: 'main';
     grid-template-columns: minmax(0, 1fr);
     gap: var(--docs-space-6);
     min-height: calc(100vh - var(--docs-header-height));
-    padding: 1.5rem;
+    padding: var(--docs-mobile-shell-padding);
+    padding-bottom: calc(
+      var(--docs-mobile-shell-padding) + env(safe-area-inset-bottom)
+    );
   }
 
   .docs-shell-content {
@@ -2340,7 +2298,11 @@
     position: fixed;
     inset: 0;
     z-index: 40;
-    background: color-mix(in srgb, var(--docs-color-background) 24%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--docs-color-background) 24%,
+      transparent
+    );
     backdrop-filter: blur(4px);
     opacity: 0;
     pointer-events: none;
@@ -2365,6 +2327,8 @@
     min-height: 0;
     margin: 0;
     overflow: hidden auto;
+    overscroll-behavior: contain;
+    padding-bottom: env(safe-area-inset-bottom);
     border: 0;
     border-left: 1px solid var(--docs-color-border);
     border-radius: 0;
@@ -2414,12 +2378,6 @@
     align-items: center;
     min-width: 0;
     gap: 0.25rem;
-  }
-
-  .docs-mobile-nav-close {
-    width: 2.5rem;
-    height: 2.5rem;
-    padding: 0;
   }
 
   .docs-mobile-nav-close-icon {
@@ -2588,7 +2546,7 @@
   }
 
   .docs-page {
-    padding: 0 0 3rem;
+    padding: 0 0 calc(3rem + env(safe-area-inset-bottom));
   }
 
   .docs-toc {
@@ -2768,10 +2726,35 @@
 @media (max-width: 959px) {
   .docs-toc-popover {
     top: var(--docs-header-height);
+    margin-right: calc(-1 * var(--docs-mobile-shell-padding, 1.5rem));
+    margin-left: calc(-1 * var(--docs-mobile-shell-padding, 1.5rem));
+  }
+
+  .docs-toc-popover-trigger {
+    padding-right: var(--docs-mobile-shell-padding, 1.5rem);
+    padding-left: var(--docs-mobile-shell-padding, 1.5rem);
+  }
+
+  .docs-toc-popover-scroll {
+    max-height: min(
+      50vh,
+      calc(
+        100dvh - var(--docs-header-height) - 2.5rem -
+          env(safe-area-inset-bottom)
+      )
+    );
+  }
+
+  .docs-toc-popover-panel .docs-toc-list {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
   }
 }
 
 @media (max-width: 640px) {
+  .docs-shell-body {
+    --docs-mobile-shell-padding: var(--docs-space-4);
+  }
+
   .docs-header-inner,
   .docs-shell-body,
   .docs-home {

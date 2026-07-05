@@ -65,67 +65,66 @@ function setOpen(value: boolean) {
       <UiDialogOverlay
         class="docs-mobile-nav-overlay"
         role="presentation"
+      />
+      <UiDialogContent
+        id="nd-sidebar-mobile"
+        class="docs-mobile-nav-panel"
+        :aria-label="`${props.headline} sidebar`"
+        :inert="open ? undefined : true"
       >
-        <UiDialogContent
-          id="nd-sidebar-mobile"
-          class="docs-mobile-nav-panel"
-          :aria-label="`${props.headline} sidebar`"
-          :inert="open ? undefined : true"
-        >
-          <div class="docs-mobile-nav-header">
-            <div class="docs-mobile-nav-tools">
-              <slot name="theme-switch" />
-              <slot name="language-select" />
-            </div>
-            <button
-              type="button"
-              class="docs-mobile-nav-close"
-              aria-label="Close navigation"
-              @click="close"
-            >
-              <PanelLeft class="docs-mobile-nav-close-icon" aria-hidden="true" />
-            </button>
+        <div class="docs-mobile-nav-header">
+          <div class="docs-mobile-nav-tools">
+            <slot name="theme-switch" />
+            <slot name="language-select" />
           </div>
-
-          <DocsSidebar
-            :sidebar-id="null"
-            :allow-collapse="false"
-            :show-header="false"
-            :headline="props.headline"
-            :items="props.items"
-            :current-path="props.currentPath"
-            :nav="props.nav"
-            @navigate="close"
+          <button
+            type="button"
+            class="docs-mobile-nav-close"
+            aria-label="Close navigation"
+            @click="close"
           >
-          </DocsSidebar>
+            <PanelLeft class="docs-mobile-nav-close-icon" aria-hidden="true" />
+          </button>
+        </div>
 
-          <nav
-            v-if="menuLinks.length > 0"
-            class="docs-mobile-menu-links"
-            aria-label="Additional navigation"
+        <DocsSidebar
+          :sidebar-id="null"
+          :allow-collapse="false"
+          :show-header="false"
+          :headline="props.headline"
+          :items="props.items"
+          :current-path="props.currentPath"
+          :nav="props.nav"
+          @navigate="close"
+        >
+        </DocsSidebar>
+
+        <nav
+          v-if="menuLinks.length > 0"
+          class="docs-mobile-menu-links"
+          aria-label="Additional navigation"
+        >
+          <DocsLink
+            v-for="link in menuLinks"
+            :key="`${link.title}:${link.href}`"
+            :href="link.href || '#'"
+            :external="link.external"
+            class="docs-mobile-menu-link"
+            :class="{ 'is-active': isActive(link) }"
+            :aria-label="link.ariaLabel"
+            :aria-current="isActive(link) ? 'page' : undefined"
+            @click="close"
           >
-            <DocsLink
-              v-for="link in menuLinks"
-              :key="`${link.title}:${link.href}`"
-              :href="link.href || '#'"
-              :external="link.external"
-              class="docs-mobile-menu-link"
-              :class="{ 'is-active': isActive(link) }"
-              :aria-label="link.ariaLabel"
-              :aria-current="isActive(link) ? 'page' : undefined"
-              @click="close"
-            >
-              <span class="docs-mobile-menu-link-main">
-                <DocsNavIcon v-if="link.icon" :name="link.icon" />
-                <span>{{ link.title }}</span>
-              </span>
-              <span v-if="link.description" class="docs-mobile-menu-description">
-                {{ link.description }}
-              </span>
-            </DocsLink>
-          </nav>
-        </UiDialogContent>
-      </UiDialogOverlay>
+            <span class="docs-mobile-menu-link-main">
+              <DocsNavIcon v-if="link.icon" :name="link.icon" />
+              <span>{{ link.title }}</span>
+            </span>
+            <span v-if="link.description" class="docs-mobile-menu-description">
+              {{ link.description }}
+            </span>
+          </DocsLink>
+        </nav>
+      </UiDialogContent>
     </UiDialog>
   </div>
 </template>

@@ -57,7 +57,18 @@ test.describe('@fast @shell toc responsive', () => {
     await trigger.click()
     await expect(trigger).toHaveAttribute('aria-expanded', 'true')
     await expect(page.locator('.docs-toc-popover-panel')).toBeVisible()
-    await expectBoxInside(page.locator('.docs-shell-content'), page.locator('.docs-toc-popover-panel'))
+    if (isNarrowViewport(page)) {
+      const panelBox = await page.locator('.docs-toc-popover-panel').boundingBox()
+      const viewportWidth = page.viewportSize()?.width ?? 0
+
+      expect(Math.round(panelBox?.x ?? -1)).toBe(0)
+      expect(Math.round(panelBox?.width ?? 0)).toBe(viewportWidth)
+    } else {
+      await expectBoxInside(
+        page.locator('.docs-shell-content'),
+        page.locator('.docs-toc-popover-panel'),
+      )
+    }
     await expect(page.locator('.docs-toc-popover-panel a').first()).toBeVisible()
 
     const maxHeight = await page
@@ -94,11 +105,15 @@ test.describe('@fast @shell toc responsive', () => {
     await expectVisibleBox(page.locator('.docs-header'))
 
     const headerBox = await page.locator('.docs-header').boundingBox()
+    const popoverBox = await page.locator('.docs-toc-popover').boundingBox()
     const triggerBox = await page.locator('.docs-toc-popover-trigger').boundingBox()
+    const viewportWidth = page.viewportSize()?.width ?? 0
 
     expect(triggerBox?.y ?? 0).toBeGreaterThanOrEqual(
       (headerBox?.y ?? 0) + (headerBox?.height ?? 0) - 1,
     )
+    expect(Math.round(popoverBox?.x ?? -1)).toBe(0)
+    expect(Math.round(popoverBox?.width ?? 0)).toBe(viewportWidth)
 
     await openMobileNav(page)
     await expectDocumentNoHorizontalOverflow(page)

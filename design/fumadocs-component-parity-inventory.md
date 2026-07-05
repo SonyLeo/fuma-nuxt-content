@@ -837,10 +837,11 @@ Process lessons:
   accidentally include nested CodeTabs and create false failures.
 - Avoid raw PascalCase Vue component blocks inside Markdown fixtures for nested
   slot-heavy components. MDC syntax gives more stable component boundaries.
-- Running `pnpm typecheck` while a Nuxt dev server is active can invalidate the
-  dev server's generated Nuxt Content database. If typecheck runs before more
-  runtime parity checks, restart the managed dev server before trusting profile
-  results.
+- Running `pnpm typecheck` while a Nuxt dev server is active can disturb the
+  dev server's generated Nuxt Content state. If typecheck runs before more
+  runtime parity checks, run route-specific health first; restart the managed
+  dev server only when health fails with `404`, Nuxt error output, request
+  timeout, stale/wrong server evidence, or Nuxt Content SQLite errors.
 
 ### Accordion
 

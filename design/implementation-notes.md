@@ -2289,3 +2289,128 @@ transform pipeline 第一版：
 - `pnpm validate:links` 通过：`25 pages / 11 links`。
 - `pnpm dev:health` 通过。
 - `git diff --check` 通过。
+
+### Page-tree transformer/runtime closeout
+
+本轮把之前分散在 tree、breadcrumb、pager、sidebar 和 search 里的导航派生逻辑收口到
+`app/utils/docs-page-tree-runtime.ts`：
+
+- `createDocsPageTreeRuntime()` 统一从 Nuxt Content navigation、page meta 和
+  directory meta 生成 `visibleTree`、`contextTree`、flat list、route path map 和
+  source path map。
+- runtime 同时暴露 `getCurrent()`、`getVisibleCurrent()`、`getContextualTree()`、
+  `getSidebarItems()`、`getSectionHeadline()`、`getBreadcrumbs()` 和 `getPager()`。
+- 新增 transformer contract：`page / group / separator / link / node / root`，并把
+  `visible` 与 `context` 两棵树的 `includeHidden / preserveExcluded` 语义传给
+  transformer context。
+- `useDocsTree()` 现在返回同一份 runtime；route 页面把 pager、breadcrumb、sidebar
+  headline 和 search index 都改为消费 runtime。首页 cards 继续消费 `items`，但这个
+  `items` 已由同一 runtime 的 `visibleTree` 派生。
+- `useDocsPager()`、`useDocsBreadcrumbs()` 和 `createDocsSearchIndex()` 保留
+  `DocsNode[]` fallback，方便已有调用逐步迁移；新 route-level 消费优先传 runtime。
+- `tests/e2e/page-tree-runtime.spec.ts` 覆盖两条关键边界：可见页面的 pager/search/sidebar
+  共享同一可见树，以及被 `meta.json` 排除但可直达的页面使用 context tree 生成 breadcrumb，
+  同时不进入可见 sidebar/pager。
+- `package.json` 的 `test:e2e:fast` 与 `test:e2e:shell` 已纳入 page-tree runtime
+  profile，避免后续改 sidebar/search/pager 时绕过这条合同。
+
+剩余边界：
+
+- 当前已经有 transformer API 和 runtime 收口，但还没有 site-level plugin registry 或
+  config-driven transformer 注册；后续 multi source/version/i18n 前再接入配置层。
+- 当前 runtime 仍以 `docs` collection 为唯一内容源；blog/changelog/api loader contract
+  仍属于下一阶段。
+- 本轮只集中 page tree 派生规则，不实现 remote search provider、feedback backend、RSS、
+  `llms-full.txt`、per-page markdown export 或 image CDN adapter。
+
+验证结论：
+
+- Codex bridge 当前 `pnpm` 解析到 bundled `pnpm@11.7.0`，而本仓库
+  `node_modules` 来自 `pnpm@10.33.2`；直接执行 `pnpm ...` 会在脚本前尝试重装依赖。
+  本轮为避免改动依赖树，改用本地 bin 和 `node scripts/...` 直接验证。
+- `.\node_modules\.bin\nuxi.cmd typecheck` 通过。
+- `node .\scripts\dev-server.mjs restart --path=/guide/code-block --timeout=60000`
+  通过，health 返回 `200`。
+- `node .\scripts\dev-server.mjs health --path=/guide/component-detail --timeout=30000`
+  通过，health 返回 `200`。
+- `.\node_modules\.bin\playwright.cmd test tests/e2e/page-tree-runtime.spec.ts tests/e2e/sidebar.spec.ts tests/e2e/page-actions.spec.ts`
+  通过：`25 passed / 8 skipped`。
+- `.\node_modules\.bin\playwright.cmd test tests/e2e/theme.spec.ts tests/e2e/prose-defaults.spec.ts tests/e2e/code-block.spec.ts tests/e2e/markdown-transform.spec.ts tests/e2e/image-zoom.spec.ts tests/e2e/toc-responsive.spec.ts tests/e2e/sidebar.spec.ts tests/e2e/page-tree-runtime.spec.ts tests/e2e/page-actions.spec.ts`
+  通过：`58 passed / 11 skipped`。
+- 格式化后最终复验：
+  - `.\node_modules\.bin\nuxi.cmd typecheck` 通过；
+  - `node .\scripts\validate-docs-links.mjs` 通过：`25 pages / 11 links`；
+  - `node .\scripts\dev-server.mjs restart --path=/guide/component-detail --timeout=60000`
+    通过，health 返回 `200`；
+  - `.\node_modules\.bin\playwright.cmd test tests/e2e/page-tree-runtime.spec.ts`
+    通过：`6 passed`。
+- `node .\scripts\validate-docs-links.mjs` 通过：`25 pages / 11 links`。
+- `git diff --check` 通过。
+
+### Sidebar page-tree parity correction
+
+本轮针对 Fumadocs 远端真实页面重新校准左侧导航：
+
+- 远端 `Components` / `Layouts` 不是 separator；它们是 folder/index 节点。之前本地用
+  `---Components---` separator 加 `visualLevel` 字符串特判，把平级页面视觉伪装成子项，
+  导致点击语义、active ancestry、缩进和 rail 都与真实树模型不一致。
+- `content/guide/meta.json` 改用 virtual group 协议描述 `Components` 和 `Layouts`：
+  `Components` 使用 `pagesIndex: "components"` 作为 folder link，组件页面作为 children；
+  `Layouts` 作为无 index 的可折叠 group，承载 `Protocol Playground`。
+- `docs-navigation` 支持 meta entry 里的 virtual group，并修正目录 meta 命中：group 需要从
+  `stem/sourcePath/dirname` 候选中选最具体的目录 meta，不能让子目录继承父目录的
+  `pages/pagesIndex`。
+- `DocsSidebarTree` 移除 `Components` 标题驱动的 `visualLevel`；`DocsSidebarItem` 改为
+  带 index 的 folder 使用单个 link row，chevron 命中时 `prevent/stop` 后只 toggle，文字区域
+  继续导航。
+- separator 样式按远端运行时 metrics 收口到 20px 行高/高度、`mt-6 mb-1 px-2` 等级；
+  nested 缩进由真实 `data-level` 驱动，不再依赖伪视觉层级。
+
+验证结论：
+
+- `.\node_modules\.bin\playwright.cmd test tests/e2e/page-tree-runtime.spec.ts` 通过：`6 passed`。
+- `.\node_modules\.bin\playwright.cmd test tests/e2e/sidebar.spec.ts` 通过：`16 passed / 8 skipped`。
+- `.\node_modules\.bin\nuxi.cmd typecheck` 通过。
+- `node .\scripts\validate-docs-links.mjs` 通过：`25 pages / 11 links`。
+- `node .\scripts\dev-server.mjs health --path=/guide/component-detail --timeout=30000` 通过。
+- `git diff --check` 通过。
+
+### Verification workflow validation and promotion
+
+本轮专门验证“health-first、少重启、聚焦测试、内容测试必要时串行”的新流程：
+
+- 初始不重启，直接执行：
+  - `node scripts/dev-server.mjs status --path=/guide/component-detail --timeout=30000`
+  - `node scripts/dev-server.mjs health --path=/guide/component-detail --timeout=30000`
+  - `node scripts/dev-server.mjs health --path=/guide/components --timeout=30000`
+- 结果：当前 `8888` 是本工作区托管的 Nuxt dev server，`/guide/component-detail`
+  和 `/guide/components` 都返回 `200`。
+- Codex bridge shell 中直接执行 `pnpm ...` 会先触发 bundled pnpm 的依赖状态检查，
+  并因非 TTY 的交互式 remove modules 确认失败。为了避免误改依赖树，验证时改用
+  `node scripts/...` 和 `.\node_modules\.bin\*.cmd`。
+- `.\node_modules\.bin\nuxi.cmd typecheck` 通过。typecheck 后两条内容路由 health
+  都超时，端口 `8888` 仍处于 Listen，但请求无响应；日志没有 UI 回归或
+  `_content_docsMeta` 错误。因此按 `server-health` 处理，只做了一次有证据的
+  `node scripts/dev-server.mjs restart --path=/guide/components --timeout=90000`，
+  restart 后 health 恢复 `200`。
+- 后续没有再重启，直接完成：
+  - `.\node_modules\.bin\playwright.cmd test tests/e2e/toc.spec.ts tests/e2e/toc-responsive.spec.ts`
+    通过：`12 passed / 9 skipped`；
+  - `$env:PLAYWRIGHT_WORKERS='1'; .\node_modules\.bin\playwright.cmd test tests/e2e/content-components.spec.ts -g "renders inline toc expanded"`
+    通过：`3 passed`；
+  - `node scripts/parity/run.mjs --profile=toc --url=http://127.0.0.1:8888/guide/component-detail --viewports=2048x1152,994x935 --chromePort=9234 --settleMs=2200`
+    通过：`15/15`；
+  - `node scripts/validate-docs-links.mjs` 通过：`25 pages / 11 links`；
+  - `git diff --check` 通过；
+  - 收尾 health 仍为 `200`。
+
+推广结论：
+
+- `restart` 不应该是默认验证动作；默认顺序是 `status/health -> typecheck ->
+  health -> focused e2e/parity -> validate:links -> git diff --check`。
+- typecheck 后必须 health-first。若出现 `404`、Nuxt error、请求超时、端口监听但
+  无响应、stale/wrong server 或 Nuxt Content sqlite 缺表，再 restart。
+- 内容组件或 Nuxt Content 压力相关失败先用 focused case + `PLAYWRIGHT_WORKERS=1`
+  复验；只有串行仍失败，才进入组件实现排查。
+- Codex bridge shell 下优先用直接命令避免 `pnpm` 包装层误触发 install；本地人工终端
+  仍可用 package scripts。

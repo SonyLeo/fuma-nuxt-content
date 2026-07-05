@@ -543,6 +543,34 @@ test.describe('@content-components docs content primitives', () => {
       'margin',
       '0px',
     )
+    const previewCodeBlock = preview.locator(
+      '.fd-doc-preview-source .fd-doc-code-block',
+    )
+    const previewCodeDiagnostics = await previewCodeBlock.evaluate((root) => {
+      const body = root.querySelector<HTMLElement>('.fd-doc-code-block-body')
+      const line = root.querySelector<HTMLElement>('.line')
+      const firstToken = root.querySelector<HTMLElement>('.fd-doc-code-token')
+
+      return {
+        lineCount: root.querySelectorAll('.line').length,
+        lineText: line?.textContent ?? '',
+        paddedLeft:
+          firstToken && body
+            ? Math.round(
+                firstToken.getBoundingClientRect().left -
+                  body.getBoundingClientRect().left,
+              )
+            : 0,
+        styledTokenCount: root.querySelectorAll<HTMLElement>(
+          '.fd-doc-code-token[style*="--shiki-light"]',
+        ).length,
+      }
+    })
+
+    expect(previewCodeDiagnostics.lineCount).toBeGreaterThanOrEqual(1)
+    expect(previewCodeDiagnostics.lineText).toContain('<PreviewCounter />')
+    expect(previewCodeDiagnostics.paddedLeft).toBeGreaterThanOrEqual(12)
+    expect(previewCodeDiagnostics.styledTokenCount).toBeGreaterThanOrEqual(2)
 
     await expect(install).toHaveCSS('border-radius', '12px')
     await expect(install).toHaveCSS('border-top-width', '1px')
@@ -556,6 +584,21 @@ test.describe('@content-components docs content primitives', () => {
       'pnpm dlx fuma-nuxt-content add preview',
     )
     await expect(install.locator('.fd-doc-code-block')).toHaveCSS('margin', '0px')
+    const installCodeDiagnostics = await install
+      .locator('.fd-doc-code-block')
+      .evaluate((root) => ({
+        lineCount: root.querySelectorAll('.line').length,
+        lineText: root.querySelector('.line')?.textContent ?? '',
+        styledTokenCount: root.querySelectorAll<HTMLElement>(
+          '.fd-doc-code-token[style*="--shiki-light"]',
+        ).length,
+      }))
+
+    expect(installCodeDiagnostics.lineCount).toBeGreaterThanOrEqual(1)
+    expect(installCodeDiagnostics.lineText).toContain(
+      'pnpm dlx fuma-nuxt-content add preview',
+    )
+    expect(installCodeDiagnostics.styledTokenCount).toBeGreaterThanOrEqual(1)
     await expect(install.locator('.fd-doc-code-copy')).toBeVisible()
   })
 })

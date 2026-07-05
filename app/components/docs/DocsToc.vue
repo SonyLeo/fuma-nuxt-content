@@ -14,6 +14,11 @@ withDefaults(defineProps<DocsTocProps>(), {
       <Text class="docs-toc-label-icon" aria-hidden="true" />
       <span>{{ label }}</span>
     </h3>
-    <DocsTocList :items="items" :active-id="activeId" :progress="progress" />
+    <DocsTocList
+      :items="items"
+      :active-id="activeId"
+      :item-states="itemStates"
+      :progress="progress"
+    />
   </div>
 </template>

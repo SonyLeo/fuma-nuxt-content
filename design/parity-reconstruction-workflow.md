@@ -859,13 +859,17 @@ bug:
 - parity profiles correctly failed in HTTP preflight, but repeated manual
   restarts made the loop noisy.
 
-The project now has a single dev server control entry point:
+The project now has a single dev server control entry point. In a normal local
+terminal, the package aliases are fine; in the Codex bridge shell, use direct
+`node scripts/...` or `node_modules/.bin/*.cmd` commands if `pnpm` attempts an
+interactive dependency reinstall before running the script.
 
 ```bash
-pnpm dev:restart -- --path=/guide/code-block --timeout=60000
-pnpm dev:health -- --path=/guide/code-block --timeout=20000
-pnpm dev:status
-pnpm dev:stop
+node scripts/dev-server.mjs status --path=/guide/component-detail --timeout=10000
+node scripts/dev-server.mjs health --path=/guide/component-detail --timeout=30000
+node scripts/dev-server.mjs health --path=/guide/components --timeout=30000
+node scripts/dev-server.mjs restart --path=/guide/components --timeout=90000
+node scripts/dev-server.mjs stop
 ```
 
 Implementation:
@@ -886,12 +890,48 @@ Status: PASS
 Checks: 20/20 passed
 ```
 
+2026-07-05 workflow validation:
+
+```text
+node scripts/dev-server.mjs status --path=/guide/component-detail --timeout=30000
+node scripts/dev-server.mjs health --path=/guide/component-detail --timeout=30000
+node scripts/dev-server.mjs health --path=/guide/components --timeout=30000
+```
+
+Baseline result: managed server belonged to this workspace and both content
+routes returned `200`.
+
+```text
+.\node_modules\.bin\nuxi.cmd typecheck
+```
+
+Result: typecheck passed. After typecheck, both content route health checks
+timed out while port `8888` was still listening. Logs did not show a UI
+regression or Nuxt Content table error, so the failure was classified as
+`server-health`. A single evidence-backed restart restored `/guide/components`
+to `200`.
+
+```text
+.\node_modules\.bin\playwright.cmd test tests/e2e/toc.spec.ts tests/e2e/toc-responsive.spec.ts
+$env:PLAYWRIGHT_WORKERS='1'; .\node_modules\.bin\playwright.cmd test tests/e2e/content-components.spec.ts -g "renders inline toc expanded"
+node scripts/parity/run.mjs --profile=toc --url=http://127.0.0.1:8888/guide/component-detail --viewports=2048x1152,994x935 --chromePort=9234 --settleMs=2200
+node scripts/validate-docs-links.mjs
+git diff --check
+```
+
+Results: TOC e2e passed `12 passed / 9 skipped`, focused content serial test
+passed `3 passed`, TOC parity profile passed `15/15`, link validation passed
+`25 pages / 11 links`, and `git diff --check` passed.
+
 Reusable rule:
 
-For parity work, do not start ad hoc dev servers. Use `pnpm dev:restart` before
-runtime profiles and `pnpm dev:stop` after the work if the server is no longer
-needed. If `dev:health` fails, classify the issue as `server-health` before
-debugging UI code.
+For parity work, do not start ad hoc dev servers and do not restart by default.
+Start with `status` and route-specific `health`. Restart only when evidence
+shows a stale/wrong server, `404`, Nuxt error page, request timeout, port that
+listens without responding, or Nuxt Content SQLite failure such as missing
+`_content_docsMeta`. After `typecheck`, run health again before any Playwright
+or parity runtime check. If health fails, classify the issue as
+`server-health` before debugging UI code.
 
 ## MVP 1.8: Component Contract Cards
 

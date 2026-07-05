@@ -4,6 +4,14 @@ export type DocsTocItem = {
   depth: number
 }
 
+export type DocsTocItemState = {
+  id: string
+  item: DocsTocItem
+  active: boolean
+  fallback: boolean
+  updatedAt: number
+}
+
 export type DocsLayoutTocOptions = {
   items?: DocsTocItem[]
   enabled?: boolean
@@ -50,6 +58,8 @@ export type DocsMetaPageEntry =
       hidden?: boolean
       defaultOpen?: boolean
       collapsible?: boolean
+      pages?: DocsMetaPageEntry[]
+      pagesIndex?: string
     }
 
 export type DocsDirectoryMeta = {
@@ -231,7 +241,10 @@ export type DocsRootLanguageOptions = {
 export type DocsTocProps = {
   items?: DocsTocItem[]
   activeId?: string
+  activeIds?: readonly string[]
   activeItem?: DocsTocItem
+  activeItems?: readonly DocsTocItem[]
+  itemStates?: readonly DocsTocItemState[]
   progress?: number
   label?: string
 }
@@ -239,7 +252,10 @@ export type DocsTocProps = {
 export type DocsTocPopoverProps = {
   items?: DocsTocItem[]
   activeId?: string
+  activeIds?: readonly string[]
   activeItem?: DocsTocItem
+  activeItems?: readonly DocsTocItem[]
+  itemStates?: readonly DocsTocItemState[]
   progress?: number
   activeLabel?: string
 }

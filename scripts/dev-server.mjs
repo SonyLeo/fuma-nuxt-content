@@ -17,6 +17,11 @@ const stateFile = resolve(controlDir, 'server.json')
 const logFile = resolve(controlDir, 'server.log')
 const errFile = resolve(controlDir, 'server.err.log')
 const nuxtLockFile = resolve(root, '.nuxt', 'nuxt.lock')
+const contentCacheFiles = [
+  resolve(root, '.data', 'content', 'contents.sqlite'),
+  resolve(root, '.data', 'content', 'contents.sqlite-shm'),
+  resolve(root, '.data', 'content', 'contents.sqlite-wal'),
+]
 const defaultHost = '127.0.0.1'
 const defaultPort = 8888
 const defaultPath = '/guide/code-block'
@@ -29,6 +34,8 @@ function parseArgs(argv) {
     path: defaultPath,
     timeout: 45_000,
     wait: true,
+    cleanContentCache: false,
+    preserveContentCache: false,
   }
 
   for (const arg of argv.slice(1)) {
@@ -46,6 +53,10 @@ function parseArgs(argv) {
       options.path = value || defaultPath
     } else if (key === 'timeout') {
       options.timeout = Number(value || options.timeout)
+    } else if (key === 'clean-content-cache') {
+      options.cleanContentCache = true
+    } else if (key === 'preserve-content-cache') {
+      options.preserveContentCache = true
     } else if (key === 'no-wait') {
       options.wait = false
     }
@@ -73,6 +84,12 @@ function readJson(path) {
 function writeJson(path, value) {
   ensureControlDir()
   writeFileSync(path, JSON.stringify(value, null, 2) + '\n')
+}
+
+function resetLogFiles() {
+  ensureControlDir()
+  writeFileSync(logFile, '')
+  writeFileSync(errFile, '')
 }
 
 function isAlive(pid) {
@@ -106,7 +123,7 @@ function listWindowsProcesses() {
       '-ExecutionPolicy',
       'Bypass',
       '-Command',
-      'Get-CimInstance Win32_Process | Select-Object ProcessId,CommandLine | ConvertTo-Json -Compress',
+      'Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,CommandLine | ConvertTo-Json -Compress',
     ],
     {
       encoding: 'utf8',
@@ -147,6 +164,67 @@ function findWorkspaceNuxtDevProcesses() {
   }
 
   return listWindowsProcesses().filter(isWorkspaceNuxtDevProcess)
+}
+
+function findRootWorkspaceNuxtDevProcesses(processes) {
+  const devPids = new Set(processes.map((item) => Number(item.ProcessId)))
+
+  return processes.filter((item) => !devPids.has(Number(item.ParentProcessId)))
+}
+
+function clearNuxtContentCache(options = {}) {
+  const removed = []
+
+  for (const file of contentCacheFiles) {
+    if (!existsSync(file)) {
+      continue
+    }
+
+    rmSync(file, { force: true })
+    removed.push(file)
+  }
+
+  if (options.print !== false) {
+    console.log(
+      removed.length > 0
+        ? `Cleared Nuxt Content cache: ${removed.join(', ')}`
+        : 'Nuxt Content cache was already clean.',
+    )
+  }
+
+  return removed
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function readTextFile(path) {
+  if (!existsSync(path)) {
+    return ''
+  }
+
+  try {
+    return readFileSync(path, 'utf8')
+  } catch {
+    return ''
+  }
+}
+
+async function waitForStartupLog(timeout) {
+  const deadline = Date.now() + timeout
+
+  while (Date.now() < deadline) {
+    const log = readTextFile(logFile)
+
+    if (log.includes('Processed ') && log.includes('Nuxt Nitro server built')) {
+      return true
+    }
+
+    await sleep(500)
+  }
+
+  return false
 }
 
 function stopPid(pid) {
@@ -214,6 +292,7 @@ async function health(options) {
       status: response.status,
       bytes: body.length,
       hasNuxtError: body.includes('An error has occurred'),
+      hasPageNotFound: body.includes('Page not found'),
       hasCodeBlock: body.includes('fd-doc-code-block'),
       url,
     }
@@ -223,6 +302,7 @@ async function health(options) {
       status: 0,
       bytes: 0,
       hasNuxtError: false,
+      hasPageNotFound: false,
       hasCodeBlock: false,
       url,
       error: error instanceof Error ? error.message : String(error),
@@ -237,11 +317,11 @@ async function waitForHealth(options) {
   while (Date.now() < deadline) {
     last = await health({ ...options, timeout: 4000 })
 
-    if (last.ok && !last.hasNuxtError) {
+    if (last.ok && !last.hasNuxtError && !last.hasPageNotFound) {
       return last
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    await sleep(1000)
   }
 
   return last ?? (await health({ ...options, timeout: 4000 }))
@@ -304,7 +384,11 @@ async function start(options) {
     )
   }
 
-  ensureControlDir()
+  if (options.cleanContentCache) {
+    clearNuxtContentCache()
+  }
+
+  resetLogFiles()
   const out = openSync(logFile, 'a')
   const err = openSync(errFile, 'a')
   const child = spawn(
@@ -342,13 +426,15 @@ async function start(options) {
   console.log(`Logs: ${logFile}`)
 
   if (options.wait) {
+    await waitForStartupLog(options.timeout)
     const result = await waitForHealth(options)
+    const ok = result.ok && !result.hasNuxtError && !result.hasPageNotFound
 
     console.log(
-      `Health: ${result.ok ? 'ok' : 'fail'} status=${result.status} bytes=${result.bytes} url=${result.url}`,
+      `Health: ${ok ? 'ok' : 'fail'} status=${result.status} bytes=${result.bytes} nuxtError=${result.hasNuxtError} pageNotFound=${result.hasPageNotFound} url=${result.url}`,
     )
 
-    if (!result.ok || result.hasNuxtError) {
+    if (!ok) {
       process.exitCode = 1
     }
   }
@@ -359,12 +445,17 @@ async function start(options) {
 async function status(options) {
   const state = readJson(stateFile)
   const processes = findWorkspaceNuxtDevProcesses()
+  const rootProcesses = findRootWorkspaceNuxtDevProcesses(processes)
+  const childProcesses = processes.filter(
+    (item) => !rootProcesses.includes(item),
+  )
   const portReachable = await canConnect(options.host, options.port)
 
   console.log(`State file: ${existsSync(stateFile) ? stateFile : 'missing'}`)
   console.log(`Managed pid: ${state?.pid ?? 'none'}`)
   console.log(`Managed alive: ${state?.pid ? isAlive(state.pid) : false}`)
-  console.log(`Workspace Nuxt dev processes: ${processes.map((item) => item.ProcessId).join(', ') || 'none'}`)
+  console.log(`Workspace Nuxt dev root processes: ${rootProcesses.map((item) => item.ProcessId).join(', ') || 'none'}`)
+  console.log(`Workspace Nuxt dev child processes: ${childProcesses.map((item) => item.ProcessId).join(', ') || 'none'}`)
   console.log(`Port reachable: ${portReachable}`)
   console.log(`Log file: ${logFile}`)
 }
@@ -378,24 +469,27 @@ async function main() {
     await stop(options)
   } else if (options.action === 'restart') {
     await stop({ ...options, print: true })
-    await start(options)
+    if (!options.preserveContentCache) {
+      clearNuxtContentCache()
+    }
+    await start({ ...options, cleanContentCache: false })
   } else if (options.action === 'health') {
     const result = await health(options)
     console.log(
-      `Health: ${result.ok ? 'ok' : 'fail'} status=${result.status} bytes=${result.bytes} url=${result.url}`,
+      `Health: ${result.ok && !result.hasNuxtError && !result.hasPageNotFound ? 'ok' : 'fail'} status=${result.status} bytes=${result.bytes} nuxtError=${result.hasNuxtError} pageNotFound=${result.hasPageNotFound} url=${result.url}`,
     )
 
     if (result.error) {
       console.log(`Error: ${result.error}`)
     }
 
-    if (!result.ok || result.hasNuxtError) {
+    if (!result.ok || result.hasNuxtError || result.hasPageNotFound) {
       process.exitCode = 1
     }
   } else if (options.action === 'status') {
     await status(options)
   } else {
-    console.error('Usage: node scripts/dev-server.mjs start|stop|restart|status|health [--host=127.0.0.1] [--port=8888] [--path=/guide/code-block]')
+    console.error('Usage: node scripts/dev-server.mjs start|stop|restart|status|health [--host=127.0.0.1] [--port=8888] [--path=/guide/code-block] [--clean-content-cache] [--preserve-content-cache]')
     process.exitCode = 1
   }
 }

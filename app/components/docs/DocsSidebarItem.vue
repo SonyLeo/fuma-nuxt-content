@@ -8,11 +8,9 @@ const props = withDefaults(
     item: DocsNode
     currentPath: string
     level?: number
-    visualLevel?: number
   }>(),
   {
     level: 0,
-    visualLevel: 0,
   },
 )
 
@@ -94,7 +92,10 @@ function emitNavigate() {
 
 function createFolderContentId(item: DocsNode) {
   const raw = item.id || item.path || item.href || item.title || 'item'
-  const id = raw.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-|-$/g, '')
+  const id = raw
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-|-$/g, '')
 
   return `docs-sidebar-folder-${id || 'item'}`
 }
@@ -104,26 +105,42 @@ const itemHref = computed(() => resolveItemHref(props.item))
 const itemExternal = computed(() => isItemExternal(props.item))
 const itemIsCurrent = computed(() => isCurrent(props.item))
 const itemIsLinkCurrent = computed(() => isLinkCurrent(props.item))
-const itemIsActive = computed(() => itemIsCurrent.value || itemIsLinkCurrent.value)
+const itemIsActive = computed(
+  () => itemIsCurrent.value || itemIsLinkCurrent.value,
+)
 const itemIsCollapsible = computed(() => props.item.collapsible !== false)
 const itemDefaultExpanded = computed(() => isExpanded(props.item))
 const folderContentId = computed(() => createFolderContentId(props.item))
 const folderOpen = shallowRef(itemDefaultExpanded.value)
 const folderState = computed(() => (folderOpen.value ? 'open' : 'closed'))
-const folderToggleLabel = computed(
-  () => `${folderOpen.value ? 'Collapse' : 'Expand'} ${props.item.title}`,
-)
+watch(itemDefaultExpanded, () => {
+  if (itemDefaultExpanded.value) {
+    folderOpen.value = true
+  }
+})
 
-watch(
-  itemDefaultExpanded,
-  () => {
-    if (itemDefaultExpanded.value) {
-      folderOpen.value = true
-    }
-  },
-)
+function isFolderIconTarget(target: EventTarget | null) {
+  return (
+    target instanceof Element &&
+    Boolean(target.closest('[data-sidebar-folder-icon]'))
+  )
+}
 
-function handleFolderLinkClick() {
+function handleFolderLinkClick(
+  event: MouseEvent,
+  setOpen: (open: boolean) => void,
+  toggle: () => void,
+) {
+  if (itemIsCollapsible.value && isFolderIconTarget(event.target)) {
+    event.preventDefault()
+    toggle()
+    return
+  }
+
+  if (itemIsCollapsible.value) {
+    setOpen(itemIsActive.value ? !folderOpen.value : true)
+  }
+
   emitNavigate()
 }
 </script>
@@ -131,20 +148,20 @@ function handleFolderLinkClick() {
 <template>
   <li
     class="docs-sidebar-item"
-    :class="{ 'is-visual-nested': visualLevel > 0 }"
     :data-level="level"
-    :data-visual-level="visualLevel"
   >
     <p
       v-if="item.type === 'separator'"
       class="docs-sidebar-separator"
       :class="{ 'is-nested': level > 0 }"
+      :data-level="level"
     >
       {{ item.title }}
     </p>
 
     <UiCollapsible
       v-else-if="itemHasChildren"
+      v-slot="{ setOpen, toggle }"
       v-model:open="folderOpen"
       class="docs-sidebar-folder"
       :content-id="folderContentId"
@@ -153,20 +170,20 @@ function handleFolderLinkClick() {
       :data-active="hasActiveDescendant(item) ? 'true' : 'false'"
       :data-collapsible="itemIsCollapsible ? 'true' : 'false'"
     >
-      <div v-if="itemHref" class="docs-sidebar-folder-row">
+      <template v-if="itemHref">
         <DocsLink
           :href="itemHref"
           :external="itemExternal"
           class="docs-sidebar-link docs-sidebar-folder-link"
           :class="{ 'is-active': itemIsActive }"
           :data-level="level"
-          :data-visual-level="visualLevel"
           :data-state="folderState"
+          :data-active="itemIsActive ? 'true' : 'false'"
           :data-collapsible="itemIsCollapsible ? 'true' : 'false'"
           :aria-current="itemIsActive ? 'page' : undefined"
           :aria-expanded="folderOpen ? 'true' : 'false'"
           :aria-controls="folderContentId"
-          @click="handleFolderLinkClick"
+          @click="handleFolderLinkClick($event, setOpen, toggle)"
         >
           <DocsNavIcon v-if="item.icon" :name="item.icon" />
           <span class="docs-sidebar-link-label">
@@ -180,29 +197,20 @@ function handleFolderLinkClick() {
               {{ item.badge }}
             </span>
           </span>
-        </DocsLink>
-
-        <UiCollapsibleTrigger
-          v-if="itemIsCollapsible"
-          class="docs-sidebar-folder-trigger docs-sidebar-folder-toggle"
-          :aria-label="folderToggleLabel"
-          :data-level="level"
-          :data-visual-level="visualLevel"
-          :data-collapsible="itemIsCollapsible ? 'true' : 'false'"
-        >
           <ChevronDown
+            v-if="itemIsCollapsible"
             class="docs-sidebar-folder-chevron"
             data-sidebar-folder-icon
             aria-hidden="true"
+            @click.prevent.stop="toggle()"
           />
-        </UiCollapsibleTrigger>
-      </div>
+        </DocsLink>
+      </template>
 
       <UiCollapsibleTrigger
         v-else-if="itemIsCollapsible"
         class="docs-sidebar-link docs-sidebar-folder-trigger"
         :data-level="level"
-        :data-visual-level="visualLevel"
         :data-collapsible="itemIsCollapsible ? 'true' : 'false'"
       >
         <DocsNavIcon v-if="item.icon" :name="item.icon" />
@@ -228,7 +236,6 @@ function handleFolderLinkClick() {
         v-else
         class="docs-sidebar-link docs-sidebar-folder-trigger"
         :data-level="level"
-        :data-visual-level="visualLevel"
         :data-state="folderState"
         data-collapsible="false"
         :aria-expanded="folderOpen ? 'true' : 'false'"
@@ -264,7 +271,7 @@ function handleFolderLinkClick() {
       class="docs-sidebar-link"
       :class="{ 'is-active': isCurrent(item) }"
       :data-level="level"
-      :data-visual-level="visualLevel"
+      :data-active="isCurrent(item) ? 'true' : 'false'"
       :aria-current="isCurrent(item) ? 'page' : undefined"
       @click="emitNavigate"
     >
@@ -289,7 +296,7 @@ function handleFolderLinkClick() {
       class="docs-sidebar-link"
       :class="{ 'is-active': isLinkCurrent(item) }"
       :data-level="level"
-      :data-visual-level="visualLevel"
+      :data-active="isLinkCurrent(item) ? 'true' : 'false'"
       :aria-current="isLinkCurrent(item) ? 'page' : undefined"
       @click="emitNavigate"
     >
@@ -319,6 +326,5 @@ function handleFolderLinkClick() {
         </span>
       </span>
     </div>
-
   </li>
 </template>

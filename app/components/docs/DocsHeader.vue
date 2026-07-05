@@ -39,6 +39,20 @@ const showGithubShortcut = computed(() => {
 function isActive(link: DocsNavLink) {
   return isDocsLinkActive(link.href, props.currentPath, link.active ?? 'url')
 }
+
+function toggleSidebarFromClick(event: MouseEvent) {
+  if ('pointerType' in event && event.pointerType === 'touch') {
+    return
+  }
+
+  sidebarState.toggleMobile()
+}
+
+function toggleSidebarFromTouch(event: TouchEvent) {
+  event.preventDefault()
+  event.stopPropagation()
+  sidebarState.toggleMobile()
+}
 </script>
 
 <template>
@@ -99,7 +113,8 @@ function isActive(link: DocsNavLink) {
           aria-label="Open sidebar"
           :aria-expanded="sidebarState.mobileOpen.value ? 'true' : 'false'"
           aria-controls="nd-sidebar-mobile"
-          @click="sidebarState.toggleMobile"
+          @click="toggleSidebarFromClick"
+          @touchend="toggleSidebarFromTouch"
         >
           <PanelLeft class="docs-header-sidebar-icon" aria-hidden="true" />
         </button>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ComponentPublicInstance } from 'vue'
-import type { DocsPageProps, DocsTocItem } from '~/types/docs'
+import type { DocsPageProps, DocsTocItem, DocsTocItemState } from '~/types/docs'
 
 const props = withDefaults(defineProps<DocsPageProps>(), {
   full: false,
@@ -21,13 +21,19 @@ defineSlots<{
   toc(props: {
     toc: NonNullable<DocsPageProps['toc']>
     activeId?: string
+    activeIds: readonly string[]
     activeItem?: DocsTocItem
+    activeItems: readonly DocsTocItem[]
+    itemStates: readonly DocsTocItemState[]
     progress: number
   }): unknown
   tocPopover(props: {
     toc: NonNullable<DocsPageProps['toc']>
     activeId?: string
+    activeIds: readonly string[]
     activeItem?: DocsTocItem
+    activeItems: readonly DocsTocItem[]
+    itemStates: readonly DocsTocItemState[]
     progress: number
   }): unknown
 }>()
@@ -57,11 +63,12 @@ const breadcrumbItems = computed(() => props.breadcrumb?.items ?? [])
 const breadcrumbEnabled = computed(() => {
   return (props.breadcrumb?.enabled ?? true) && breadcrumbItems.value.length > 0
 })
-const { activeId, activeItem, progress } = useDocsTocState(
-  computed(() =>
-    tocEnabled.value || tocPopoverEnabled.value ? tocItems.value : [],
-  ),
-)
+const { activeId, activeIds, activeItem, activeItems, itemStates, progress } =
+  useDocsTocState(
+    computed(() =>
+      tocEnabled.value || tocPopoverEnabled.value ? tocItems.value : [],
+    ),
+  )
 
 function scanRenderedHeadings() {
   if (!import.meta.client || (props.toc?.items?.length ?? 0) > 0) {
@@ -123,13 +130,19 @@ onUpdated(() => {
       name="tocPopover"
       :toc="tocOptions"
       :active-id="activeId"
+      :active-ids="activeIds"
       :active-item="activeItem"
+      :active-items="activeItems"
+      :item-states="itemStates"
       :progress="progress"
     >
       <DocsTocPopover
         :items="tocOptions.items"
         :active-id="activeId"
+        :active-ids="activeIds"
         :active-item="activeItem"
+        :active-items="activeItems"
+        :item-states="itemStates"
         :progress="progress"
         :active-label="tocOptions.activeLabel"
       />
@@ -178,13 +191,19 @@ onUpdated(() => {
       name="toc"
       :toc="tocOptions"
       :active-id="activeId"
+      :active-ids="activeIds"
       :active-item="activeItem"
+      :active-items="activeItems"
+      :item-states="itemStates"
       :progress="progress"
     >
       <DocsToc
         :items="tocOptions.items"
         :active-id="activeId"
+        :active-ids="activeIds"
         :active-item="activeItem"
+        :active-items="activeItems"
+        :item-states="itemStates"
         :progress="progress"
         :label="tocOptions.label"
       />

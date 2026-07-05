@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import type {
-  DocsPageAction,
-  DocsPageActionState,
-} from '~/types/docs-actions'
+import type { DocsPageAction, DocsPageActionState } from '~/types/docs-actions'
 import type { DocsContentPage, DocsPageRecord } from '~/types/docs'
 import {
   docsNavigationFields,
@@ -10,10 +7,7 @@ import {
   resolveDocsRecordSourcePath,
   resolveDocsSourcePath,
 } from '~/utils/docs-navigation'
-import {
-  getDocsGithubEditUrl,
-  getDocsGithubSourceUrl,
-} from '~/utils/docs-site'
+import { getDocsGithubEditUrl, getDocsGithubSourceUrl } from '~/utils/docs-site'
 import { writeDocsClipboardText } from '~/utils/docs-clipboard'
 import {
   readDocsFrontmatterBoolean,
@@ -60,21 +54,24 @@ const { data: docsPages } = await useAsyncData('docs-pages', () => {
     .all()
 })
 
-const { data: docsSearchPages } = await useAsyncData('docs-search-pages', () => {
-  return queryCollection('docs')
-    .select(
-      'path',
-      'stem',
-      'title',
-      'description',
-      'sectionLabel',
-      'hidden',
-      'slug',
-      'structuredData',
-      'body',
-    )
-    .all()
-})
+const { data: docsSearchPages } = await useAsyncData(
+  'docs-search-pages',
+  () => {
+    return queryCollection('docs')
+      .select(
+        'path',
+        'stem',
+        'title',
+        'description',
+        'sectionLabel',
+        'hidden',
+        'slug',
+        'structuredData',
+        'body',
+      )
+      .all()
+  },
+)
 
 const docsPageRecords = computed<DocsPageRecord[]>(() => {
   return (docsPages.value ?? []) as DocsPageRecord[]
@@ -119,7 +116,16 @@ const { data: pageFrontmatter } = await useAsyncData(
     const markdown = await readDocsMarkdownSource(pageSourcePath.value)
 
     return {
+      full: readDocsFrontmatterBoolean(markdown, 'full'),
+      toc: readDocsFrontmatterBoolean(markdown, 'toc'),
       tocPopover: readDocsFrontmatterBoolean(markdown, 'tocPopover'),
+      pager: readDocsFrontmatterBoolean(markdown, 'pager'),
+      breadcrumb: readDocsFrontmatterBoolean(markdown, 'breadcrumb'),
+      breadcrumbPage: readDocsFrontmatterBoolean(markdown, 'breadcrumbPage'),
+      breadcrumbSeparator: readDocsFrontmatterBoolean(
+        markdown,
+        'breadcrumbSeparator',
+      ),
     }
   },
 )
@@ -143,29 +149,55 @@ const { data: docsMeta } = await useAsyncData('docs-meta', () => {
     .all()
 })
 
-if (!page.value) {
-  throw createError({
-    statusCode: 404,
-    statusMessage: 'Page not found',
-    fatal: true,
-  })
-}
-
-const { items, contextualItems, headline, sidebarItems } = useDocsTree(
+const { runtime, headline, sidebarItems } = useDocsTree(
   computed(() => navigation.value ?? null),
   computed(() => docsPageRecords.value),
   computed(() => docsMeta.value ?? null),
   computed(() => route.path),
 )
+
+if (!page.value) {
+  const fallbackPath = runtime.value.getFallbackPath(route.path)
+
+  if (fallbackPath) {
+    await navigateTo(fallbackPath, {
+      redirectCode: 302,
+      replace: true,
+    })
+  } else {
+    throw createError({
+      statusCode: 404,
+      statusMessage: 'Page not found',
+      fatal: true,
+    })
+  }
+}
+
 const { previous, next } = useDocsPager(
-  items,
+  runtime,
   computed(() => route.path),
 )
+const pageForOptions = computed<DocsContentPage | null>(() => {
+  if (!page.value) {
+    return null
+  }
+
+  return {
+    ...page.value,
+    full: pageFrontmatter.value?.full,
+    toc: pageFrontmatter.value?.toc,
+    tocPopover: pageFrontmatter.value?.tocPopover,
+    pager: pageFrontmatter.value?.pager,
+    breadcrumb: pageFrontmatter.value?.breadcrumb,
+    breadcrumbPage: pageFrontmatter.value?.breadcrumbPage,
+    breadcrumbSeparator: pageFrontmatter.value?.breadcrumbSeparator,
+  }
+})
 const {
   title,
   createHeader,
   options: pageOptions,
-} = useDocsPage(computed(() => page.value))
+} = useDocsPage(pageForOptions)
 const breadcrumbOptions = computed(() => {
   if (!pageOptions.value.breadcrumb.enabled) {
     return {
@@ -182,7 +214,7 @@ const breadcrumbOptions = computed(() => {
   }
 })
 const { breadcrumbs } = useDocsBreadcrumbs(
-  contextualItems,
+  runtime,
   computed(() => route.path),
   breadcrumbOptions,
 )
@@ -191,7 +223,9 @@ const pageHeader = computed(() => {
   return createHeader([])
 })
 const pageDescription = computed(() => {
-  return page.value?.description || site.seo?.defaultDescription || site.description
+  return (
+    page.value?.description || site.seo?.defaultDescription || site.description
+  )
 })
 const pageSeoTitle = computed(() => createDocsSeoTitle(title.value, site))
 const canonicalUrl = computed(() => {
@@ -317,7 +351,7 @@ const pageActions = computed<DocsPageAction[]>(() => {
 const searchIndex = computed(() => {
   return createDocsSearchIndex(
     (docsSearchPages.value ?? []) as DocsContentPage[],
-    items.value,
+    runtime.value,
   )
 })
 
@@ -352,10 +386,7 @@ function createPageActionPrompt(url: string) {
   return `Read ${url}, I want to ask questions about it.`
 }
 
-function withSearchParams(
-  url: string,
-  params: Record<string, string>,
-) {
+function withSearchParams(url: string, params: Record<string, string>) {
   return `${url}?${new URLSearchParams(params)}`
 }
 
@@ -423,7 +454,9 @@ onBeforeUnmount(() => {
 
       <template #footer="{ footer }">
         <DocsPageFooter
-          :enabled="(footer?.enabled ?? true) || site.feedback?.enabled === true"
+          :enabled="
+            (footer?.enabled ?? true) || site.feedback?.enabled === true
+          "
           :previous="footer?.previous"
           :next="footer?.next"
           :pager-labels="footer?.pagerLabels"

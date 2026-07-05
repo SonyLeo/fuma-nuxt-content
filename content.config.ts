@@ -1,6 +1,6 @@
 import { defineCollection, defineContentConfig, z } from '@nuxt/content'
 
-const docsMetaPageEntrySchema = z.union([
+const docsMetaLeafEntrySchema = z.union([
   z.string(),
   z.object({
     type: z.literal('separator'),
@@ -26,6 +26,10 @@ const docsMetaPageEntrySchema = z.union([
     defaultOpen: z.boolean().optional(),
     collapsible: z.boolean().optional(),
   }),
+])
+
+const docsMetaPageEntrySchema = z.union([
+  docsMetaLeafEntrySchema,
   z.object({
     type: z.literal('group'),
     name: z.string(),
@@ -36,6 +40,8 @@ const docsMetaPageEntrySchema = z.union([
     hidden: z.boolean().optional(),
     defaultOpen: z.boolean().optional(),
     collapsible: z.boolean().optional(),
+    pages: z.array(docsMetaLeafEntrySchema).optional(),
+    pagesIndex: z.string().optional(),
   }),
 ])
 

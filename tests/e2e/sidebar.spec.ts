@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { devices, expect, test } from '@playwright/test'
 import { expectCountAtLeast } from './helpers/assertions'
 import {
   activeSidebarScope,
@@ -9,7 +9,9 @@ import {
 import { clickAndExpectExpanded } from './helpers/interaction'
 
 test.describe('@fast @shell sidebar', () => {
-  test('exposes tab, separators, and current item contract', async ({ page }) => {
+  test('exposes tab, separators, and current item contract', async ({
+    page,
+  }) => {
     await gotoDocsFixture(page, '/guide/component-detail')
 
     const scope = await activeSidebarScope(page)
@@ -24,17 +26,28 @@ test.describe('@fast @shell sidebar', () => {
 
     const separators = scope.locator('.docs-sidebar-separator')
 
-    for (const label of ['Introduction', 'References', 'Components', 'Layouts']) {
+    for (const label of ['Introduction', 'References']) {
       await expect(separators.filter({ hasText: label })).toHaveCount(1)
     }
 
     await expect(
-      scope.locator('.docs-sidebar-link[aria-current="page"] .docs-sidebar-link-label'),
+      scope.locator('.docs-sidebar-folder-link', { hasText: 'Components' }),
+    ).toBeVisible()
+    await expect(
+      scope.locator('.docs-sidebar-folder-trigger', { hasText: 'Layouts' }),
+    ).toBeVisible()
+
+    await expect(
+      scope.locator(
+        '.docs-sidebar-link[aria-current="page"] .docs-sidebar-link-label',
+      ),
     ).toHaveText('Accordion')
     await expectCountAtLeast(scope.locator('.docs-sidebar-link'), 1)
   })
 
-  test('opens tabs menu without shifting sidebar nav flow', async ({ page }) => {
+  test('opens tabs menu without shifting sidebar nav flow', async ({
+    page,
+  }) => {
     await gotoDocsFixture(page, '/guide/component-detail')
 
     const scope = await activeSidebarScope(page)
@@ -43,7 +56,10 @@ test.describe('@fast @shell sidebar', () => {
 
     await clickAndExpectExpanded(trigger)
     await expect(scope.locator('.docs-sidebar-tab-panel')).toBeVisible()
-    await expect(scope.locator('.docs-sidebar-tab-panel')).toHaveAttribute('role', 'menu')
+    await expect(scope.locator('.docs-sidebar-tab-panel')).toHaveAttribute(
+      'role',
+      'menu',
+    )
     await expect(
       scope.locator('.docs-sidebar-tab-option[aria-current="page"]'),
     ).toContainText('Fumadocs UI')
@@ -53,37 +69,74 @@ test.describe('@fast @shell sidebar', () => {
     expect(Math.round(navTopAfter?.y ?? 0)).toBe(Math.round(navTop?.y ?? 0))
   })
 
-  test('exposes folder trigger, link, and content semantics when folders are visible', async ({
+  test('renders separators as static labels without disclosure affordance', async ({
     page,
   }) => {
-    test.skip(isNarrowViewport(page), 'Folder protocol is covered in persistent sidebar.')
+    await gotoDocsFixture(page, '/guide/component-detail')
+
+    const scope = await activeSidebarScope(page)
+
+    await expect(scope.locator('.docs-sidebar-section-trigger')).toHaveCount(0)
+    await expect(scope.locator('button.docs-sidebar-separator')).toHaveCount(0)
+
+    for (const label of ['Introduction', 'References']) {
+      const separator = scope
+        .locator('.docs-sidebar-separator', {
+          hasText: label,
+        })
+        .first()
+
+      await expect(separator).toBeVisible()
+      await expect(separator).not.toHaveAttribute('aria-expanded', /.+/)
+    }
+
+    await expect(
+      scope.locator('.docs-sidebar-separator', {
+        hasText: 'Components',
+      }),
+    ).toHaveCount(0)
+    await expect(
+      scope.locator('.docs-sidebar-separator', {
+        hasText: 'Layouts',
+      }),
+    ).toHaveCount(0)
+    await expect(
+      scope.locator('.docs-sidebar-link', {
+        hasText: 'Overview',
+      }),
+    ).toBeVisible()
+  })
+
+  test('keeps top-level folder link navigation separate from disclosure', async ({
+    page,
+  }) => {
+    test.skip(
+      isNarrowViewport(page),
+      'Folder protocol is covered in persistent sidebar.',
+    )
 
     await gotoDocsFixture(page, '/guide/component-detail')
 
     const scope = await activeSidebarScope(page)
     const folderLink = scope
       .locator('.docs-sidebar-folder-link', {
-        hasText: 'Protocol Playground',
+        hasText: 'Components',
       })
       .first()
     const folder = folderLink.locator(
       'xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " docs-sidebar-folder ")][1]',
     )
-    const trigger = folderLink.locator(
-      'xpath=following-sibling::button[contains(concat(" ", normalize-space(@class), " "), " docs-sidebar-folder-trigger ")][1]',
-    )
-    const contentId = await trigger.getAttribute('aria-controls')
+    const folderIcon = folderLink.locator('[data-sidebar-folder-icon]').first()
+    const contentId = await folderLink.getAttribute('aria-controls')
 
     await expect(folder).toBeVisible()
     await expect(folder).toHaveAttribute('data-state', /^(open|closed)$/)
-    await expect(folderLink).toHaveAttribute('aria-expanded', /^(true|false)$/)
-    await expect(trigger).toHaveAttribute('aria-expanded', /^(true|false)$/)
-    await expect(trigger).toHaveAttribute(
-      'aria-label',
-      /^(Collapse|Expand) Protocol Playground$/,
+    await expect(folderLink).toHaveAttribute(
+      'href',
+      /\/guide\/components$/,
     )
+    await expect(folderLink).toHaveAttribute('aria-expanded', /^(true|false)$/)
     expect(contentId).toBeTruthy()
-    await expect(folderLink).toHaveAttribute('aria-controls', contentId ?? '')
 
     const content = scope.locator(`#${contentId}`)
 
@@ -91,22 +144,28 @@ test.describe('@fast @shell sidebar', () => {
     await expect(content).toHaveAttribute('data-state', /^(open|closed)$/)
 
     const urlBeforeToggle = page.url()
-    const previousState = await trigger.getAttribute('aria-expanded')
+    const previousState = await folderLink.getAttribute('aria-expanded')
 
-    await trigger.click()
-    await expect(trigger).not.toHaveAttribute(
+    await folderIcon.click()
+    await expect(folderLink).not.toHaveAttribute(
       'aria-expanded',
       previousState ?? '',
     )
     expect(page.url()).toBe(urlBeforeToggle)
 
-    await folderLink.click()
-    await expect(page).toHaveURL(/\/guide\/protocol-playground\/entry-contract$/)
+    await folderIcon.click()
+    await expect(folderLink).toHaveAttribute(
+      'aria-expanded',
+      previousState ?? '',
+    )
+
+    await folderLink.click({ position: { x: 16, y: 18 } })
+    await expect(page).toHaveURL(/\/guide\/components$/)
 
     const nextScope = await activeSidebarScope(page)
     const nextFolderLink = nextScope
       .locator('.docs-sidebar-folder-link', {
-        hasText: 'Protocol Playground',
+        hasText: 'Components',
       })
       .first()
     const nextFolder = nextFolderLink.locator(
@@ -114,38 +173,55 @@ test.describe('@fast @shell sidebar', () => {
     )
 
     await expect(nextFolder).toHaveAttribute('data-state', 'open')
-    await expect(
-      nextFolder.locator('.docs-sidebar-link[aria-current="page"]'),
-    ).toContainText('Protocol Playground')
+    await expect(nextFolderLink).toHaveAttribute('aria-current', 'page')
   })
 
   test('supports collapse, hover preview, and floating pin on desktop', async ({
     page,
   }) => {
-    test.skip(isNarrowViewport(page), 'Mobile sidebar uses the drawer contract.')
+    test.skip(
+      isNarrowViewport(page),
+      'Mobile sidebar uses the drawer contract.',
+    )
 
     await gotoDocsFixture(page, '/guide/component-detail')
 
     const layout = page.locator('#nd-docs-layout')
     const sidebar = page.locator('#nd-sidebar')
     const inner = sidebar.locator('.docs-sidebar-inner')
+    const content = page.locator('.docs-shell-content')
+    const contentBoxBefore = await content.boundingBox()
 
     await sidebar.locator('.docs-sidebar-collapse').click()
     await expect(layout).toHaveAttribute('data-sidebar-collapsed', 'true')
     await expect(sidebar).toHaveAttribute('data-collapsed', 'true')
     await expect(page.locator('.docs-sidebar-floating')).toBeVisible()
     await expect(inner).toHaveCSS('opacity', '0')
+    const contentBoxAfter = await content.boundingBox()
 
-    await sidebar.locator('.docs-sidebar-hover-zone').dispatchEvent('pointerenter', {
-      clientX: 1,
-      pointerType: 'mouse',
-    })
+    expect(
+      Math.abs((contentBoxAfter?.x ?? 0) - (contentBoxBefore?.x ?? 0)),
+    ).toBeLessThanOrEqual(1)
+    expect(
+      Math.abs((contentBoxAfter?.width ?? 0) - (contentBoxBefore?.width ?? 0)),
+    ).toBeLessThanOrEqual(1)
+
+    await sidebar
+      .locator('.docs-sidebar-hover-zone')
+      .dispatchEvent('pointerenter', {
+        clientX: 1,
+        pointerType: 'mouse',
+      })
     await expect(sidebar).toHaveAttribute('data-hovered', 'true')
     await expect(inner).toHaveCSS('opacity', '1')
-    await expect(page.locator('.docs-sidebar-floating')).toHaveClass(/is-hidden/)
+    await expect(page.locator('.docs-sidebar-floating')).toHaveClass(
+      /is-hidden/,
+    )
 
     await page.mouse.move(400, 20)
-    await expect(page.locator('.docs-sidebar-floating')).not.toHaveClass(/is-hidden/)
+    await expect(page.locator('.docs-sidebar-floating')).not.toHaveClass(
+      /is-hidden/,
+    )
     await page.locator('.docs-sidebar-floating-button').click()
     await expect(layout).toHaveAttribute('data-sidebar-collapsed', 'false')
     await expect(sidebar).toHaveAttribute('data-collapsed', 'false')
@@ -179,9 +255,9 @@ test.describe('@fast @shell sidebar', () => {
     )
     expect(panelBox?.width ?? 0).toBeGreaterThan(viewportWidth * 0.8)
     await expect(panel.locator('.docs-sidebar')).toBeVisible()
-    await expect(panel.locator('.docs-sidebar-link[aria-current="page"]')).toContainText(
-      'Accordion',
-    )
+    await expect(
+      panel.locator('.docs-sidebar-link[aria-current="page"]'),
+    ).toContainText('Accordion')
 
     await page.keyboard.press('Escape')
     await expect(panel).toHaveAttribute('data-state', 'closed')
@@ -190,6 +266,46 @@ test.describe('@fast @shell sidebar', () => {
       'data-sidebar-mobile-open',
       'false',
     )
+  })
+
+  test('opens mobile drawer from touch tap on emulated iPhone', async ({
+    baseURL,
+    browser,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== 'chromium-desktop',
+      'Touch emulation is covered once from the desktop browser project.',
+    )
+
+    const context = await browser.newContext({
+      ...devices['iPhone 12 Pro'],
+      baseURL,
+      viewport: {
+        height: 844,
+        width: 390,
+      },
+    })
+    const page = await context.newPage()
+
+    try {
+      await gotoDocsFixture(page, '/guide/components')
+      await page.locator('#docs-header-sidebar-trigger').tap()
+
+      const panel = page.locator('#nd-sidebar-mobile')
+
+      await expect(page.locator('#nd-docs-layout')).toHaveAttribute(
+        'data-sidebar-mobile-open',
+        'true',
+      )
+      await expect(page.locator('#docs-header-sidebar-trigger')).toHaveAttribute(
+        'aria-expanded',
+        'true',
+      )
+      await expect(panel).toHaveAttribute('data-state', 'open')
+      await expect(panel).toBeVisible()
+    } finally {
+      await context.close()
+    }
   })
 
   test('closes the mobile drawer from the overlay', async ({ page }) => {
@@ -230,22 +346,33 @@ test.describe('@fast @shell sidebar', () => {
     const folder = folderLink.locator(
       'xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " docs-sidebar-folder ")][1]',
     )
-    const trigger = folderLink.locator(
-      'xpath=following-sibling::button[contains(concat(" ", normalize-space(@class), " "), " docs-sidebar-folder-trigger ")][1]',
-    )
+    const folderIcon = folderLink.locator('[data-sidebar-folder-icon]').first()
     const urlBeforeToggle = page.url()
 
     await expect(folder).toBeVisible()
-    await trigger.click()
+    const previousState = await folderLink.getAttribute('aria-expanded')
+
+    await folderIcon.click()
     await expect(panel).toHaveAttribute('data-state', 'open')
     await expect(page.locator('#nd-docs-layout')).toHaveAttribute(
       'data-sidebar-mobile-open',
       'true',
     )
+    await expect(folderLink).not.toHaveAttribute(
+      'aria-expanded',
+      previousState ?? '',
+    )
     expect(page.url()).toBe(urlBeforeToggle)
 
-    await folderLink.click()
-    await expect(page).toHaveURL(/\/guide\/protocol-playground\/entry-contract$/)
+    if ((await folderLink.getAttribute('aria-expanded')) !== 'true') {
+      await folderIcon.click()
+      await expect(folderLink).toHaveAttribute('aria-expanded', 'true')
+    }
+
+    await folderLink.click({ position: { x: 16, y: 18 } })
+    await expect(page).toHaveURL(
+      /\/guide\/protocol-playground\/entry-contract$/,
+    )
     await expect(panel).toHaveAttribute('data-state', 'closed')
     await expect(page.locator('#nd-docs-layout')).toHaveAttribute(
       'data-sidebar-mobile-open',

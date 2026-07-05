@@ -32,6 +32,8 @@ foundation work.
 
 - Install dependencies: `pnpm install`
 - Start dev server: `pnpm dev`
+- Managed dev server health: `node scripts/dev-server.mjs health --path=/guide/component-detail --timeout=30000`
+- Managed dev server restart, only after failed health/log evidence: `node scripts/dev-server.mjs restart --path=/guide/components --timeout=90000`
 - Build: `pnpm build`
 - Generate static output: `pnpm generate`
 - Preview built output: `pnpm preview`
@@ -103,6 +105,11 @@ Foundation work does not include:
   computed styles, and layout metrics before visual fine-tuning.
 - Run the relevant parity profile when one exists; if none exists, record the
   missing profile as part of the task review.
+- Use `scripts/parity/run.mjs` for parity profiles and suites.
+- Before runtime parity, check the managed dev server with `status`/`health`.
+  Do not restart by default; restart only when the health result or logs show a
+  stale/wrong server, 404/Nuxt error, request timeout, or Nuxt Content SQLite
+  failure.
 - Treat `design/parity-reconstruction-workflow.md` as a historical case archive,
   not the daily execution entry point.
 
@@ -134,6 +141,11 @@ Foundation work does not include:
 - UI/style changes: re-read changed CSS and at least one consumer component.
 - Component changes: check props, emits, slots, responsive behavior,
   accessibility labels, and token usage.
+- After `nuxi typecheck`, run `node scripts/dev-server.mjs health` before any
+  Playwright or parity runtime check. Restart only if that health check fails.
+- For Nuxt Content-heavy Playwright tests, prefer focused specs first and use
+  `PLAYWRIGHT_WORKERS=1` or `--workers=1` when the failure signature points to
+  shared content database instability instead of a UI regression.
 - If a runtime check is skipped, say which check was skipped and why.
 
 ## Git Rules

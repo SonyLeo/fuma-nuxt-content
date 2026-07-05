@@ -94,6 +94,7 @@ function close() {
             <DocsTocList
               :items="items"
               :active-id="activeId"
+              :item-states="itemStates"
               :progress="progress"
               @navigate="close"
             />

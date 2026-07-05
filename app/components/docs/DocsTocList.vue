@@ -8,7 +8,7 @@ import {
   useTemplateRef,
   watch,
 } from 'vue'
-import type { DocsTocItem } from '~/types/docs'
+import type { DocsTocItem, DocsTocItemState } from '~/types/docs'
 
 type TocItemTrack = {
   width: number
@@ -60,11 +60,13 @@ const props = withDefaults(
   defineProps<{
     items?: DocsTocItem[]
     activeId?: string
+    itemStates?: readonly DocsTocItemState[]
     progress?: number
   }>(),
   {
     items: () => [],
     activeId: undefined,
+    itemStates: () => [],
     progress: 0,
   },
 )
@@ -81,6 +83,7 @@ const linkElements = new Map<string, HTMLAnchorElement>()
 let resizeObserver: ResizeObserver | null = null
 let rafId = 0
 let previousThumbRange: ThumbRange | null = null
+let didInitialAutoScroll = false
 
 const renderItems = computed<TocRenderItem[]>(() => {
   return props.items.map((item, index, list) => {
@@ -116,32 +119,29 @@ const renderItems = computed<TocRenderItem[]>(() => {
   })
 })
 
+const stateById = computed(() => {
+  const states = new Map<string, DocsTocItemState>()
+
+  for (const state of props.itemStates) {
+    states.set(state.id, state)
+  }
+
+  return states
+})
+
 const activeLinks = computed(() => {
   const links = new Set<string>()
-  const activeIndex = props.items.findIndex((item) => item.id === props.activeId)
-  const index = activeIndex >= 0 ? activeIndex : 0
-  const activeItem = props.items[index]
 
-  if (!activeItem) {
-    return links
-  }
-
-  let parentDepth = activeItem.depth - 1
-
-  for (let i = index - 1; i >= 0 && parentDepth >= 2; i--) {
-    const item = props.items[i]
-
-    if (!item) {
-      continue
-    }
-
-    if (item.depth <= parentDepth) {
-      links.add(item.id)
-      parentDepth = item.depth - 1
+  for (const state of props.itemStates) {
+    if (state.active) {
+      links.add(state.id)
     }
   }
 
-  links.add(activeItem.id)
+  if (links.size === 0 && props.activeId) {
+    links.add(props.activeId)
+  }
+
   return links
 })
 
@@ -223,6 +223,10 @@ function itemTrackStyle(item: TocRenderItem) {
 
 function isItemActive(item: DocsTocItem) {
   return activeLinks.value.has(item.id)
+}
+
+function isItemFallback(item: DocsTocItem) {
+  return stateById.value.get(item.id)?.fallback ?? false
 }
 
 function getItemOffset(depth: number) {
@@ -313,6 +317,11 @@ function measureTrack() {
     d,
     positions: withPathLengths(d, measuredPositions),
   }
+
+  if (!didInitialAutoScroll) {
+    didInitialAutoScroll =
+      scrollItemIntoView(props.activeId, true) || didInitialAutoScroll
+  }
 }
 
 function withPathLengths(
@@ -363,6 +372,63 @@ function withPathLengths(
   return positions
 }
 
+function getScrollContainer(element: HTMLElement) {
+  let current = element.parentElement
+
+  while (current && current !== document.body) {
+    const styles = window.getComputedStyle(current)
+    const overflowY = styles.overflowY
+
+    if (
+      (overflowY === 'auto' || overflowY === 'scroll') &&
+      current.scrollHeight > current.clientHeight
+    ) {
+      return current
+    }
+
+    current = current.parentElement
+  }
+
+  return listRef.value?.parentElement ?? null
+}
+
+function scrollItemIntoView(id: string | undefined, instant = false) {
+  if (!id) {
+    return false
+  }
+
+  const element = linkElements.get(id)
+
+  if (!element) {
+    return false
+  }
+
+  const container = getScrollContainer(element)
+
+  if (!container || container.clientHeight === 0) {
+    return false
+  }
+
+  const elementRect = element.getBoundingClientRect()
+  const containerRect = container.getBoundingClientRect()
+  const distanceToCenter =
+    elementRect.top -
+    containerRect.top -
+    container.clientHeight / 2 +
+    elementRect.height / 2
+
+  if (Math.abs(distanceToCenter) < elementRect.height) {
+    return true
+  }
+
+  container.scrollTo({
+    top: container.scrollTop + distanceToCenter,
+    behavior: instant ? 'auto' : 'smooth',
+  })
+
+  return true
+}
+
 function onItemClick() {
   emit('navigate')
 }
@@ -407,8 +473,19 @@ watch(
     linkElements.clear()
     track.value = null
     previousThumbRange = null
+    didInitialAutoScroll = false
     queueMeasure()
   },
+)
+
+watch(
+  () => props.activeId,
+  async (id) => {
+    await nextTick()
+    didInitialAutoScroll =
+      scrollItemIntoView(id, !didInitialAutoScroll) || didInitialAutoScroll
+  },
+  { immediate: true },
 )
 
 onBeforeUnmount(() => {
@@ -448,6 +525,8 @@ onBeforeUnmount(() => {
         :ref="(element) => setItemRef(item.id, element as Element | null)"
         class="docs-toc-link"
         :class="{ 'is-active': isItemActive(item) }"
+        :data-active="isItemActive(item) ? 'true' : undefined"
+        :data-fallback="isItemFallback(item) ? 'true' : undefined"
         :href="`#${item.id}`"
         :style="itemStyle(item)"
         :aria-current="activeId === item.id ? 'location' : undefined"

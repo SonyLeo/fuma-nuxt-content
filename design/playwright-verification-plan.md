@@ -297,8 +297,8 @@ Closeout notes:
   paragraph-wrapped. The component now renders a block wrapper and the spec
   targets the visible `Container API` callout instead of relying on a fixed
   array index.
-- After `pnpm typecheck`, `pnpm dev:health` returned `404`; `pnpm dev:restart`
-  restored the dev server before the remaining runtime checks.
+- After `pnpm typecheck`, `pnpm dev:health` returned `404`; a health-backed
+  restart restored the dev server before the remaining runtime checks.
 
 ## Execution Rules
 
@@ -307,8 +307,17 @@ Closeout notes:
   `--workers` only for explicit stress/measurement runs.
 - Do not run `pnpm typecheck` in parallel with Playwright. `nuxi typecheck`
   can disturb the Nuxt dev/content state while browser tests are loading pages.
-- If `pnpm dev:health` returns `404` after typecheck, run `pnpm dev:restart`
-  before any Playwright or legacy parity runtime check.
+- After typecheck, always run a route-specific dev health check before any
+  Playwright or legacy parity runtime check. Restart only if health fails with
+  `404`, Nuxt error output, request timeout, stale/wrong server evidence, or
+  Nuxt Content SQLite errors.
+- In the Codex bridge shell, if `pnpm` tries to perform an interactive
+  dependency reinstall before script execution, use direct commands:
+  `node scripts/dev-server.mjs ...`, `node scripts/parity/run.mjs ...`, and
+  `.\node_modules\.bin\playwright.cmd ...`.
+- For content-heavy specs that show shared Nuxt Content database instability,
+  rerun the focused case with `PLAYWRIGHT_WORKERS=1` or `--workers=1` before
+  treating it as a component regression.
 - Runtime checks can run in parallel with lightweight file reads, but not with
   Nuxt build/typecheck/generate commands.
 

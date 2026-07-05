@@ -727,6 +727,7 @@ Home/not-found 和 layout variant 决策，不在 roadmap 展开具体 contract�
 - slug transform
 - visible tree / context tree
 - breadcrumb / pager / homepage cards 共用 tree
+- page-tree transformer/plugin runtime 第一轮
 - `DocsPage` page-level contract
 - TOC / TOC popover 基础消费
 - page slots 第一版
@@ -765,7 +766,7 @@ Stage 6：集成 / 插件层起步已完成第一轮。
 
 仍后置为 P1，不阻塞集成 / 插件层起步：
 
-- 完整 page-tree transformer/plugin runtime
+- page-tree runtime 的 site-level plugin registry / config-driven transformer 注册
 - markdown transform pipeline 后续增强：steps/package-manager command tabs、
   richer structured component extraction
 
@@ -838,8 +839,8 @@ Banner decision 和 advanced/product backlog 中明确进入 foundation 的项�
 
 建议优先顺序：
 
-1. 收口 page-tree transformer/plugin runtime，避免 tree/layout 继续依赖零散适配。
-2. 集成层 P1：remote search provider / search API、feedback backend、RSS、llms-full.txt / per-page markdown export。
-3. Image pipeline adapter：在已有 ImageZoom foundation 上补 CDN/尺寸/源适配。
-4. Multi source baseline：先建立 docs/blog/changelog/api 的 loader/route/content contract，再做具体页面体验。
+1. 集成层 P1：remote search provider / search API、feedback backend、RSS、llms-full.txt / per-page markdown export。
+2. Image pipeline adapter：在已有 ImageZoom foundation 上补 CDN/尺寸/源适配。
+3. Multi source baseline：先建立 docs/blog/changelog/api 的 loader/route/content contract，再做具体页面体验。
+4. Page-tree runtime 配置层：在 multi source 前补 site-level plugin registry / config-driven transformer 注册。
 5. 站点产品组合层：story/playground、AI/MCP/docs assistant、versioning/i18n、OpenAPI/AsyncAPI/type generation。

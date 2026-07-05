@@ -65,4 +65,102 @@ test.describe('@shell toc rail', () => {
       )
       .toBe(`#${lastHeadingId}`)
   })
+
+  test('marks observed headings directly without synthetic parent active state', async ({
+    page,
+  }) => {
+    test.skip(!isDesktopTocViewport(page), 'Desktop TOC rail owns the active track.')
+
+    await gotoDocsFixture(page, '/guide/component-detail')
+
+    await page.locator('#keyboard-flow').evaluate((element) => {
+      const top = element.getBoundingClientRect().top + window.scrollY
+      window.scrollTo(0, Math.max(0, top - 32))
+    })
+
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          return (
+            document
+              .querySelector<HTMLAnchorElement>(
+                '#nd-toc .docs-toc-link[href="#keyboard-flow"]',
+              )
+              ?.getAttribute('data-active') ?? 'false'
+          )
+        }),
+      )
+      .toBe('true')
+
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          return (
+            document
+              .querySelector<HTMLAnchorElement>(
+                '#nd-toc .docs-toc-link[href="#behavior"]',
+              )
+              ?.getAttribute('data-active') ?? 'false'
+          )
+        }),
+      )
+      .toBe('false')
+  })
+
+  test('sizes active track from the active item range on desktop', async ({
+    page,
+  }) => {
+    test.skip(!isDesktopTocViewport(page), 'Desktop TOC rail owns the active track.')
+
+    await gotoDocsFixture(page, '/guide/component-detail')
+
+    await page.locator('#multiple-items').scrollIntoViewIfNeeded()
+
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const activeLinks = Array.from(
+            document.querySelectorAll<HTMLAnchorElement>(
+              '#nd-toc .docs-toc-link[data-active="true"]',
+            ),
+          )
+          const track = document.querySelector<HTMLElement>(
+            '#nd-toc .docs-toc-thumb-track',
+          )
+
+          if (!track || activeLinks.length === 0) {
+            return false
+          }
+
+          const trackStyles = window.getComputedStyle(track)
+          const trackTop = Number.parseFloat(
+            trackStyles.getPropertyValue('--docs-toc-track-top'),
+          )
+          const trackBottom = Number.parseFloat(
+            trackStyles.getPropertyValue('--docs-toc-track-bottom'),
+          )
+          const first = activeLinks[0]
+          const last = activeLinks.at(-1)
+
+          if (!first || !last) {
+            return false
+          }
+
+          const firstStyles = window.getComputedStyle(first)
+          const lastStyles = window.getComputedStyle(last)
+          const firstTop =
+            first.offsetTop + Number.parseFloat(firstStyles.paddingTop)
+          const lastBottom =
+            last.offsetTop +
+            last.clientHeight -
+            Number.parseFloat(lastStyles.paddingBottom)
+
+          return (
+            Math.abs(trackTop - firstTop) <= 1 &&
+            Math.abs(trackBottom - lastBottom) <= 1
+          )
+        }),
+      )
+      .toBe(true)
+  })
 })

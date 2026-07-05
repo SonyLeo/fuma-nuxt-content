@@ -1,15 +1,10 @@
 import type { ContentNavigationItem } from '@nuxt/content'
 import type { DocsDirectoryMeta, DocsNode, DocsPageRecord } from '~/types/docs'
 import {
-  buildDocsTree,
   createDirectoryMetaMap,
   createDocsMetaMap,
-  findDocsNodeByPath,
-  findDocsRoot,
-  findSidebarBranch,
-  flattenDocsNodes,
-  resolveSectionHeadline,
 } from '~/utils/docs-navigation'
+import { createDocsPageTreeRuntime } from '~/utils/docs-page-tree-runtime'
 
 type DocsMetaRecord = Omit<DocsDirectoryMeta, 'stem'> & {
   stem: string
@@ -25,62 +20,42 @@ export function useDocsTree(
   const directoryMetaByStem = computed(() =>
     createDirectoryMetaMap(directoryMeta.value),
   )
-
-  const items = computed<DocsNode[]>(() =>
-    buildDocsTree({
+  const runtime = computed(() =>
+    createDocsPageTreeRuntime({
       navigation: navigation.value,
       pageMetaByPath: pageMetaByPath.value,
       directoryMetaByStem: directoryMetaByStem.value,
     }),
   )
 
-  const contextItems = computed<DocsNode[]>(() =>
-    buildDocsTree({
-      navigation: navigation.value,
-      pageMetaByPath: pageMetaByPath.value,
-      directoryMetaByStem: directoryMetaByStem.value,
-      preserveExcluded: true,
-      includeHidden: true,
-    }),
-  )
+  const items = computed<DocsNode[]>(() => runtime.value.visibleTree)
 
-  const flattened = computed(() => flattenDocsNodes(items.value))
+  const contextItems = computed<DocsNode[]>(() => runtime.value.contextTree)
+
+  const flattened = computed(() => runtime.value.visibleFlat)
 
   const visibleCurrent = computed(() => {
-    return findDocsNodeByPath(items.value, currentPath.value)
+    return runtime.value.getVisibleCurrent(currentPath.value)
   })
 
   const current = computed(() => {
-    return (
-      visibleCurrent.value ??
-      findDocsNodeByPath(contextItems.value, currentPath.value)
-    )
+    return runtime.value.getCurrent(currentPath.value)
   })
 
   const contextualItems = computed(() => {
-    return visibleCurrent.value ? items.value : contextItems.value
+    return runtime.value.getContextualTree(currentPath.value)
   })
 
   const headline = computed(() => {
-    return resolveSectionHeadline(contextualItems.value, currentPath.value)
+    return runtime.value.getSectionHeadline(currentPath.value)
   })
 
   const sidebarItems = computed(() => {
-    if (visibleCurrent.value) {
-      return findSidebarBranch(items.value, currentPath.value).filter(
-        (item) => !item.hidden,
-      )
-    }
-
-    const contextRoot = findDocsRoot(contextItems.value, currentPath.value)
-    const rootPath = contextRoot?.path ?? contextRoot?.index?.path
-
-    return findSidebarBranch(items.value, rootPath ?? currentPath.value).filter(
-      (item) => !item.hidden,
-    )
+    return runtime.value.getSidebarItems(currentPath.value)
   })
 
   return {
+    runtime,
     items,
     contextItems,
     contextualItems,

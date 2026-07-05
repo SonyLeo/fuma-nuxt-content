@@ -3,11 +3,13 @@ import type {
   DocsSearchIndexEntry,
   DocsSearchResult,
 } from '~/types/docs-search'
+import type { DocsPageTreeRuntime } from '~/utils/docs-page-tree-runtime'
 import {
   flattenDocsNodes,
   resolveDocsRecordSourcePath,
   resolveDocsRoutePath,
 } from '~/utils/docs-navigation'
+import { isDocsPageTreeRuntime } from '~/utils/docs-page-tree-runtime'
 
 type ContentAstNode = {
   type?: string
@@ -61,7 +63,11 @@ function createExcerpt(value: string) {
   return value.replace(/\s+/g, ' ').trim().slice(0, 180)
 }
 
-function createNodeMap(nodes: DocsNode[]) {
+function createNodeMap(nodes: DocsNode[] | DocsPageTreeRuntime) {
+  if (isDocsPageTreeRuntime(nodes)) {
+    return nodes.nodeBySourcePath
+  }
+
   return new Map(
     flattenDocsNodes(nodes).map((node) => [
       node.sourcePath ?? node.path ?? node.id,
@@ -72,7 +78,7 @@ function createNodeMap(nodes: DocsNode[]) {
 
 export function createDocsSearchIndex(
   pages: DocsContentPage[] | null | undefined,
-  nodes: DocsNode[] | null | undefined,
+  nodes: DocsNode[] | DocsPageTreeRuntime | null | undefined,
 ): DocsSearchIndexEntry[] {
   const nodeBySourcePath = createNodeMap(nodes ?? [])
 
