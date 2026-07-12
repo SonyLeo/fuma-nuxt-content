@@ -9,7 +9,10 @@ export async function expectAttributeOneOf(
   name: string,
   values: string[],
 ) {
-  await expect(locator).toHaveAttribute(name, new RegExp(`^(${values.join('|')})$`))
+  await expect(locator).toHaveAttribute(
+    name,
+    new RegExp(`^(${values.join('|')})$`),
+  )
 }
 
 export async function expectCountExactly(locator: Locator, count: number) {
@@ -56,7 +59,9 @@ export async function expectDocumentNoHorizontalOverflow(page: Page) {
     .toMatchObject({ scrollWidth: expect.any(Number) })
 
   const viewport = page.viewportSize()
-  const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth)
+  const scrollWidth = await page.evaluate(
+    () => document.documentElement.scrollWidth,
+  )
 
   expect(scrollWidth).toBeLessThanOrEqual((viewport?.width ?? 0) + 1)
 }

@@ -1,15 +1,11 @@
 {
   "name": "fuma-nuxt-content",
   "private": true,
+  "packageManager": "pnpm@10.33.2",
   "type": "module",
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
-    "dev:health": "node scripts/dev-server.mjs health",
-    "dev:restart": "node scripts/dev-server.mjs restart",
-    "dev:start": "node scripts/dev-server.mjs start",
-    "dev:status": "node scripts/dev-server.mjs status",
-    "dev:stop": "node scripts/dev-server.mjs stop",
     "generate": "nuxt generate",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -17,16 +13,10 @@
     "format:check": "prettier . --check",
     "postinstall": "nuxt prepare",
     "preview": "nuxt preview",
+    "test:nuxt": "vitest run",
     "test:e2e": "playwright test",
-    "test:e2e:components": "playwright test tests/e2e/content-components.spec.ts",
-    "test:e2e:content": "playwright test tests/e2e/prose-defaults.spec.ts tests/e2e/code-block.spec.ts tests/e2e/markdown-transform.spec.ts tests/e2e/image-zoom.spec.ts tests/e2e/content-components.spec.ts",
-    "test:e2e:fast": "playwright test tests/e2e/theme.spec.ts tests/e2e/prose-defaults.spec.ts tests/e2e/code-block.spec.ts tests/e2e/markdown-transform.spec.ts tests/e2e/image-zoom.spec.ts tests/e2e/toc-responsive.spec.ts tests/e2e/sidebar.spec.ts tests/e2e/page-tree-runtime.spec.ts tests/e2e/page-actions.spec.ts",
-    "test:e2e:full": "playwright test",
-    "test:e2e:layout": "playwright test tests/e2e/layout-provider.spec.ts",
-    "test:e2e:page": "playwright test tests/e2e/page-actions.spec.ts",
-    "test:e2e:shell": "playwright test tests/e2e/layout-provider.spec.ts tests/e2e/theme.spec.ts tests/e2e/toc.spec.ts tests/e2e/toc-responsive.spec.ts tests/e2e/sidebar.spec.ts tests/e2e/page-tree-runtime.spec.ts",
-    "test:e2e:toc": "playwright test tests/e2e/toc.spec.ts tests/e2e/toc-responsive.spec.ts",
-    "typecheck": "nuxi typecheck",
+    "test:e2e:full": "playwright test --max-failures=1 --workers=2",
+    "typecheck": "node scripts/run-typecheck.mjs",
     "validate:links": "node scripts/validate-docs-links.mjs"
   },
   "dependencies": {
@@ -41,12 +31,17 @@
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.16.0",
+    "@nuxt/test-utils": "^4.0.3",
     "@playwright/test": "^1.61.1",
     "@tailwindcss/vite": "^4.3.1",
+    "@vue/test-utils": "^2.4.11",
     "eslint": "^10.6.0",
+    "happy-dom": "^20.10.6",
+    "playwright-core": "^1.61.1",
     "prettier": "^3.8.5",
     "tailwindcss": "^4.3.1",
     "typescript": "^6.0.3",
+    "vitest": "^4.1.10",
     "vue-tsc": "^3.3.5"
   }
 }

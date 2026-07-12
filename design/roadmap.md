@@ -24,17 +24,12 @@ sectionLabel: Plan
 
 ## 文档架构
 
-`design/` 目录固定为这些长期入口：
+`design/` 目录的当前长期入口：
 
 - `design/roadmap.md`
   - 总路线图
   - 说明基础层 / 集成插件层 / 站点产品组合层 / 未来 VitePress 边界
   - 说明阶段优先级和当前下一步
-
-- `design/foundation-prep-plan.md`
-  - 正式开发前准备阶段
-  - 说明 agent 规约、依赖基线、设计语言、token 体系和风格对齐口径
-  - 作为进入基础层 Phase 1 前的 gate
 
 - `design/foundation-roadmap.md`
   - 基础层详细演进顺序
@@ -42,15 +37,15 @@ sectionLabel: Plan
   - 参考源码位置
   - 验收标准
 
+- [`design/foundation-alignment-matrix.md`](./foundation-alignment-matrix.md)
+  - 当前 foundation hardening 的主动执行入口
+  - 把基础层详细差异、逐项对照点、exit gate 和推进顺序收成可执行矩阵
+
 - `design/product-roadmap.md`
   - 集成 / 插件层和站点产品组合层详细演进顺序
   - site config、page actions、search、feedback、AI 等上层能力规划
   - 插件和站点产品组合边界
   - 验收标准
-
-- `design/fumadocs-alignment-plan.md`
-  - 对齐 `fumadocs / assistant-ui / fumapress / VitePress prototype` 的设计依据
-  - 作为基础协议和历史分析资料保留
 
 - `design/fumadocs-component-parity-inventory.md`
   - Fumadocs 基础组件 parity 清单
@@ -73,12 +68,28 @@ sectionLabel: Plan
   - 定期对比 Fumadocs 源码、当前实现和现有规划
   - 记录剩余差异、分类和排期建议
 
-- `design/implementation-notes.md`
-  - 只记录最新结论
-  - 只记录当前状态
-  - 只记录已验证经验
+- [`design/development-workflow-audit.md`](./development-workflow-audit.md)
+  - 记录当前真实研发流程、纸面流程偏差、验证流程问题
+  - 记录当前基础实现与目标预期之间的交付差距
 
-`design/nuxt-content-mvp-plan.md` 是早期 MVP 记录，后续只作为历史参考，不作为当前主动规划入口。
+- `design/implementation-notes.md`
+  - 记录已验证的 durable conclusions 和历史实施证据
+  - 当前执行状态以 roadmap、alignment matrix 和 runbook 为准
+  - 后续按阶段拆分归档，避免继续无限增长
+
+- [`design/verification-runbook.md`](./verification-runbook.md)
+  - 当前本地验证命令和最小执行路径
+  - Playwright 自动启动或复用唯一的 E2E app server
+
+历史记录：
+
+- `design/foundation-prep-plan.md`
+- `design/nuxt-content-mvp-plan.md`
+- `design/fumadocs-alignment-plan.md`
+- `design/playwright-verification-plan.md`
+- `design/parity-reconstruction-workflow.md`
+
+这些文件保留历史证据，不作为当前主动执行入口。
 
 ## 参考依据
 

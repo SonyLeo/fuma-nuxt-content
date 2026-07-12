@@ -14,7 +14,9 @@ test.describe('@fast @shell theme runtime', () => {
     })
   })
 
-  test('initializes root state and switch surfaces', async ({ page }) => {
+  test('@responsive initializes root state and switch surfaces', async ({
+    page,
+  }) => {
     await gotoDocsFixture(page, '/guide/code-block')
 
     const html = page.locator('html')
@@ -25,12 +27,20 @@ test.describe('@fast @shell theme runtime', () => {
       'dark',
       'system',
     ])
-    await expectAttributeOneOf(html, 'data-docs-theme-resolved', ['light', 'dark'])
+    await expectAttributeOneOf(html, 'data-docs-theme-resolved', [
+      'light',
+      'dark',
+    ])
     await expectCountAtLeast(page.locator('[data-theme-toggle]'), 2)
-    await expectCountAtLeast(page.locator('.docs-header [data-theme-toggle]'), 1)
+    await expectCountAtLeast(
+      page.locator('.docs-header [data-theme-toggle]'),
+      1,
+    )
     await expectCountAtLeast(page.locator('#nd-sidebar [data-theme-toggle]'), 1)
 
-    for (const button of await page.locator('[data-theme-toggle] button').all()) {
+    for (const button of await page
+      .locator('[data-theme-toggle] button')
+      .all()) {
       await expect(button).toHaveAttribute('aria-label', /.+/)
       await expectAttributeOneOf(button, 'aria-pressed', ['true', 'false'])
     }
@@ -50,42 +60,64 @@ test.describe('@fast @shell theme runtime', () => {
     }
   }
 
-  test('syncs dark, light, and system modes across switches', async ({ page }) => {
+  test('@responsive syncs dark, light, and system modes across switches', async ({
+    page,
+  }) => {
     await gotoDocsFixture(page, '/guide/code-block')
     await revealThemeControls(page)
 
     await clickFirstVisible(page, '.docs-theme-button[data-theme-mode="dark"]')
-    await expect(page.locator('html')).toHaveAttribute('data-docs-theme-mode', 'dark')
+    await expect(page.locator('html')).toHaveAttribute(
+      'data-docs-theme-mode',
+      'dark',
+    )
     await expect(page.locator('html')).toHaveAttribute(
       'data-docs-theme-resolved',
       'dark',
     )
     await expect
-      .poll(() => page.evaluate(() => window.localStorage.getItem('fuma-nuxt-theme')))
+      .poll(() =>
+        page.evaluate(() => window.localStorage.getItem('fuma-nuxt-theme')),
+      )
       .toBe('dark')
 
     await clickFirstVisible(page, '.docs-theme-button[data-theme-mode="light"]')
-    await expect(page.locator('html')).toHaveAttribute('data-docs-theme-mode', 'light')
+    await expect(page.locator('html')).toHaveAttribute(
+      'data-docs-theme-mode',
+      'light',
+    )
     await expect(page.locator('html')).toHaveAttribute(
       'data-docs-theme-resolved',
       'light',
     )
     await expect
-      .poll(() => page.evaluate(() => window.localStorage.getItem('fuma-nuxt-theme')))
+      .poll(() =>
+        page.evaluate(() => window.localStorage.getItem('fuma-nuxt-theme')),
+      )
       .toBe('light')
 
-    await clickFirstVisible(page, '.docs-theme-button[data-theme-mode="system"]')
+    await clickFirstVisible(
+      page,
+      '.docs-theme-button[data-theme-mode="system"]',
+    )
     const expectedSystemMode = await page.evaluate(() =>
-      window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+      window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light',
     )
 
-    await expect(page.locator('html')).toHaveAttribute('data-docs-theme-mode', 'system')
+    await expect(page.locator('html')).toHaveAttribute(
+      'data-docs-theme-mode',
+      'system',
+    )
     await expect(page.locator('html')).toHaveAttribute(
       'data-docs-theme-resolved',
       expectedSystemMode,
     )
     await expect
-      .poll(() => page.evaluate(() => window.localStorage.getItem('fuma-nuxt-theme')))
+      .poll(() =>
+        page.evaluate(() => window.localStorage.getItem('fuma-nuxt-theme')),
+      )
       .toBe('system')
   })
 
@@ -104,7 +136,9 @@ test.describe('@fast @shell theme runtime', () => {
 
     const tokenState = await page.evaluate(() => {
       const root = document.documentElement
-      const span = document.querySelector('.fd-doc-code-block.shiki-themes code span')
+      const span = document.querySelector(
+        '.fd-doc-code-block.shiki-themes code span',
+      )
       const style = getComputedStyle(root)
 
       return {

@@ -276,7 +276,7 @@ Tasks:
 Validation:
 
 - `pnpm test:e2e -- tests/e2e/sidebar.spec.ts`
-- `pnpm test:e2e:shell`
+- `pnpm test:e2e -- --grep '@shell'`
 
 ### S1: Mobile Drawer Primitive
 
@@ -417,7 +417,7 @@ Tasks:
 Validation:
 
 - `pnpm test:e2e -- tests/e2e/sidebar.spec.ts`
-- `pnpm test:e2e:shell`
+- `pnpm test:e2e -- --grep '@shell'`
 
 ### Phase 3: Dropdown Menus
 
@@ -445,7 +445,7 @@ Validation:
 
 - `pnpm test:e2e -- tests/e2e/content-components.spec.ts`
 - `pnpm test:e2e -- tests/e2e/sidebar.spec.ts`
-- `pnpm test:e2e:content`
+- `pnpm test:e2e -- --grep '@content|@content-components'`
 
 ### Phase 5: Tabs
 
@@ -457,7 +457,7 @@ Tasks:
 Validation:
 
 - `pnpm test:e2e -- tests/e2e/content-components.spec.ts`
-- `pnpm test:e2e:content`
+- `pnpm test:e2e -- --grep '@content|@content-components'`
 
 ### Phase 6: Scroll Area And Cleanup
 
@@ -479,10 +479,10 @@ Tasks:
 Validation:
 
 - `pnpm typecheck`
-- `pnpm test:e2e:toc`
-- `pnpm test:e2e:layout`
+- `pnpm test:e2e -- tests/e2e/toc.spec.ts tests/e2e/toc-responsive.spec.ts`
+- `pnpm test:e2e -- tests/e2e/layout-provider.spec.ts`
 - `pnpm test:e2e -- tests/e2e/sidebar.spec.ts tests/e2e/content-components.spec.ts`
-- `pnpm test:e2e:fast`
+- `pnpm test:e2e -- --grep '@fast'`
 - `git diff --check`
 
 ### Phase 7: Reka Tree POC
@@ -496,7 +496,7 @@ Tasks:
 Validation:
 
 - Dedicated sidebar-tree fixture spec.
-- `pnpm test:e2e:shell` only after POC is promoted.
+- `pnpm test:e2e -- --grep '@shell'` only after POC is promoted.
 
 ## Validation Policy
 
@@ -505,9 +505,9 @@ Per primitive:
 - Re-read changed wrapper and at least one consumer.
 - Run the focused Playwright spec for the changed surface.
 - Run the impact suite:
-  - sidebar/mobile drawer/menu: `pnpm test:e2e:shell`
-  - content primitives: `pnpm test:e2e:content`
-  - page actions/open menu: `pnpm test:e2e:page`
+  - sidebar/mobile drawer/menu: `pnpm test:e2e -- --grep '@shell'`
+  - content primitives: `pnpm test:e2e -- --grep '@content|@content-components'`
+  - page actions/open menu: `pnpm test:e2e -- tests/e2e/page-actions.spec.ts`
 - Run `pnpm typecheck` when Vue/TS changes are made.
 - Run `git diff --check` for every migration step.
 

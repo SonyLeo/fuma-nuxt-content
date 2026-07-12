@@ -14,6 +14,7 @@ import {
   findSidebarBranch,
   flattenDocsNodes,
   normalizeDocsRoutePath,
+  normalizeDocsSourcePath,
   resolveSectionHeadline,
 } from '~/utils/docs-navigation'
 
@@ -324,7 +325,7 @@ export function createDocsPageTreeRuntime(
   const contextFlat = flattenDocsNodes(contextTree)
   const visibleByPath = createPathMap(visibleTree)
   const contextByPath = createPathMap(contextTree)
-  const nodeBySourcePath = createSourcePathMap(visibleTree)
+  const nodeBySourcePath = createSourcePathMap(contextTree)
 
   function getNodeByPath(
     path: string,
@@ -417,6 +418,6 @@ export function createDocsPageTreeRuntime(
     getFallbackPath,
     getNodeByPath,
     getNodeBySourcePath: (sourcePath) =>
-      nodeBySourcePath.get(sourcePath) ?? null,
+      nodeBySourcePath.get(normalizeDocsSourcePath(sourcePath)) ?? null,
   }
 }

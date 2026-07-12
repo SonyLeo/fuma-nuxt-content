@@ -24,24 +24,38 @@ test.describe('@layout-provider Playwright POC', () => {
       'dark',
       'system',
     ])
-    await expectAttributeOneOf(html, 'data-docs-theme-resolved', ['light', 'dark'])
+    await expectAttributeOneOf(html, 'data-docs-theme-resolved', [
+      'light',
+      'dark',
+    ])
     await expectCountAtLeast(page.locator('.docs-search-trigger'), 1)
     await expectCountAtLeast(page.locator('[data-theme-toggle]'), 2)
 
-    const colorScheme = await html.evaluate((root) => getComputedStyle(root).colorScheme)
+    const colorScheme = await html.evaluate(
+      (root) => getComputedStyle(root).colorScheme,
+    )
 
     expect(colorScheme.length).toBeGreaterThan(0)
   })
 
-  test('layout slots keep default and replacement surfaces reachable', async ({
+  test('@responsive layout slots keep default and replacement surfaces reachable', async ({
     page,
   }) => {
     await gotoDocsFixture(page)
 
-    await expectCountAtLeast(page.locator('.docs-header [data-theme-toggle]'), 1)
+    await expectCountAtLeast(
+      page.locator('.docs-header [data-theme-toggle]'),
+      1,
+    )
     await expectCountAtLeast(page.locator('#nd-sidebar [data-theme-toggle]'), 1)
-    await expectCountAtLeast(page.locator('.docs-header .docs-search-trigger'), 1)
-    await expectCountAtLeast(page.locator('#nd-sidebar .docs-search-trigger'), 1)
+    await expectCountAtLeast(
+      page.locator('.docs-header .docs-search-trigger'),
+      1,
+    )
+    await expectCountAtLeast(
+      page.locator('#nd-sidebar .docs-search-trigger'),
+      1,
+    )
     await expect(page.locator('[data-docs-language-select]')).toHaveCount(0)
 
     if (isNarrowViewport(page)) {
@@ -53,7 +67,9 @@ test.describe('@layout-provider Playwright POC', () => {
     }
   })
 
-  test('search dialog keeps result scroll area usable', async ({ page }) => {
+  test('@responsive search dialog keeps result scroll area usable', async ({
+    page,
+  }) => {
     await gotoDocsFixture(page)
 
     await page
@@ -96,7 +112,7 @@ test.describe('@layout-provider Playwright POC', () => {
     await expect(dialog).toBeHidden()
   })
 
-  test('sidebar provider synchronizes collapse, hover, and mobile state', async ({
+  test('@responsive sidebar provider synchronizes collapse, hover, and mobile state', async ({
     page,
   }) => {
     await gotoDocsFixture(page)
@@ -118,14 +134,16 @@ test.describe('@layout-provider Playwright POC', () => {
     await expect(layout).toHaveAttribute('data-sidebar-collapsed', 'true')
     await expect(sidebar).toHaveAttribute('data-collapsed', 'true')
 
-    await sidebar.locator('.docs-sidebar-hover-zone').dispatchEvent('pointerenter', {
-      clientX: 1,
-      pointerType: 'mouse',
-    })
+    await sidebar
+      .locator('.docs-sidebar-hover-zone')
+      .dispatchEvent('pointerenter', {
+        clientX: 1,
+        pointerType: 'mouse',
+      })
     await expect(sidebar).toHaveAttribute('data-hovered', 'true')
   })
 
-  test('layout tabs expose active tab and accessible menu contract', async ({
+  test('@responsive layout tabs expose active tab and accessible menu contract', async ({
     page,
   }) => {
     await gotoDocsFixture(page)
@@ -141,11 +159,13 @@ test.describe('@layout-provider Playwright POC', () => {
     const panel = scope.locator('.docs-sidebar-tab-panel')
     await expect(panel).toHaveAttribute('role', 'menu')
     await expectCountAtLeast(panel.locator('.docs-sidebar-tab-option'), 3)
-    await expect(panel.locator('.docs-sidebar-tab-option[aria-current="page"]')).toContainText(
-      'Fumadocs UI',
-    )
+    await expect(
+      panel.locator('.docs-sidebar-tab-option[aria-current="page"]'),
+    ).toContainText('Fumadocs UI')
 
-    for (const option of await panel.locator('.docs-sidebar-tab-option').all()) {
+    for (const option of await panel
+      .locator('.docs-sidebar-tab-option')
+      .all()) {
       await expect(option).toHaveAttribute('role', 'menuitem')
       await expect(option).toHaveAttribute('href', /.+/)
     }
@@ -163,8 +183,12 @@ test.describe('@layout-provider Playwright POC', () => {
     await expect(page.locator('.docs-home-brand-text')).toHaveText('Fumadocs')
     await expect(page.locator('.docs-home-title')).toHaveText('Fumadocs')
     await expectCountAtLeast(page.locator('.docs-home-nav-link'), 1)
-    await expectCountAtLeast(page.locator('.docs-home-tools [data-theme-toggle]'), 1)
-    await expectCountAtLeast(page.locator('.docs-home-card,.docs-home-link'), 3)
+    await expectCountAtLeast(
+      page.locator('.docs-home-tools [data-theme-toggle]'),
+      1,
+    )
+    await expectCountAtLeast(page.locator('.docs-home-card'), 1)
+    await expectCountAtLeast(page.locator('.docs-home-link'), 1)
     await expect(page.locator('.docs-home-content')).toBeVisible()
   })
 
@@ -180,9 +204,19 @@ test.describe('@layout-provider Playwright POC', () => {
     await expect(page.locator('.docs-home-layout')).toBeVisible()
     await expect(page.locator('.docs-not-found')).toBeVisible()
     await expect(page.locator('.docs-not-found-code')).toHaveText('404')
-    await expect(page.locator('.docs-not-found-title')).toHaveText('Page Not Found')
-    await expect(page.locator('.docs-not-found-action')).toHaveAttribute('href', '/')
-    await expect(page.locator('.docs-not-found-action')).toContainText('Back to Home')
-    await expectCountAtLeast(page.locator('.docs-home-tools [data-theme-toggle]'), 1)
+    await expect(page.locator('.docs-not-found-title')).toHaveText(
+      'Page Not Found',
+    )
+    await expect(page.locator('.docs-not-found-action')).toHaveAttribute(
+      'href',
+      '/',
+    )
+    await expect(page.locator('.docs-not-found-action')).toContainText(
+      'Back to Home',
+    )
+    await expectCountAtLeast(
+      page.locator('.docs-home-tools [data-theme-toggle]'),
+      1,
+    )
   })
 })

@@ -1,6 +1,6 @@
 ---
 title: Foundation Implementation Spec
-sectionLabel: Plan
+sectionLabel: Archive
 ---
 
 # Foundation Implementation Spec

@@ -4,7 +4,11 @@ import {
   expectDocumentNoHorizontalOverflow,
   expectVisibleBox,
 } from './helpers/assertions'
-import { gotoDocsFixture, isNarrowViewport, openMobileNav } from './helpers/docs-page'
+import {
+  gotoDocsFixture,
+  isNarrowViewport,
+  openMobileNav,
+} from './helpers/docs-page'
 import {
   expectElementClearsLeft,
   expectElementsDoNotOverlap,
@@ -12,24 +16,38 @@ import {
 } from './helpers/layout'
 
 test.describe('@fast @shell toc responsive', () => {
-  test('keeps shell columns and document width stable', async ({ page }) => {
+  test('@responsive keeps shell columns and document width stable', async ({
+    page,
+  }) => {
     await gotoDocsFixture(page, '/guide/component-detail')
 
     await expectDocumentNoHorizontalOverflow(page)
     await expect(page.locator('.docs-shell-content')).toBeVisible()
     await expect(page.locator('.docs-page-frame')).toBeVisible()
     await expect(page.locator('#nd-page')).toBeVisible()
-    await expectBoxInside(page.locator('.docs-shell-content'), page.locator('.docs-page-frame'))
+    await expectBoxInside(
+      page.locator('.docs-shell-content'),
+      page.locator('.docs-page-frame'),
+    )
 
     if (!isNarrowViewport(page)) {
-      await expectElementClearsLeft(page.locator('#nd-sidebar'), page.locator('.docs-shell-content'))
+      await expectElementClearsLeft(
+        page.locator('#nd-sidebar'),
+        page.locator('.docs-shell-content'),
+      )
     }
 
     if (isDesktopTocViewport(page)) {
       await expect(page.locator('#nd-toc')).toBeVisible()
       await expect(page.locator('#nd-toc')).toHaveCSS('display', /.+/)
-      await expect(page.locator('#nd-toc')).toHaveCSS('width', /2[4-9]\dpx|3\d\dpx/)
-      await expectElementsDoNotOverlap(page.locator('#nd-page'), page.locator('#nd-toc'))
+      await expect(page.locator('#nd-toc')).toHaveCSS(
+        'width',
+        /2[4-9]\dpx|3\d\dpx/,
+      )
+      await expectElementsDoNotOverlap(
+        page.locator('#nd-page'),
+        page.locator('#nd-toc'),
+      )
       await expect(page.locator('.docs-toc-popover')).toBeHidden()
     } else {
       await expect(page.locator('#nd-toc')).toBeHidden()
@@ -45,10 +63,13 @@ test.describe('@fast @shell toc responsive', () => {
     }
   })
 
-  test('opens and closes responsive toc popover with real interactions', async ({
+  test('@narrow opens and closes responsive toc popover with real interactions', async ({
     page,
   }) => {
-    test.skip(isDesktopTocViewport(page), 'Desktop uses the persistent TOC rail.')
+    test.skip(
+      isDesktopTocViewport(page),
+      'Desktop uses the persistent TOC rail.',
+    )
 
     await gotoDocsFixture(page, '/guide/component-detail')
 
@@ -58,7 +79,9 @@ test.describe('@fast @shell toc responsive', () => {
     await expect(trigger).toHaveAttribute('aria-expanded', 'true')
     await expect(page.locator('.docs-toc-popover-panel')).toBeVisible()
     if (isNarrowViewport(page)) {
-      const panelBox = await page.locator('.docs-toc-popover-panel').boundingBox()
+      const panelBox = await page
+        .locator('.docs-toc-popover-panel')
+        .boundingBox()
       const viewportWidth = page.viewportSize()?.width ?? 0
 
       expect(Math.round(panelBox?.x ?? -1)).toBe(0)
@@ -69,11 +92,15 @@ test.describe('@fast @shell toc responsive', () => {
         page.locator('.docs-toc-popover-panel'),
       )
     }
-    await expect(page.locator('.docs-toc-popover-panel a').first()).toBeVisible()
+    await expect(
+      page.locator('.docs-toc-popover-panel a').first(),
+    ).toBeVisible()
 
     const maxHeight = await page
       .locator('.docs-toc-popover-scroll')
-      .evaluate((element) => Number.parseFloat(getComputedStyle(element).maxHeight))
+      .evaluate((element) =>
+        Number.parseFloat(getComputedStyle(element).maxHeight),
+      )
     const viewportHeight = page.viewportSize()?.height ?? 0
 
     expect(maxHeight).toBeLessThanOrEqual(viewportHeight * 0.5 + 1)
@@ -92,21 +119,29 @@ test.describe('@fast @shell toc responsive', () => {
     await expect(trigger).toHaveAttribute('aria-expanded', 'false')
   })
 
-  test('keeps sticky toc below mobile header and mobile drawer clickable', async ({
+  test('@mobile keeps sticky toc below mobile header and mobile drawer clickable', async ({
     page,
   }) => {
-    test.skip(!isNarrowViewport(page), 'Only mobile has sticky header plus drawer.')
+    test.skip(
+      !isNarrowViewport(page),
+      'Only mobile has sticky header plus drawer.',
+    )
 
     await gotoDocsFixture(page, '/guide/component-detail')
 
     await page.evaluate(() => {
-      window.scrollTo(0, Math.min(700, document.documentElement.scrollHeight - innerHeight))
+      window.scrollTo(
+        0,
+        Math.min(700, document.documentElement.scrollHeight - innerHeight),
+      )
     })
     await expectVisibleBox(page.locator('.docs-header'))
 
     const headerBox = await page.locator('.docs-header').boundingBox()
     const popoverBox = await page.locator('.docs-toc-popover').boundingBox()
-    const triggerBox = await page.locator('.docs-toc-popover-trigger').boundingBox()
+    const triggerBox = await page
+      .locator('.docs-toc-popover-trigger')
+      .boundingBox()
     const viewportWidth = page.viewportSize()?.width ?? 0
 
     expect(triggerBox?.y ?? 0).toBeGreaterThanOrEqual(

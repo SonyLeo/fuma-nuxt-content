@@ -11,8 +11,10 @@ demos are intentionally later.
 Planning starts here:
 
 - `design/roadmap.md`
-- `design/foundation-prep-plan.md`
 - `design/foundation-roadmap.md`
+- `design/foundation-alignment-matrix.md`
+- `design/verification-runbook.md`
+- `design/development-workflow-audit.md`
 
 ## Setup
 
@@ -24,10 +26,21 @@ pnpm install
 
 ## Development Server
 
-Start the development server on `http://localhost:3000`:
+Start the development server:
 
 ```bash
 pnpm dev
+```
+
+Playwright automatically starts the E2E Nuxt server when needed and reuses a
+healthy local server when one is already available.
+
+Useful commands:
+
+```bash
+pnpm test:nuxt
+pnpm test:e2e -- tests/e2e/sidebar.spec.ts --project=chromium-desktop
+pnpm test:e2e:full
 ```
 
 ## Production

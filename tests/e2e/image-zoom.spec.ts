@@ -3,7 +3,9 @@ import { expectBoxInside, expectCountAtLeast } from './helpers/assertions'
 import { gotoDocsFixture } from './helpers/docs-page'
 
 test.describe('@fast @content image zoom', () => {
-  test('opens and closes zoomed documentation images', async ({ page }) => {
+  test('@responsive opens and closes zoomed documentation images', async ({
+    page,
+  }) => {
     await gotoDocsFixture(page, '/guide/zoomable-image')
 
     const figures = page.locator('.fd-doc-image[data-zoomable="true"]')
@@ -28,7 +30,10 @@ test.describe('@fast @content image zoom', () => {
     await expect(overlay).toBeVisible()
     await expect(content).toBeVisible()
     await expect(content).toHaveAttribute('role', 'dialog')
-    await expect(zoomImage).toHaveAttribute('src', '/docs-image-zoom-sample.svg')
+    await expect(zoomImage).toHaveAttribute(
+      'src',
+      '/docs-image-zoom-sample.svg',
+    )
     await expectBoxInside(overlay, zoomImage)
 
     const imageBox = await zoomImage.boundingBox()
@@ -36,8 +41,12 @@ test.describe('@fast @content image zoom', () => {
 
     expect(imageBox?.width ?? 0).toBeGreaterThan(0)
     expect(imageBox?.height ?? 0).toBeGreaterThan(0)
-    expect(imageBox?.width ?? 0).toBeLessThanOrEqual((viewport?.width ?? 0) - 24)
-    expect(imageBox?.height ?? 0).toBeLessThanOrEqual((viewport?.height ?? 0) - 24)
+    expect(imageBox?.width ?? 0).toBeLessThanOrEqual(
+      (viewport?.width ?? 0) - 24,
+    )
+    expect(imageBox?.height ?? 0).toBeLessThanOrEqual(
+      (viewport?.height ?? 0) - 24,
+    )
 
     await page.keyboard.press('Escape')
     await expect(content).toBeHidden()

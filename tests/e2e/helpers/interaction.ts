@@ -1,6 +1,9 @@
 import { expect, type Locator, type Page } from '@playwright/test'
 
-export async function firstVisible(page: Page, selector: string): Promise<Locator> {
+export async function firstVisible(
+  page: Page,
+  selector: string,
+): Promise<Locator> {
   const locator = page.locator(selector)
   const count = await locator.count()
 

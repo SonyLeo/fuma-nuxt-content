@@ -18,7 +18,10 @@ export async function expectElementClearsLeft(left: Locator, right: Locator) {
   expect(rightBox.x).toBeGreaterThanOrEqual(leftBox.x + leftBox.width - 1)
 }
 
-export async function expectElementsDoNotOverlap(left: Locator, right: Locator) {
+export async function expectElementsDoNotOverlap(
+  left: Locator,
+  right: Locator,
+) {
   const leftBox = await left.boundingBox()
   const rightBox = await right.boundingBox()
 

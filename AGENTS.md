@@ -11,8 +11,8 @@ added later, the closest file to the edited path wins.
 - Package manager: pnpm.
 - Current goal: build a stable Vue docs system foundation before product-layer
   features.
-- Current planning source of truth: `design/roadmap.md`, with the active
-  pre-development gate in `design/foundation-prep-plan.md`.
+- Current planning source of truth: `design/roadmap.md`, with active foundation
+  hardening in `design/foundation-alignment-matrix.md`.
 
 ## Reference Priority
 
@@ -32,8 +32,7 @@ foundation work.
 
 - Install dependencies: `pnpm install`
 - Start dev server: `pnpm dev`
-- Managed dev server health: `node scripts/dev-server.mjs health --path=/guide/component-detail --timeout=30000`
-- Managed dev server restart, only after failed health/log evidence: `node scripts/dev-server.mjs restart --path=/guide/components --timeout=90000`
+- Playwright E2E automatically starts or reuses the Nuxt app server.
 - Build: `pnpm build`
 - Generate static output: `pnpm generate`
 - Preview built output: `pnpm preview`
@@ -106,10 +105,8 @@ Foundation work does not include:
 - Run the relevant parity profile when one exists; if none exists, record the
   missing profile as part of the task review.
 - Use `scripts/parity/run.mjs` for parity profiles and suites.
-- Before runtime parity, check the managed dev server with `status`/`health`.
-  Do not restart by default; restart only when the health result or logs show a
-  stale/wrong server, 404/Nuxt error, request timeout, or Nuxt Content SQLite
-  failure.
+- Playwright tests use `webServer` and own only the process they start. Legacy
+  parity profiles still require their target URL to be available separately.
 - Treat `design/parity-reconstruction-workflow.md` as a historical case archive,
   not the daily execution entry point.
 
@@ -128,8 +125,8 @@ Foundation work does not include:
 
 - Keep planning centralized. Do not add another roadmap unless it has a distinct
   role and is linked from `design/roadmap.md`.
-- Before starting upper-layer feature development, complete the Stage 0 prep
-  gate in `design/foundation-prep-plan.md`.
+- Stage 0 preparation is complete and retained in
+  `design/foundation-prep-plan.md` as historical evidence.
 - Record durable conclusions in `design/implementation-notes.md`.
 - Keep product-layer ideas in `design/product-roadmap.md` until the foundation
   protocol is stable.
@@ -141,11 +138,30 @@ Foundation work does not include:
 - UI/style changes: re-read changed CSS and at least one consumer component.
 - Component changes: check props, emits, slots, responsive behavior,
   accessibility labels, and token usage.
-- After `nuxi typecheck`, run `node scripts/dev-server.mjs health` before any
-  Playwright or parity runtime check. Restart only if that health check fails.
-- For Nuxt Content-heavy Playwright tests, prefer focused specs first and use
-  `PLAYWRIGHT_WORKERS=1` or `--workers=1` when the failure signature points to
-  shared content database instability instead of a UI regression.
+- Prefer layered local verification instead of replaying the whole stack every
+  time:
+  - iteration: one focused spec or one focused static check
+  - batch closeout: `typecheck` once, then the smallest relevant regression
+  - milestone or pre-merge: `pnpm test:e2e:full`
+- `pnpm test:e2e:full` uses two workers because all browser workers share one
+  Nuxt Content server. Focused runs may override workers when appropriate.
+- E2E viewport selection is tag-driven: untagged contracts run on desktop,
+  `@responsive` runs on all projects, `@narrow` runs on tablet/mobile, and
+  `@tablet` / `@mobile` select project-specific branches.
+- `pnpm typecheck` uses an isolated `.nuxt-typecheck` build directory.
+- Playwright `webServer` reuses a healthy local server or starts Nuxt with the
+  isolated `.nuxt-e2e` build directory. Setting `PLAYWRIGHT_TEST_BASE_URL`
+  disables automatic startup and targets that external server instead.
+- For non-responsive changes, prefer one desktop project first
+  (`--project=chromium-desktop`). Add
+  tablet/mobile only when the change touches layout, drawer/popover, touch, or
+  responsive shell behavior.
+- For Nuxt Content-heavy Playwright tests, prefer focused specs first and pass
+  `--workers=1` when the failure signature points to shared content database
+  instability instead of a UI regression.
+- Do not treat the legacy parity runner as a daily default gate. Use it when a
+  surface still lacks a Playwright contract, or when hidden DOM/reference
+  comparison is the point of the task.
 - If a runtime check is skipped, say which check was skipped and why.
 
 ## Git Rules

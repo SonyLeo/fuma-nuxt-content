@@ -6,8 +6,20 @@ import type {
   DocsDirectoryMeta,
   DocsMetaPageEntry,
   DocsNode,
+  DocsPageIdentity,
   DocsPageMeta,
 } from '~/types/docs'
+import {
+  normalizeDocsRoutePath,
+  normalizeDocsSourcePath,
+  resolveDocsRoutePath,
+} from '#shared/docs-identity.js'
+
+export {
+  normalizeDocsRoutePath,
+  normalizeDocsSourcePath,
+  resolveDocsRoutePath,
+} from '#shared/docs-identity.js'
 
 export const docsNavigationFields = [
   'description',
@@ -48,8 +60,6 @@ type DocsRouteRecord = {
   stem?: string
   slug?: string
 }
-
-type DocsPathSegments = string[]
 
 function readString(item: ContentNavigationItem, key: string) {
   const value = item[key]
@@ -182,38 +192,6 @@ function getPathSegments(path?: string) {
   return path.replace(/^\//, '').split('/')
 }
 
-function decodeRouteSegment(segment: string) {
-  try {
-    return decodeURIComponent(segment)
-  } catch {
-    return segment
-  }
-}
-
-function encodeRouteSegment(segment: string) {
-  return encodeURI(segment)
-}
-
-function normalizeRouteSegments(segments: DocsPathSegments) {
-  return segments
-    .map((segment) => decodeRouteSegment(segment.trim()))
-    .filter((segment) => segment.length > 0)
-    .map((segment) => encodeRouteSegment(segment))
-}
-
-export function normalizeDocsSourcePath(path?: string) {
-  if (!path) {
-    return '/'
-  }
-
-  const normalized = path
-    .replace(/\\/g, '/')
-    .replace(/^\/+|\/+$/g, '')
-    .replace(/\/index$/, '')
-
-  return normalized ? `/${normalized}` : '/'
-}
-
 export function resolveDocsRecordSourcePath(
   record: Pick<DocsRouteRecord, 'path' | 'stem'>,
 ) {
@@ -226,51 +204,18 @@ function createDocsNodeId(parts: Array<string | number | undefined>) {
     .join(':')
 }
 
-export function normalizeDocsRoutePath(path?: string) {
-  if (!path) {
-    return '/'
+export function resolveDocsPageIdentity(
+  record: Pick<DocsRouteRecord, 'path' | 'stem' | 'slug'>,
+): DocsPageIdentity {
+  const sourcePath = resolveDocsRecordSourcePath(record)
+
+  return {
+    contentPath: record.path,
+    sourcePath,
+    routePath: resolveDocsRoutePath(sourcePath, record),
+    stem: record.stem,
+    slug: record.slug,
   }
-
-  const normalized = (path.startsWith('/') ? path : `/${path}`).replace(
-    /\/+/g,
-    '/',
-  )
-  const normalizedSegments = normalizeRouteSegments(getPathSegments(normalized))
-
-  if (normalizedSegments.length === 0) {
-    return normalized
-  }
-
-  return `/${normalizedSegments.join('/')}`
-}
-
-export function resolveDocsRoutePath(
-  sourcePath: string,
-  pageMeta?: Pick<DocsPageMeta, 'slug'>,
-) {
-  const normalizedSourcePath = normalizeDocsRoutePath(sourcePath)
-  const slug = pageMeta?.slug?.trim()
-
-  if (!slug) {
-    return normalizedSourcePath
-  }
-
-  if (slug.startsWith('/')) {
-    return normalizeDocsRoutePath(slug)
-  }
-
-  const normalizedSlug = slug.replace(/^\/+|\/+$/g, '')
-
-  if (!normalizedSlug) {
-    return normalizedSourcePath
-  }
-
-  const baseDir = getDirnameFromPath(normalizedSourcePath)
-  const normalizedSlugPath = normalizeDocsRoutePath(normalizedSlug)
-
-  return normalizeDocsRoutePath(
-    `/${[baseDir, normalizedSlugPath.replace(/^\//, '')].filter(Boolean).join('/')}`,
-  )
 }
 
 function getLevel(path?: string) {
@@ -562,9 +507,10 @@ function createLinkNode(
   } satisfies DocsNode
 }
 
-function isVirtualMetaGroupEntry(
-  entry: DocsMetaPageEntry,
-): entry is Extract<DocsMetaPageEntry, { type: 'page' | 'group' }> & {
+function isVirtualMetaGroupEntry(entry: DocsMetaPageEntry): entry is Extract<
+  DocsMetaPageEntry,
+  { type: 'page' | 'group' }
+> & {
   type: 'group'
 } {
   return (
@@ -1272,30 +1218,34 @@ export function createDocsMetaMap(
   assertUniqueDocsRoutePaths(items)
 
   return new Map(
-    (items ?? []).map((item) => [
-      resolveDocsRecordSourcePath(item),
-      {
-        title: item.title,
-        description: item.description,
-        sectionLabel: item.sectionLabel,
-        slug: item.slug,
-        order: item.order,
-        hidden: item.hidden,
-        badge: item.badge,
-        icon: item.icon,
-        status: item.status,
-        defaultOpen: item.defaultOpen,
-        collapsible: item.collapsible,
-        full: item.full,
-        toc: item.toc,
-        tocPopover: item.tocPopover,
-        pager: item.pager,
-        breadcrumb: item.breadcrumb,
-        breadcrumbRoot: item.breadcrumbRoot,
-        breadcrumbPage: item.breadcrumbPage,
-        breadcrumbSeparator: item.breadcrumbSeparator,
-      } satisfies DocsPageMeta,
-    ]),
+    (items ?? []).map((item) => {
+      const identity = resolveDocsPageIdentity(item)
+
+      return [
+        identity.sourcePath,
+        {
+          title: item.title,
+          description: item.description,
+          sectionLabel: item.sectionLabel,
+          slug: item.slug,
+          order: item.order,
+          hidden: item.hidden,
+          badge: item.badge,
+          icon: item.icon,
+          status: item.status,
+          defaultOpen: item.defaultOpen,
+          collapsible: item.collapsible,
+          full: item.full,
+          toc: item.toc,
+          tocPopover: item.tocPopover,
+          pager: item.pager,
+          breadcrumb: item.breadcrumb,
+          breadcrumbRoot: item.breadcrumbRoot,
+          breadcrumbPage: item.breadcrumbPage,
+          breadcrumbSeparator: item.breadcrumbSeparator,
+        } satisfies DocsPageMeta,
+      ] as const
+    }),
   )
 }
 
@@ -1305,9 +1255,10 @@ export function assertUniqueDocsRoutePaths(
   const routeToSources = new Map<string, string[]>()
 
   for (const item of items ?? []) {
-    const routePath = resolveDocsRoutePath(resolveDocsRecordSourcePath(item), item)
+    const identity = resolveDocsPageIdentity(item)
+    const routePath = identity.routePath
     const sources = routeToSources.get(routePath) ?? []
-    sources.push(item.path)
+    sources.push(identity.sourcePath)
     routeToSources.set(routePath, sources)
   }
 
@@ -1392,13 +1343,10 @@ export function resolveDocsSourcePath(
 ) {
   const normalizedRoutePath = normalizeDocsRoutePath(routePath)
   const match = (items ?? []).find((item) => {
-    return (
-      resolveDocsRoutePath(resolveDocsRecordSourcePath(item), item) ===
-      normalizedRoutePath
-    )
+    return resolveDocsPageIdentity(item).routePath === normalizedRoutePath
   })
 
-  return match ? resolveDocsRecordSourcePath(match) : null
+  return match ? resolveDocsPageIdentity(match).sourcePath : null
 }
 
 export function findDocsPageRecordByRoute<
@@ -1411,9 +1359,10 @@ export function findDocsPageRecordByRoute<
 
   return (
     (items ?? []).find((item) => {
+      const identity = resolveDocsPageIdentity(item)
+
       return (
-        resolveDocsRoutePath(resolveDocsRecordSourcePath(item), item) ===
-          normalizedRoutePath ||
+        identity.routePath === normalizedRoutePath ||
         normalizeDocsRoutePath(item.path) === normalizedRoutePath
       )
     }) ?? null

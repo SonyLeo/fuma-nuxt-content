@@ -197,7 +197,7 @@ Static checks:
 Runtime checks:
 
 - `pnpm test:e2e -- tests/e2e/sidebar.spec.ts`.
-- `pnpm test:e2e:shell` after CSS or layout changes.
+- `pnpm test:e2e -- --grep '@shell'` after CSS or layout changes.
 - `pnpm typecheck` after Vue/TS changes.
 
 ## Implementation Phases

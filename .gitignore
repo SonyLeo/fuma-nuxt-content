@@ -2,6 +2,8 @@
 .output
 .data
 .nuxt
+.nuxt-typecheck
+.nuxt-e2e
 .nitro
 .cache
 .parity
@@ -26,4 +28,3 @@ logs
 .env
 .env.*
 !.env.example
-pnpm-lock.yaml

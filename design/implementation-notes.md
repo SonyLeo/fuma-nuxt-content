@@ -11,7 +11,8 @@ sectionLabel: Record
 - 设计语言参考 `fumadocs`
 - 壳层节奏参考 `assistant-ui`
 - 不照搬 `React / Tailwind` 实现
-- 正式进入上层开发前，先完成 `foundation-prep-plan.md` 的 Stage 0
+- Stage 0 已完成；当前 foundation hardening 入口是
+  `foundation-alignment-matrix.md`
 - TinyRobot monorepo 暂时不作为架构参考，只后置为组件 API、demo 内容和产品状态验证来源
 - 基础依赖先按能力层评估，不照搬 Fumadocs / assistant-ui 的 React 依赖
 - CSS 框架路线是：CSS tokens 作为设计语言源头，Tailwind CSS v4 作为 utility / `@theme` 编译层
@@ -19,7 +20,7 @@ sectionLabel: Record
 - Tailwind CSS v4 使用 `@tailwindcss/vite` 接入，不走当前仍绑定 Tailwind v3 的 `@nuxtjs/tailwindcss`
 - 当前不引入 Nuxt UI、shadcn-vue、VueUse；Reka UI 已通过 `UiPopover` POC
   验证，后续只通过本地 `Ui*` wrapper 分阶段迁移 interaction primitives
-- 按当前项目偏好，`.gitignore` 已加入 `pnpm-lock.yaml`；由于该文件已被 Git 跟踪，本次只保持不纳入提交范围，是否 untrack 需单独处理
+- 应用仓库保留 `pnpm-lock.yaml`，用于固定本地与 CI 的依赖解析结果
 
 ## 已验证结论
 
@@ -1033,7 +1034,7 @@ Page actions 契约卡验证：
   - Page actions 按钮统一为 Fumadocs-like compact `12px / 34px` rhythm。
   - Copy 成功态保持 `Copy Markdown` 文案，只切换 check 图标，避免宽度跳动。
   - Open 菜单扩展为 `Open in GitHub / Edit page / Open in Scira AI /
-    Open in ChatGPT / Open in Claude / Open in Cursor`。
+Open in ChatGPT / Open in Claude / Open in Cursor`。
   - Popover 改为先隐藏固定定位测量，再写入最终位置，并使用
     `focus({ preventScroll: true })` 避免焦点滚动破坏几何。
 - 验证：
@@ -1200,7 +1201,7 @@ Page actions 契约卡验证：
 回归经验：
 
 - full-regression 初次运行时曾出现单 viewport 的 Nuxt `500 - Internal Server
-  Error`，dump 显示标题为 Nuxt 500 而不是组件 DOM 缺失。重跑通过，判断为
+Error`，dump 显示标题为 Nuxt 500 而不是组件 DOM 缺失。重跑通过，判断为
   dev-server rebuild/HMR 期间的 server-health 波动。长回归建议加
   `--retries=1`，并在失败 dump 中先区分 server-health 与 UI mismatch。
 
@@ -1466,6 +1467,102 @@ Page actions 契约卡验证：
 - `git diff --check` 通过。
 - typecheck 后已重启托管 dev server，`/guide/component-detail` 健康检查通过。
 
+### 2026-07-11 verification flow tightening
+
+- Local verification had become too cumulative: developers were effectively
+  paying `health -> typecheck -> health -> focused e2e -> responsive e2e ->
+parity/probe -> links -> diff` even when the change only touched one narrow
+  desktop surface.
+- Current Playwright coverage is already broad enough that the daily path does
+  not need legacy parity plus multi-project grouped suites on every loop.
+- The optimized local model is now:
+  - iteration: one focused spec or one focused static check
+  - batch closeout: one `typecheck`, then route-specific health, then the
+    smallest relevant regression command
+  - milestone/pre-merge: `test:e2e:fast` or `test:e2e:full:failfast`
+- New package scripts were added to support that shorter path:
+  - `test:e2e:*:desktop` for non-responsive work
+  - `test:e2e:responsive` for tablet/mobile shell checks
+  - `test:e2e:content:serial` for Nuxt Content-heavy fallback
+  - `test:e2e:full:failfast` for broad but cheaper local failure detection
+- Legacy parity remains useful, but only for unmigrated surfaces, hidden DOM,
+  and reference comparison. It should not remain part of the default local loop
+  for migrated visible behavior.
+- A dedicated `scripts/run-playwright.mjs` wrapper now makes server ownership
+  explicit by removing it from the test runner:
+  - `test:e2e:*` scripts now assume a server is already running
+  - the wrapper only checks reachability, then launches Playwright
+- Playwright no longer starts or stops Nuxt automatically in this repo, which
+  removes the extra window/process churn from local test commands.
+
+### 2026-07-11 verification flow shortcuts
+
+- Added `pnpm test:e2e:changed` and `pnpm test:e2e:last-failed` as lighter
+  retry entrypoints around Playwright CLI selection flags.
+- `test:e2e:last-failed` now uses a strict wrapper mode in this repo. When
+  `.playwright/test-results/.last-run.json` has no failed tests, the command
+  exits successfully and skips Playwright instead of silently falling back to a
+  broader collection.
+- `test:e2e:changed` is useful for Playwright-side changes such as specs and
+  helpers, but it is not a generic affected-test solver for app source edits in
+  this repo. The browser tests do not import ordinary Nuxt app files, so app
+  changes still need one focused file, one focused tag, or one explicit grouped
+  script.
+- The default iteration loop should now start from the smallest relevant
+  Playwright command. `dev:health` remains valuable after `pnpm typecheck` or
+  when route/content/server state looks suspicious, but it should not stay in
+  front of every focused retry by habit.
+- The wrapper precheck now validates a real docs route, not just the app root:
+  it probes `PLAYWRIGHT_TEST_HEALTH_PATH` or `/guide/components` by default,
+  which catches stale `404`/Nuxt-error states after `typecheck` more reliably
+  than a root-only ping.
+- The old `tests/e2e/content-components.spec.ts` grouping has now been split
+  into four surface-owned specs under `tests/e2e/content-components/`:
+  - `cards-callout.spec.ts`
+  - `tabs-accordion-files.spec.ts`
+  - `inline-toc-type-table-steps.spec.ts`
+  - `heading-preview.spec.ts`
+- On PowerShell, tag filters such as `@callout` and `@files` must be quoted
+  when passed to `--grep`; otherwise they can be misparsed before reaching
+  Playwright.
+
+### 2026-07-11 runtime content verification downshift
+
+- Added a lighter Nuxt runtime test layer with `@nuxt/test-utils`, `vitest`,
+  `@vue/test-utils`, and `happy-dom`.
+- Added `test:nuxt`, `test:nuxt:content`, and `test:nuxt:watch` as local
+  entrypoints for render-only or transform-heavy verification.
+- The first runtime spec is `tests/nuxt/docs-content-rendering.nuxt.spec.ts`.
+  It now owns:
+  - prose defaults structure
+  - markdown transform structure such as custom heading ids and code meta
+  - code block shell rendering
+- The retained Playwright split is now:
+  - `tests/e2e/prose-defaults.spec.ts`: removed after full downshift
+  - `tests/e2e/markdown-transform.spec.ts`: kept only for search-facing page
+    behavior
+  - `tests/e2e/code-block.spec.ts`: kept only for browser-only highlighting,
+    overflow, and typography behavior
+- The stable runtime harness pattern is:
+  - read raw markdown with `readDocsMarkdownSource()`
+  - parse it with the project rehype pipeline
+  - render the parsed AST through `ContentRenderer`
+  - wrap it in `DocsBody`
+- Two earlier approaches were intentionally rejected:
+  - mounting the full route page pulled in unrelated layout/site data and made
+    structure tests noisy
+  - calling `queryCollection()` inside runtime tests tried to fetch the Nuxt
+    Content client SQL dump and failed on `/__nuxt_content/.../sql_dump.txt`
+- Reusing `ContentRenderer` was the key fix. Direct `MDCRenderer` mounting did
+  not inherit Nuxt Content's local component resolution map, so `doc-*`
+  components such as `DocCallout` and `DocPreview` failed to resolve.
+- Validation:
+  - `pnpm run test:nuxt:content` passed: `3 passed`
+  - `node scripts/dev-server.mjs health --path=/guide/code-block --timeout=30000`
+    passed before the retained browser-only check
+  - `pnpm run test:e2e -- tests/e2e/code-block.spec.ts --project=chromium-desktop --max-failures=1`
+    passed on focused rerun after one hydration-timeout navigation blip
+
 流程经验：
 
 - 对响应式 shell 问题，不能只验证目标组件是否存在。契约卡必须同时采集
@@ -1709,7 +1806,7 @@ Fumadocs 证据：
   - page actions 改动：`page-actions`
   - feedback/pager 改动：`page-tail`
 - 需要跨层烟测时跑 `fast-regression`，它覆盖 `theme / prose-defaults /
-  code-block / toc-responsive / sidebar / page-actions`。
+code-block / toc-responsive / sidebar / page-actions`。
 - `full-regression` 只用于阶段收口、跨层大改、提交前总检。
 - 不要给 `full-regression` 传全局高 `--settleMs=3200`。`toc` 和
   `toc-responsive` profile 已经在 profile 内部设置了必要的最低等待；全局高
@@ -1927,7 +2024,7 @@ POC 暴露并修复的问题：
   floating pin 的 Playwright 迁移已改成真实用户流程：先 hover 展开预览并确认
   floating 隐藏，再移出预览让 floating 重新出现，最后点击 pin。
 - 后续已补齐移动端 layout tabs：`DocsLayoutShell -> DocsMobileNav ->
-  DocsSidebar` 现在会传递同一份 `nav.tabs` contract，Playwright 可以直接验证
+DocsSidebar` 现在会传递同一份 `nav.tabs` contract，Playwright 可以直接验证
   visible mobile drawer，不再依赖旧 runner 检查隐藏桌面 DOM。
 
 ### Playwright migration closeout
@@ -2044,7 +2141,7 @@ Escape close、focus return 和 viewport collision，是最容易验证收益的
   `update:open`、默认 slot `{ open, close, toggle }`。
 - `UiPopoverTrigger`、`UiPopoverContent`、`UiPopoverClose` 继续保留原组件名、class
   透传和 slot contract，内部改用 Reka `PopoverRoot / Trigger / Portal / Content /
-  Close`。
+Close`。
 - 原先手写的 window `keydown`、`pointerdown`、resize/scroll 监听和弹层定位逻辑已从
   `UiPopover` / `UiPopoverContent` 移除，底层行为交给 Reka + Floating UI。
 
@@ -2191,7 +2288,7 @@ Sidebar 决策：
 - 因此本地不把它强行迁到 `UiPopover`。Reka Popper 即使 `portal=false` 也会插入
   floating wrapper，容易破坏当前已验证的 `position: static` 和正文上方展开节奏。
 - `DocsTocPopover` 已改为消费 `UiCollapsible / UiCollapsibleTrigger /
-  UiCollapsibleContent`，保留原 `docs-toc-popover*` 类名、`docs-toc-popover-panel`
+UiCollapsibleContent`，保留原 `docs-toc-popover*` 类名、`docs-toc-popover-panel`
   id、`v-show` display contract，以及点击 TOC item 后关闭。
 - `UiCollapsible` 新增 opt-in dismiss contract：`closeOnEscape` 和
   `closeOnOutside`。监听只在对应 prop 开启时注册，避免 sidebar/tree 内每个
@@ -2200,7 +2297,7 @@ Sidebar 决策：
   `ScrollAreaRoot / Viewport / Scrollbar / Thumb`，继续保留本地 wrapper、类名和
   tokenized visuals。
 - `ui.css` 的 scroll area 样式补齐 Reka custom scrollbar 需要的 `overflow:
-  hidden`、viewport height、`touch-action: none`、显示态 pointer events 和 thumb
+hidden`、viewport height、`touch-action: none`、显示态 pointer events 和 thumb
   flex contract。
 - 新增 `layout-provider.spec.ts` 的 search dialog 回归：打开搜索、输入 query、
   验证 `.ui-scroll-viewport` 可见、有高度、结果可键盘选择并可 Escape 关闭。
@@ -2407,10 +2504,180 @@ transform pipeline 第一版：
 推广结论：
 
 - `restart` 不应该是默认验证动作；默认顺序是 `status/health -> typecheck ->
-  health -> focused e2e/parity -> validate:links -> git diff --check`。
+health -> focused e2e/parity -> validate:links -> git diff --check`。
 - typecheck 后必须 health-first。若出现 `404`、Nuxt error、请求超时、端口监听但
   无响应、stale/wrong server 或 Nuxt Content sqlite 缺表，再 restart。
 - 内容组件或 Nuxt Content 压力相关失败先用 focused case + `PLAYWRIGHT_WORKERS=1`
   复验；只有串行仍失败，才进入组件实现排查。
 - Codex bridge shell 下优先用直接命令避免 `pnpm` 包装层误触发 install；本地人工终端
   仍可用 package scripts。
+
+### Foundation alignment baseline
+
+本轮把当前 foundation hardening 的主动执行入口收口到
+`design/foundation-alignment-matrix.md`，并确认下面这些结论应作为长期基线：
+
+- 当前更大的基础差异不在“还缺几个页面组件”，而在 `source identity -> docs tree ->
+provider/layout -> markdown transform -> verification gate` 这条协议链还没有全部达到
+  `Gate Passed`。
+- `content.config.ts`、`app/utils/docs-navigation.ts`、
+  `app/utils/docs-page-tree-runtime.ts`、`DocsRootProvider`、`DocsPage`、`DocsLink`、
+  `app/utils/docs-markdown-pipeline.ts` 是当前 foundation hardening 的核心 owner 面。
+- Markdown transform pipeline 仍是最明显的基础差异之一：当前已具备 custom heading id、
+  structured data、code meta 和 Shiki notation baseline，但 steps、package-manager、
+  code-tab grouping、image metadata policy 仍需继续补齐。
+- integration P1 的 remote search provider、feedback backend、RSS、
+  `llms-full.txt`、per-page markdown export、image CDN adapter 和 multi-source baseline
+  不应与 foundation hardening 混在同一轮推进；除非它们先暴露出新的基础协议缺口。
+
+### Source identity and route identity hardening
+
+本轮只推进 foundation 第一阶段的 `content -> docs tree -> page identity`：
+
+- 对照 Fumadocs page-tree `$ref` / `url` 分离后，确认本地仍把尾部 `index` 同时折叠在
+  `sourcePath` 和 route path 中。这样会让嵌套 `index.md` 的源码读取、GitHub source/edit
+  URL 和相对链接失去真实文件身份。
+- `normalizeDocsSourcePath()` 改为保留真实 content stem；`resolveDocsRoutePath()` 单独负责
+  默认 index route 折叠和 slug transform。
+- 新增 `DocsPageIdentity` / `resolveDocsPageIdentity()`，统一输出 `contentPath / sourcePath /
+routePath / stem / slug`。这里显式承认 `DocsPageRecord.path` 是 Nuxt Content 查询键，
+  `DocsNode.path` 才是 route consumption key；meta map、route collision、route lookup 复用
+  同一 identity 入口。
+- route collision 错误改为报告稳定 source identity，不再报告可能已经是 route alias 的
+  `record.path`。
+- `DocsPageTreeRuntime` 的 source lookup 改由 `contextTree` 建表，并统一规范化查询 key；
+  excluded/hidden 页面仍不进入 visible sidebar/pager，但可以按 source identity 找回。
+- 新增 `tests/nuxt/docs-page-identity.nuxt.spec.ts`，覆盖根/嵌套 index、中文和空格 slug、
+  route collision、hidden context identity。该测试显式使用 Node environment，避免纯工具测试
+  额外启动完整 Nuxt DOM environment；`tests/nuxt/setup.ts` 同步允许 Node 环境安全加载。
+
+验证结论：
+
+- `pnpm exec vitest run tests/nuxt/docs-page-identity.nuxt.spec.ts`：`4 passed`。
+- `pnpm run test:nuxt`：`7 passed`。
+- `pnpm run validate:links`：`25 pages / 11 links`。
+- `pnpm run typecheck`：通过。
+- typecheck 后 route health 超时；`dev-server.mjs status` 显示 managed PID 存活但端口不可达。
+  按“测试不拥有服务生命周期”的当前规则，本轮没有自动 restart，因此浏览器级
+  page-tree 回归未执行。
+
+### Documentation lifecycle and verification entry simplification
+
+本轮按文档与测试服务审计结果完成减法治理：
+
+- 删除已 100% 完成的 Stage 7.7 / Stage 7.8 临时 TODO；durable component 状态继续由
+  `fumadocs-component-parity-inventory.md` 承接。
+- `foundation-prep-plan.md`、`nuxt-content-mvp-plan.md`、
+  `fumadocs-alignment-plan.md` 和 `playwright-verification-plan.md` 标记为历史记录，
+  不再作为主动执行入口。
+- 新增 `verification-runbook.md` 作为唯一活跃验证说明；旧 Playwright 文档只保留迁移、
+  benchmark 和历史故障证据。
+- `package.json` 的 Playwright 入口由 20 个收敛为两个：参数化 `test:e2e` 和明确的
+  `test:e2e:full`。文件、tag、project、workers 和 last-failed 等选择全部通过参数传递。
+- 测试链退役 managed dev-server 和 Playwright wrapper。服务由用户通过 `pnpm dev`
+  管理；`app:check` 只执行一次只读 HTTP 检查。
+- `typecheck` 使用 `.nuxt-typecheck`，避免与运行中的 dev server 共享 `.nuxt`。
+- docs source/route identity 提取到 `shared/docs-identity.js`，生产导航、链接解析和离线
+  link validator 共用同一套纯函数，避免验证器再次漂移。
+
+验证结论：
+
+- `package.json` 只剩 `test:nuxt`、`test:e2e`、`test:e2e:full` 三个测试入口。
+- `pnpm test:e2e -- --list`：成功列出 `132 tests / 14 files`。
+- `pnpm test:e2e -- --grep '@fast' --project=chromium-desktop --list`：成功筛选
+  `23 tests / 8 files`，证明原 grouped scripts 可以由参数替代。
+- `pnpm test:nuxt`：`7 passed`。
+- `pnpm validate:links`：`25 pages / 11 links`。
+- `pnpm typecheck`：通过；生成 `.nuxt-typecheck`，默认 `.nuxt/tsconfig.json` 时间未变化。
+- `app:check` 对不可达测试地址会在指定 timeout 内返回非零，不启动或修复任何服务。
+- 本轮未运行真实浏览器测试，因为现有服务由用户管理且当前未恢复健康状态。
+
+### Playwright-owned E2E server lifecycle
+
+本轮修正上一节“浏览器服务由用户手动管理”的临时结论，最终采用 Playwright 官方
+`webServer` 生命周期：
+
+- `test:e2e` 和 `test:e2e:full` 是仅有的 Playwright package scripts；文件、tag、project、
+  workers 等选择继续通过参数传递。
+- 默认没有健康服务时，Playwright 自动执行 Nuxt dev；本地已有健康服务时通过
+  `reuseExistingServer` 复用。设置 `PLAYWRIGHT_TEST_BASE_URL` 时视为显式外部服务。
+- E2E、typecheck 和日常开发分别使用 `.nuxt-e2e`、`.nuxt-typecheck` 和 `.nuxt`，避免
+  buildDir 互相污染。
+- 删除 `app:check` 和 `scripts/check-app.mjs`；测试前不再要求人工健康检查或手动启动服务。
+- 不恢复已退役的 `scripts/dev-server.mjs` 和 `scripts/run-playwright.mjs`。
+
+隔离 buildDir 首次验证暴露出应用通过相对路径导入 `shared/docs-identity.js` 时，Nitro
+会生成依赖输出目录深度的错误路径。应用侧已改用 Nuxt 标准
+`#shared/docs-identity.js` alias；离线 link validator 仍直接导入同一个共享模块。
+
+冷启动验证结论：
+
+- 删除工作区内 `.nuxt-e2e` 后执行 focused Playwright 用例，Playwright 自动创建
+  `.nuxt-e2e`、启动 Nuxt、完成测试并在结束后释放 `127.0.0.1:8888`。
+- 冷启动时 Nuxt/Vite 首次依赖优化会占用较多时间，因此单测 timeout 从 30 秒调整为
+  60 秒；最终 focused case `1 passed`，总耗时约 40 秒。
+- `pnpm typecheck` 通过。
+- `pnpm test:nuxt` 通过：`7 passed`。
+- `pnpm validate:links` 通过：`25 pages / 11 links`。
+- `pnpm exec eslint`（相关配置与共享 identity consumers）和 `git diff --check` 通过。
+
+### Test service standardization gate
+
+本轮完成测试服务剩余三个标准化缺口：existing-server reuse、完整 E2E 和 CI gate。
+
+复用行为实测：
+
+- 人工启动一个隐藏的本工作区 Nuxt 临时服务后，记录 `8888` listener PID `22996`。
+- 执行 focused Playwright 用例时没有出现第二个 listener；测试前后均为同一 PID。
+- 测试结束后原服务仍返回 `200`，证明 Playwright 不会回收复用的外部进程。
+- 验证完成后只停止了已核实的临时 PID。
+
+全量行为实测：
+
+- 首轮发现首页测试把 composable home contract 错写成“card/link 合计至少 3 个”；当前
+  数据合法地只有两个入口。断言改为分别要求至少一个 card 和一个 foundation link。
+- 4 workers 的长时间全量运行在 mobile 阶段出现一次 `page.goto net::ERR_ABORTED`；该
+  用例在单 worker 下连续重复 3 次通过，判断为共享 Nuxt dev server 压力下的瞬时导航
+  抖动，而不是稳定产品回归。
+- 本机有 20 个逻辑核心，但浏览器 worker 共享一个 Nuxt Content server，CPU 不是主要
+  瓶颈。`test:e2e:full` 因此固定为 2 workers；focused `test:e2e` 仍允许通过参数覆盖。
+- 最终完整三 project 回归通过：`113 passed / 19 skipped`，耗时约 4.8 分钟。
+- 测试结束后 `8888` 被正常释放。
+
+仓库 gate：
+
+- 新增 `.github/workflows/verify.yml`。
+- pull request 执行 typecheck、Nuxt runtime、link validation 和 desktop `@fast` E2E。
+- main push 和手动 workflow 执行完整 `test:e2e:full`。
+- CI 使用 Playwright `webServer` 冷启动 `.nuxt-e2e`，失败时上传 report 和 test artifacts。
+- `packageManager` 固定为 `pnpm@10.33.2`；`pnpm-lock.yaml` 纳入版本控制范围，
+  CI 使用 `pnpm install --frozen-lockfile`。
+
+### Viewport-aware E2E selection and CI sharding
+
+本轮按 Playwright 官方 project filtering 和 sharding 方案验证全量加速：
+
+- desktop 保留完整基线；viewport-independent 测试不再在 tablet/mobile 重复。
+- `@responsive` 表示三 project contract，`@narrow` 表示 tablet + mobile，
+  `@tablet` / `@mobile` 表示 project-specific branch。
+- 最终收集矩阵从 `132` 条缩减为 `88` 条：desktop `39`、tablet `23`、mobile `26`。
+- 两个 full-suite shard 各收集 `44` 条，`fullyParallel: true` 下负载均衡。
+- 优化后的第一次完整回归执行 `90` 条，`88 passed / 2 skipped`，约 4.0 分钟；
+  随后细化 `@narrow` / `@tablet` 标签，在收集阶段移除这两条无效 skip。
+- 受标签调整影响的 sidebar + TOC responsive 矩阵复验通过：`20 passed`，无 skip。
+- 最终 `88` 条零 skip 全量回归通过：`88 passed`，本轮冷启动总耗时约 4.6 分钟。
+
+本地收益说明：
+
+- 相比优化前 `113 passed / 19 skipped / 4.8 分钟`，用例调度减少约 33%，但两次优化后
+  全量分别约 4.0 和 4.6 分钟。单机墙钟收益存在明显波动，主要成本仍来自共享 Nuxt
+  服务、冷启动和导航，而不是纯浏览器 worker 数量。
+- 本地继续使用一个 Nuxt server + 2 workers；不在单机上复制多个 shard server。
+
+CI sharding 验证：
+
+- `verify.yml` 的 main/manual full gate 改为两个独立 matrix shard。
+- shard 使用 blob reporter，merge job 下载并执行 `playwright merge-reports --reporter html`。
+- 本地用 desktop `@fast` 集合模拟两个并行 shard：shard 1 `10 passed`，shard 2
+  `8 passed / 1 skipped`，两者约 52 秒并行完成。
+- 两个 blob zip 已成功合并为统一 HTML report，证明 CI 命令和报告链路可执行。

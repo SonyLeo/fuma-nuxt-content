@@ -9,7 +9,7 @@ import {
 import { clickAndExpectExpanded } from './helpers/interaction'
 
 test.describe('@fast @shell sidebar', () => {
-  test('exposes tab, separators, and current item contract', async ({
+  test('@responsive exposes tab, separators, and current item contract', async ({
     page,
   }) => {
     await gotoDocsFixture(page, '/guide/component-detail')
@@ -45,7 +45,7 @@ test.describe('@fast @shell sidebar', () => {
     await expectCountAtLeast(scope.locator('.docs-sidebar-link'), 1)
   })
 
-  test('opens tabs menu without shifting sidebar nav flow', async ({
+  test('@responsive opens tabs menu without shifting sidebar nav flow', async ({
     page,
   }) => {
     await gotoDocsFixture(page, '/guide/component-detail')
@@ -107,7 +107,7 @@ test.describe('@fast @shell sidebar', () => {
     ).toBeVisible()
   })
 
-  test('keeps top-level folder link navigation separate from disclosure', async ({
+  test('@tablet keeps top-level folder link navigation separate from disclosure', async ({
     page,
   }) => {
     test.skip(
@@ -131,10 +131,7 @@ test.describe('@fast @shell sidebar', () => {
 
     await expect(folder).toBeVisible()
     await expect(folder).toHaveAttribute('data-state', /^(open|closed)$/)
-    await expect(folderLink).toHaveAttribute(
-      'href',
-      /\/guide\/components$/,
-    )
+    await expect(folderLink).toHaveAttribute('href', /\/guide\/components$/)
     await expect(folderLink).toHaveAttribute('aria-expanded', /^(true|false)$/)
     expect(contentId).toBeTruthy()
 
@@ -228,7 +225,7 @@ test.describe('@fast @shell sidebar', () => {
     await expect(page.locator('.docs-sidebar-floating')).toHaveCount(0)
   })
 
-  test('uses mobile nav drawer instead of desktop sidebar on narrow screens', async ({
+  test('@mobile uses mobile nav drawer instead of desktop sidebar on narrow screens', async ({
     page,
   }) => {
     test.skip(!isNarrowViewport(page), 'Desktop uses the persistent sidebar.')
@@ -297,10 +294,9 @@ test.describe('@fast @shell sidebar', () => {
         'data-sidebar-mobile-open',
         'true',
       )
-      await expect(page.locator('#docs-header-sidebar-trigger')).toHaveAttribute(
-        'aria-expanded',
-        'true',
-      )
+      await expect(
+        page.locator('#docs-header-sidebar-trigger'),
+      ).toHaveAttribute('aria-expanded', 'true')
       await expect(panel).toHaveAttribute('data-state', 'open')
       await expect(panel).toBeVisible()
     } finally {
@@ -308,7 +304,9 @@ test.describe('@fast @shell sidebar', () => {
     }
   })
 
-  test('closes the mobile drawer from the overlay', async ({ page }) => {
+  test('@mobile closes the mobile drawer from the overlay', async ({
+    page,
+  }) => {
     test.skip(!isNarrowViewport(page), 'Desktop uses the persistent sidebar.')
 
     await gotoDocsFixture(page, '/guide/component-detail')
@@ -330,7 +328,7 @@ test.describe('@fast @shell sidebar', () => {
     )
   })
 
-  test('keeps mobile drawer open for folder disclosure and closes on folder link navigation', async ({
+  test('@mobile keeps mobile drawer open for folder disclosure and closes on folder link navigation', async ({
     page,
   }) => {
     test.skip(!isNarrowViewport(page), 'Desktop uses the persistent sidebar.')

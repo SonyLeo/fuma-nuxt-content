@@ -20,7 +20,10 @@ export async function waitForNuxtHydration(page: Page) {
   })
 }
 
-export async function gotoDocsFixture(page: Page, path = '/guide/component-detail') {
+export async function gotoDocsFixture(
+  page: Page,
+  path = '/guide/component-detail',
+) {
   await page.goto(path, {
     waitUntil: 'domcontentloaded',
   })

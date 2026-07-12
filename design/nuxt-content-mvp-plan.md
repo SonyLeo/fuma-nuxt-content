@@ -1,9 +1,12 @@
 ---
 title: Nuxt Content MVP Plan
-sectionLabel: Plan
+sectionLabel: Archive
 ---
 
 # Nuxt Content MVP Plan
+
+> Status: historical MVP record. Current foundation execution is governed by
+> `foundation-alignment-matrix.md`.
 
 ## 目标
 

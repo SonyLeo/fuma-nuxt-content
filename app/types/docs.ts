@@ -136,6 +136,14 @@ export type DocsPageRecord = DocsPageMeta & {
   stem?: string
 }
 
+export type DocsPageIdentity = {
+  contentPath: string
+  sourcePath: string
+  routePath: string
+  stem?: string
+  slug?: string
+}
+
 export type DocsNode = {
   id: string
   type: DocsNodeType

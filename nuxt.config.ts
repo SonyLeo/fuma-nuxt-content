@@ -13,8 +13,8 @@ const docsMarkdownPipelinePluginPath = createLocalImportPath(
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  buildDir: '.nuxt',
-  modules: ['@nuxt/eslint', '@nuxt/content'],
+  buildDir: process.env.NUXT_BUILD_DIR ?? '.nuxt',
+  modules: ['@nuxt/eslint', '@nuxt/content', '@nuxt/test-utils/module'],
   vite: {
     plugins: [tailwindcss()],
   },

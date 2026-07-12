@@ -12,7 +12,7 @@ const expectedOpenOptions = [
 ]
 
 test.describe('@fast @page-actions page actions and tail', () => {
-  test('renders preview frame, page actions, and open menu contract', async ({
+  test('@responsive renders preview frame, page actions, and open menu contract', async ({
     page,
   }) => {
     await gotoDocsFixture(page, '/guide/components')
@@ -26,7 +26,9 @@ test.describe('@fast @page-actions page actions and tail', () => {
     await expect(preview.locator('doccodeblock, previewcounter')).toHaveCount(0)
 
     const actions = page.locator('.docs-page-actions')
-    const copy = page.locator('.docs-page-action[data-action-id="copy-markdown"]')
+    const copy = page.locator(
+      '.docs-page-action[data-action-id="copy-markdown"]',
+    )
     const open = page.locator('.docs-page-open-trigger')
 
     await expect(actions).toBeVisible()
@@ -39,9 +41,9 @@ test.describe('@fast @page-actions page actions and tail', () => {
     const copyBox = await expectVisibleBox(copy)
     const openBox = await expectVisibleBox(open)
 
-    expect(Math.abs((copyBox?.height ?? 0) - (openBox?.height ?? 0))).toBeLessThanOrEqual(
-      1,
-    )
+    expect(
+      Math.abs((copyBox?.height ?? 0) - (openBox?.height ?? 0)),
+    ).toBeLessThanOrEqual(1)
 
     await open.click()
     await expect(open).toHaveAttribute('aria-expanded', 'true')
@@ -61,7 +63,9 @@ test.describe('@fast @page-actions page actions and tail', () => {
     )
 
     for (const label of expectedOpenOptions) {
-      const option = page.locator('.docs-page-open-option').filter({ hasText: label })
+      const option = page
+        .locator('.docs-page-open-option')
+        .filter({ hasText: label })
 
       await expect(option).toBeVisible()
       await expect(option).toHaveAttribute('target', '_blank')
@@ -79,10 +83,9 @@ test.describe('@fast @page-actions page actions and tail', () => {
     await expect(feedback).toBeVisible()
     await expect(feedback.locator('.docs-feedback-button')).toHaveCount(2)
     await feedback.locator('.docs-feedback-button').first().click()
-    await expect(feedback.locator('.docs-feedback-button').first()).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    )
+    await expect(
+      feedback.locator('.docs-feedback-button').first(),
+    ).toHaveAttribute('aria-pressed', 'true')
     await expect(feedback.locator('.docs-feedback-thanks')).toBeVisible()
 
     const pager = page.locator('.docs-pager')

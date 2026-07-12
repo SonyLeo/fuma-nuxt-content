@@ -2,6 +2,11 @@ import { existsSync } from 'node:fs'
 import { readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import {
+  normalizeDocsRoutePath,
+  normalizeDocsSourcePath,
+  resolveDocsRoutePath,
+} from '../shared/docs-identity.js'
 
 const DOC_EXTENSION_RE = /\.(?:md|mdx)$/i
 const EXTERNAL_HREF_RE = /^[a-z][a-z\d+.-]*:/i
@@ -42,78 +47,8 @@ function splitPathSuffix(value) {
   }
 }
 
-function decodeRouteSegment(segment) {
-  try {
-    return decodeURIComponent(segment)
-  } catch {
-    return segment
-  }
-}
-
-function encodeRouteSegment(segment) {
-  return encodeURI(segment)
-}
-
-function getPathSegments(value) {
-  if (!value || value === '/') {
-    return []
-  }
-
-  return value.replace(/^\//, '').split('/')
-}
-
-function normalizeDocsRoutePath(value = '/') {
-  const normalized = (value.startsWith('/') ? value : `/${value}`).replace(
-    /\/+/g,
-    '/',
-  )
-  const segments = getPathSegments(normalized)
-    .map((segment) => decodeRouteSegment(segment.trim()))
-    .filter(Boolean)
-    .map(encodeRouteSegment)
-
-  return segments.length > 0 ? `/${segments.join('/')}` : '/'
-}
-
-function normalizeDocsSourcePath(value = '/') {
-  const normalized = value
-    .replace(/\\/g, '/')
-    .replace(/^\/+|\/+$/g, '')
-    .replace(DOC_EXTENSION_RE, '')
-    .replace(/\/index$/, '')
-
-  return normalized ? `/${normalized}` : '/'
-}
-
-function getDirnameFromPath(value) {
-  const segments = getPathSegments(value)
-  return segments.slice(0, -1).join('/')
-}
-
-function resolveDocsRoutePath(sourcePath, pageMeta = {}) {
-  const normalizedSourcePath = normalizeDocsRoutePath(sourcePath)
-  const slug = pageMeta.slug?.trim()
-
-  if (!slug) {
-    return normalizedSourcePath
-  }
-
-  if (slug.startsWith('/')) {
-    return normalizeDocsRoutePath(slug)
-  }
-
-  const normalizedSlug = slug.replace(/^\/+|\/+$/g, '')
-
-  if (!normalizedSlug) {
-    return normalizedSourcePath
-  }
-
-  const baseDir = getDirnameFromPath(normalizedSourcePath)
-  const normalizedSlugPath = normalizeDocsRoutePath(normalizedSlug)
-
-  return normalizeDocsRoutePath(
-    `/${[baseDir, normalizedSlugPath.replace(/^\//, '')].filter(Boolean).join('/')}`,
-  )
+function normalizeDocsFileSourcePath(value = '/') {
+  return normalizeDocsSourcePath(value.replace(DOC_EXTENSION_RE, ''))
 }
 
 function parseFrontmatter(markdown) {
@@ -279,7 +214,7 @@ async function walkDocsFiles(dir) {
 
 function resolveRelativeSourcePath(currentSourcePath, target) {
   const { pathname, search, hash } = splitPathSuffix(target)
-  const baseSegments = normalizeDocsSourcePath(currentSourcePath)
+  const baseSegments = normalizeDocsFileSourcePath(currentSourcePath)
     .replace(/^\//, '')
     .split('/')
     .filter(Boolean)
@@ -299,7 +234,7 @@ function resolveRelativeSourcePath(currentSourcePath, target) {
     baseSegments.push(segment)
   }
 
-  return `${normalizeDocsSourcePath(`/${baseSegments.join('/')}`)}${search}${hash ? `#${hash}` : ''}`
+  return `${normalizeDocsFileSourcePath(`/${baseSegments.join('/')}`)}${search}${hash ? `#${hash}` : ''}`
 }
 
 function isExternalHref(target) {
@@ -370,7 +305,7 @@ function validateLink(link, page, indexes, failures) {
   if (target.startsWith('./') || target.startsWith('../')) {
     const sourcePath = resolveRelativeSourcePath(page.sourcePath, target)
     const resolved = splitPathSuffix(sourcePath)
-    const normalizedSourcePath = normalizeDocsSourcePath(resolved.pathname)
+    const normalizedSourcePath = normalizeDocsFileSourcePath(resolved.pathname)
     const targetPage = indexes.bySourcePath.get(normalizedSourcePath)
 
     if (!targetPage) {
@@ -392,7 +327,7 @@ function validateLink(link, page, indexes, failures) {
 
   if (target.startsWith('/')) {
     const targetPage = hasDocsFileExtension(target)
-      ? indexes.bySourcePath.get(normalizeDocsSourcePath(pathname))
+      ? indexes.bySourcePath.get(normalizeDocsFileSourcePath(pathname))
       : indexes.byRoutePath.get(normalizeDocsRoutePath(pathname))
 
     if (!targetPage) {
@@ -413,7 +348,7 @@ async function createDocsPages() {
   for (const file of files) {
     const markdown = await readFile(file, 'utf8')
     const relativePath = toPosixPath(path.relative(CONTENT_DIR, file))
-    const sourcePath = normalizeDocsSourcePath(relativePath)
+    const sourcePath = normalizeDocsFileSourcePath(relativePath)
     const meta = parseFrontmatter(markdown)
 
     pages.push({

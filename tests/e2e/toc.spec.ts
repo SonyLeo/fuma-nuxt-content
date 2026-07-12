@@ -4,7 +4,9 @@ import { gotoDocsFixture } from './helpers/docs-page'
 import { isDesktopTocViewport } from './helpers/layout'
 
 test.describe('@shell toc rail', () => {
-  test('renders desktop rail or responsive popover contract', async ({ page }) => {
+  test('@responsive renders desktop rail or responsive popover contract', async ({
+    page,
+  }) => {
     await gotoDocsFixture(page, '/guide/component-detail')
 
     if (isDesktopTocViewport(page)) {
@@ -21,12 +23,18 @@ test.describe('@shell toc rail', () => {
     await expect(page.locator('#nd-toc')).toBeHidden()
     await expect(popover).toBeVisible()
     await expect(trigger).toHaveAttribute('aria-expanded', 'false')
-    await expect(page.locator('.docs-toc-popover-panel')).toHaveCSS('display', 'none')
+    await expect(page.locator('.docs-toc-popover-panel')).toHaveCSS(
+      'display',
+      'none',
+    )
 
     await trigger.click()
     await expect(trigger).toHaveAttribute('aria-expanded', 'true')
     await expect(page.locator('.docs-toc-popover-panel')).toBeVisible()
-    await expect(page.locator('.docs-toc-popover-panel')).toHaveCSS('position', 'static')
+    await expect(page.locator('.docs-toc-popover-panel')).toHaveCSS(
+      'position',
+      'static',
+    )
     await expect(page.locator('.docs-toc-popover-progress')).toHaveAttribute(
       'role',
       'progressbar',
@@ -41,16 +49,23 @@ test.describe('@shell toc rail', () => {
   test('updates current TOC item when scrolling to the bottom on desktop', async ({
     page,
   }) => {
-    test.skip(!isDesktopTocViewport(page), 'Responsive TOC active state is covered by popover specs.')
+    test.skip(
+      !isDesktopTocViewport(page),
+      'Responsive TOC active state is covered by popover specs.',
+    )
 
     await gotoDocsFixture(page, '/guide/component-detail')
 
     const lastHeadingId = await page
-      .locator('.docs-page-body h2[id], .docs-page-body h3[id], .docs-page-body h4[id]')
+      .locator(
+        '.docs-page-body h2[id], .docs-page-body h3[id], .docs-page-body h4[id]',
+      )
       .last()
       .getAttribute('id')
 
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+    await page.evaluate(() =>
+      window.scrollTo(0, document.documentElement.scrollHeight),
+    )
     await expect
       .poll(() =>
         page.evaluate(() => {
@@ -69,7 +84,10 @@ test.describe('@shell toc rail', () => {
   test('marks observed headings directly without synthetic parent active state', async ({
     page,
   }) => {
-    test.skip(!isDesktopTocViewport(page), 'Desktop TOC rail owns the active track.')
+    test.skip(
+      !isDesktopTocViewport(page),
+      'Desktop TOC rail owns the active track.',
+    )
 
     await gotoDocsFixture(page, '/guide/component-detail')
 
@@ -110,7 +128,10 @@ test.describe('@shell toc rail', () => {
   test('sizes active track from the active item range on desktop', async ({
     page,
   }) => {
-    test.skip(!isDesktopTocViewport(page), 'Desktop TOC rail owns the active track.')
+    test.skip(
+      !isDesktopTocViewport(page),
+      'Desktop TOC rail owns the active track.',
+    )
 
     await gotoDocsFixture(page, '/guide/component-detail')
 

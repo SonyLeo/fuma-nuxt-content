@@ -1,9 +1,10 @@
 import type { DocsPageRecord } from '~/types/docs'
+import { resolveDocsRecordSourcePath } from '~/utils/docs-navigation'
 import {
   normalizeDocsRoutePath,
-  resolveDocsRecordSourcePath,
+  normalizeDocsSourcePath,
   resolveDocsRoutePath,
-} from '~/utils/docs-navigation'
+} from '#shared/docs-identity.js'
 
 export type DocsResolvedLink = {
   href: string
@@ -60,16 +61,15 @@ export function isExternalDocsHref(href: string) {
   return /^[a-z][a-z\d+.-]*:/i.test(href) || href.startsWith('//')
 }
 
-function normalizeDocsSourcePath(path: string) {
+function normalizeDocsFileSourcePath(path: string) {
   const { pathname, suffix } = splitPathSuffix(path)
   const withoutExtension = pathname.replace(DOC_FILE_EXTENSION_RE, '')
-  const withoutIndex = withoutExtension.replace(/\/index$/, '')
-  return `${normalizeDocsRoutePath(withoutIndex || '/')}${suffix}`
+  return `${normalizeDocsSourcePath(withoutExtension)}${suffix}`
 }
 
 function resolveRelativePath(basePath: string, href: string) {
   const { pathname, suffix } = splitPathSuffix(href)
-  const baseSegments = normalizeDocsSourcePath(basePath)
+  const baseSegments = normalizeDocsFileSourcePath(basePath)
     .replace(/[#?].*$/, '')
     .replace(/^\//, '')
     .split('/')
@@ -90,7 +90,7 @@ function resolveRelativePath(basePath: string, href: string) {
     baseSegments.push(segment)
   }
 
-  return normalizeDocsSourcePath(`/${baseSegments.join('/')}${suffix}`)
+  return normalizeDocsFileSourcePath(`/${baseSegments.join('/')}${suffix}`)
 }
 
 function resolveRouteFromSourcePath(
@@ -98,9 +98,12 @@ function resolveRouteFromSourcePath(
   pages: DocsPageRecord[] | null | undefined,
 ) {
   const { pathname, suffix } = splitPathSuffix(sourcePath)
-  const normalizedSource = normalizeDocsSourcePath(pathname)
+  const normalizedSource = normalizeDocsFileSourcePath(pathname)
   const match = (pages ?? []).find((page) => {
-    return normalizeDocsSourcePath(resolveDocsRecordSourcePath(page)) === normalizedSource
+    return (
+      normalizeDocsFileSourcePath(resolveDocsRecordSourcePath(page)) ===
+      normalizedSource
+    )
   })
 
   if (!match) {
@@ -147,7 +150,7 @@ export function resolveDocsLink(
       : rawHref.startsWith('/')
         ? hasDocsFileExtension(rawHref)
           ? resolveRouteFromSourcePath(rawHref, options.pages)
-          : normalizeDocsSourcePath(rawHref)
+          : normalizeDocsRoutePath(rawHref)
         : rawHref
 
   return {

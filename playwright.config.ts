@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
 const baseURL = process.env.PLAYWRIGHT_TEST_BASE_URL ?? 'http://127.0.0.1:8888'
+const useExternalServer = Boolean(process.env.PLAYWRIGHT_TEST_BASE_URL)
 const configuredWorkers = Number(process.env.PLAYWRIGHT_WORKERS)
 const workers =
   Number.isFinite(configuredWorkers) && configuredWorkers > 0
@@ -18,6 +19,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium-desktop',
+      grepInvert: /@mobile|@narrow/,
       use: {
         ...devices['Desktop Chrome'],
         channel: 'chrome',
@@ -29,6 +31,8 @@ export default defineConfig({
     },
     {
       name: 'chromium-tablet',
+      grep: /@responsive|@narrow|@tablet/,
+      grepInvert: /@mobile/,
       use: {
         ...devices['Desktop Chrome'],
         channel: 'chrome',
@@ -40,6 +44,8 @@ export default defineConfig({
     },
     {
       name: 'chromium-mobile',
+      grep: /@responsive|@narrow|@mobile/,
+      grepInvert: /@tablet/,
       use: {
         ...devices['Desktop Chrome'],
         channel: 'chrome',
@@ -51,10 +57,25 @@ export default defineConfig({
       },
     },
   ],
-  reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
+  reporter: [
+    ['list'],
+    ['html', { open: 'never', outputFolder: 'playwright-report' }],
+  ],
   retries: process.env.CI ? 1 : 0,
   testDir: './tests/e2e',
-  timeout: 30_000,
+  timeout: 60_000,
+  webServer: useExternalServer
+    ? undefined
+    : {
+        command: 'pnpm exec nuxt dev --host 127.0.0.1 --port 8888',
+        env: {
+          NUXT_BUILD_DIR: '.nuxt-e2e',
+          NUXT_TELEMETRY_DISABLED: '1',
+        },
+        reuseExistingServer: !process.env.CI,
+        timeout: 120_000,
+        url: 'http://127.0.0.1:8888/guide/components',
+      },
   use: {
     baseURL,
     screenshot: 'only-on-failure',
@@ -62,10 +83,4 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
   workers,
-  webServer: {
-    command: 'pnpm exec nuxt dev --host 127.0.0.1 --port 8888',
-    reuseExistingServer: true,
-    timeout: 60_000,
-    url: baseURL,
-  },
 })

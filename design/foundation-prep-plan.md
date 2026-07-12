@@ -1,9 +1,12 @@
 ---
 title: Foundation Prep Plan
-sectionLabel: Plan
+sectionLabel: Archive
 ---
 
 # Foundation Prep Plan
+
+> Status: Stage 0 is complete. This file is retained as historical preparation
+> evidence and is not an active gate.
 
 ## 定位
 

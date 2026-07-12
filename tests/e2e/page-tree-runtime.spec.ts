@@ -3,7 +3,9 @@ import { expectCountAtLeast } from './helpers/assertions'
 import { activeSidebarScope, gotoDocsFixture } from './helpers/docs-page'
 
 test.describe('@fast @shell page tree runtime', () => {
-  test('feeds visible tree consumers from one runtime', async ({ page }) => {
+  test('@responsive feeds visible tree consumers from one runtime', async ({
+    page,
+  }) => {
     await gotoDocsFixture(page, '/guide/component-detail')
 
     const pager = page.locator('.docs-pager')
@@ -46,7 +48,9 @@ test.describe('@fast @shell page tree runtime', () => {
     await expect(page.locator('html')).not.toContainText('Page not found')
   })
 
-  test('uses context tree for excluded route breadcrumbs', async ({ page }) => {
+  test('@responsive uses context tree for excluded route breadcrumbs', async ({
+    page,
+  }) => {
     await gotoDocsFixture(page, '/guide/protocol-playground/archive')
 
     await expect(page.locator('h1').first()).toContainText('Archive Note')

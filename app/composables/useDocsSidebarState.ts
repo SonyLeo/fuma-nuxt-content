@@ -16,16 +16,14 @@ function createDocsSidebarState(options: DocsSidebarStateOptions = {}) {
   const mobileOpen = shallowRef(false)
   const tabsOpen = shallowRef(false)
   const closeOnNavigate = shallowRef(true)
-  const hoverCloseTimer = shallowRef<ReturnType<typeof window.setTimeout> | null>(
-    null,
-  )
+  const hoverCloseTimer = shallowRef<ReturnType<typeof setTimeout> | null>(null)
 
   function clearHoverCloseTimer() {
     if (!hoverCloseTimer.value) {
       return
     }
 
-    window.clearTimeout(hoverCloseTimer.value)
+    clearTimeout(hoverCloseTimer.value)
     hoverCloseTimer.value = null
   }
 
@@ -74,7 +72,7 @@ function createDocsSidebarState(options: DocsSidebarStateOptions = {}) {
     }
 
     clearHoverCloseTimer()
-    hoverCloseTimer.value = window.setTimeout(() => {
+    hoverCloseTimer.value = setTimeout(() => {
       hovered.value = false
     }, event && Math.min(event.clientX, document.body.clientWidth - event.clientX) > 100
       ? 0

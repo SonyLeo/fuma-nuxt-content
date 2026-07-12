@@ -359,7 +359,7 @@ Current verified commands:
 
 - `pnpm typecheck`
 - `git diff --check`
-- `pnpm dev:restart`
+- run focused Playwright checks directly; Playwright starts or reuses the E2E server
 - `node scripts\parity\run.mjs --suite=layout-provider --viewports=1440x1000,994x935,390x844 --chromePort=9371 --retries=1 --dump`
 - `node scripts\parity\run.mjs --suite=docs-shell --url=http://127.0.0.1:8888/guide/component-detail --viewports=1440x1000,994x935,390x844 --chromePort=9372 --retries=1 --dump`
 - `node scripts\parity\run.mjs --suite=fast-regression --viewports=1440x1000,994x935,390x844 --chromePort=9373 --retries=1 --dump`
