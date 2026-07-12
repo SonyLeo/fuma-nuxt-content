@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import type { DocsPageAction, DocsPageActionState } from '~/types/docs-actions'
-import type {
-  DocsContentPage,
-  DocsPageMeta,
-  DocsPageRecord,
-} from '~/types/docs'
+import type { DocsContentPage, DocsPageRecord } from '~/types/docs'
 import {
   findDocsPageRecordByRoute,
   resolveDocsPageIdentity,
@@ -110,46 +106,33 @@ const { previous, next } = useDocsPager(
   runtime,
   computed(() => route.path),
 )
-const pageForOptions = computed<DocsPageMeta | null>(() => {
-  return page.value?.docsMetadata ?? null
-})
-const {
-  title,
-  createHeader,
-  options: pageOptions,
-} = useDocsPage(pageForOptions)
-const breadcrumbOptions = computed(() => {
-  if (!pageOptions.value.breadcrumb.enabled) {
-    return {
-      includeRoot: false,
-      includePage: false,
-      includeSeparator: false,
-    }
-  }
-
-  return {
-    includeRoot: pageOptions.value.breadcrumb.includeRoot,
-    includePage: pageOptions.value.breadcrumb.includePage,
-    includeSeparator: pageOptions.value.breadcrumb.includeSeparator,
-  }
-})
+const { breadcrumbOptions, resolveOptions } = useDocsPage(
+  computed(() => page.value),
+)
 const { breadcrumbs } = useDocsBreadcrumbs(
   runtime,
   computed(() => route.path),
   breadcrumbOptions,
 )
 const { items: toc } = useDocsToc(computed(() => page.value))
-const pageHeader = computed(() => {
-  return createHeader([])
+const pageOptions = computed(() => {
+  return resolveOptions({
+    tocItems: toc.value,
+    breadcrumbItems: breadcrumbs.value,
+    previous: previous.value,
+    next: next.value,
+  })
 })
 const pageDescription = computed(() => {
   return (
-    page.value?.docsMetadata.description ||
+    pageOptions.value.header.description ||
     site.seo?.defaultDescription ||
     site.description
   )
 })
-const pageSeoTitle = computed(() => createDocsSeoTitle(title.value, site))
+const pageSeoTitle = computed(() => {
+  return createDocsSeoTitle(pageOptions.value.header.title, site)
+})
 const canonicalUrl = computed(() => {
   return createDocsCanonicalUrl(
     currentPageIdentity.value?.routePath ?? '/',
@@ -157,24 +140,8 @@ const canonicalUrl = computed(() => {
     requestUrl.origin,
   )
 })
-const pageToc = computed(() => {
-  return {
-    ...pageOptions.value.toc,
-    items: toc.value,
-  }
-})
-const pageBreadcrumb = computed(() => {
-  return {
-    ...pageOptions.value.breadcrumb,
-    items: breadcrumbs.value,
-  }
-})
-const pageFooter = computed(() => {
-  return {
-    ...pageOptions.value.footer,
-    previous: previous.value,
-    next: next.value,
-  }
+const siteFooterEnabled = computed(() => {
+  return pageOptions.value.footer.enabled || site.feedback?.enabled === true
 })
 const pageActions = computed<DocsPageAction[]>(() => {
   const actions: DocsPageAction[] = []
@@ -353,13 +320,7 @@ onBeforeUnmount(() => {
       <DocsSearch :config="site.search" :index="searchIndex" />
     </template>
 
-    <DocsPage
-      :full="pageOptions.full"
-      :header="pageHeader"
-      :toc="pageToc"
-      :breadcrumb="pageBreadcrumb"
-      :footer="pageFooter"
-    >
+    <DocsPage v-bind="pageOptions">
       <template #pageActions>
         <DocsPageActions :actions="pageActions" @run="runPageAction" />
       </template>
@@ -368,14 +329,12 @@ onBeforeUnmount(() => {
         <ContentRenderer v-if="page" :value="page" />
       </DocsBody>
 
-      <template #footer="{ footer }">
+      <template #footer>
         <DocsPageFooter
-          :enabled="
-            (footer?.enabled ?? true) || site.feedback?.enabled === true
-          "
-          :previous="footer?.previous"
-          :next="footer?.next"
-          :pager-labels="footer?.pagerLabels"
+          :enabled="siteFooterEnabled"
+          :previous="pageOptions.footer.previous"
+          :next="pageOptions.footer.next"
+          :pager-labels="pageOptions.footer.pagerLabels"
         >
           <DocsFeedback
             :config="site.feedback"

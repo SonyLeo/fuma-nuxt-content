@@ -35,7 +35,7 @@ contracts exist, but several protocol boundaries still need to become
 | Page tree and context tree runtime    | Gate Passed | Tree policy/search/directory Nuxt and browser tests   | Keep future adapters on normalized publishable input    |
 | Root provider and layout slots        | First Pass+ | Layout-provider Playwright contracts                  | Document public provider/slot API as stable             |
 | Theme runtime and presets             | First Pass+ | Theme project tests and parity profile                | Treat product preset adapter separately                 |
-| Docs layout and page protocol         | First Pass+ | Shell, TOC, sidebar, page actions tests               | Freeze slot ownership and page option normalization     |
+| Docs page protocol                    | Gate Passed | Normalized page policy tests and focused shell checks | Keep site adapters outside metadata policy              |
 | Default MDC mapping and link protocol | First Pass+ | Runtime content tests and browser contracts           | Complete authoring edge cases and external-link policy  |
 | Markdown transform pipeline           | First Pass  | Heading ids, structured data, code meta baseline      | Steps/package-manager/code-tab/image transform policy   |
 | Code system and preview               | First Pass+ | CodeBlock, tabs, preview and copy tests               | Complete transform-driven authoring contract            |
@@ -76,8 +76,13 @@ contracts exist, but several protocol boundaries still need to become
 
 - `DocsRootProvider` owns root-level shared state and feature availability.
 - Layout components consume normalized options and stable slots.
-- `DocsPage` owns article composition, TOC state, page actions, feedback, and
-  pager placement without reading product config directly.
+- `useDocsPage` owns normalized page metadata policy and final resolved page
+  props. It reads only `docsMetadata`; tree/content owners supply breadcrumb,
+  pager, and TOC derived data as explicit inputs.
+- Catch-all routes own query, identity, redirect/404, SEO, and site integration
+  assembly without reinterpreting page metadata defaults.
+- `DocsPage` owns article composition, slots, TOC state, rendered-heading
+  fallback, and page-adjacent rendering without reading product config.
 - Home and not-found shells reuse shared layout options rather than creating
   separate navigation systems.
 
@@ -117,7 +122,8 @@ contracts exist, but several protocol boundaries still need to become
 ### P1: freeze public provider and page contracts
 
 - List stable root provider state and replacement slots.
-- List stable page options and ownership.
+- Keep the resolved page options contract and standalone breadcrumb ownership
+  covered while public provider and layout slots are documented.
 - Confirm product adapters generate foundation props instead of being read by
   foundation components.
 

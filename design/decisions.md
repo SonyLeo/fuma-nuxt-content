@@ -58,7 +58,16 @@ superseded experiments belong in Git history or the archive summaries.
 
 - Root shared state belongs to `DocsRootProvider`.
 - Layouts consume normalized options and slots.
-- Pages compose article-adjacent surfaces without reading product config.
+- `useDocsPage` is the single page protocol owner: it resolves normalized
+  `docsMetadata` policy first, then assembles complete header, TOC, standalone
+  breadcrumb, and footer props from explicit tree/content-derived inputs.
+- Catch-all routes retain query, identity, redirect/404, SEO, and site adapter
+  assembly, but do not reinterpret metadata defaults or rebuild page options.
+- `DocsPage` renders the resolved contract and owns only DOM composition,
+  slots, TOC interaction state, and rendered-heading fallback.
+- Site actions, feedback, search, and SEO stay integration inputs. They may
+  affect outer assembly, such as keeping a footer container for feedback, but
+  do not mutate page metadata policy.
 - Home and not-found reuse shared layout contracts.
 
 ## D006: Theme state lives at the document root

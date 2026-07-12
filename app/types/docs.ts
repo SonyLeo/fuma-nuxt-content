@@ -233,6 +233,14 @@ export type DocsPageHeaderOptions = DocsPageHeaderProps & {
   enabled?: boolean
 }
 
+export type DocsResolvedPageHeaderOptions = {
+  enabled: boolean
+  title: string
+  description: string | undefined
+  sectionLabel: string
+  breadcrumbs: DocsBreadcrumbItem[]
+}
+
 export type DocsPageTocOptions = {
   items?: DocsTocItem[]
   enabled?: boolean
@@ -286,6 +294,8 @@ export type DocsPagerLabels = {
   nextDescription?: string
 }
 
+export type DocsResolvedPagerLabels = Required<DocsPagerLabels>
+
 export type DocsPageFooterProps = {
   enabled?: boolean
   previous?: DocsPagerItem | null
@@ -295,6 +305,9 @@ export type DocsPageFooterProps = {
 
 export type DocsResolvedPageFooterProps = {
   enabled: boolean
+  previous: DocsPagerItem | null
+  next: DocsPagerItem | null
+  pagerLabels: DocsResolvedPagerLabels
 }
 
 export type DocsPageProps = {
@@ -307,7 +320,16 @@ export type DocsPageProps = {
 
 export type DocsResolvedPageOptions = {
   full: boolean
+  header: DocsResolvedPageHeaderOptions
   toc: DocsResolvedPageTocOptions
   breadcrumb: DocsResolvedPageBreadcrumbProps
   footer: DocsResolvedPageFooterProps
+}
+
+export type DocsResolvedPagePolicy = {
+  full: boolean
+  header: Omit<DocsResolvedPageHeaderOptions, 'breadcrumbs'>
+  toc: Omit<DocsResolvedPageTocOptions, 'items'>
+  breadcrumb: Omit<DocsResolvedPageBreadcrumbProps, 'items'>
+  footer: Pick<DocsResolvedPageFooterProps, 'enabled' | 'pagerLabels'>
 }

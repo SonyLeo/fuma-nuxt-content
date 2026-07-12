@@ -1,105 +1,120 @@
 import type {
   DocsBreadcrumbItem,
-  DocsPageBreadcrumbProps,
-  DocsPageHeaderOptions,
-  DocsPageLike,
+  DocsBreadcrumbOptions,
+  DocsContentPage,
+  DocsPageMeta,
+  DocsPagerItem,
   DocsResolvedPageOptions,
+  DocsResolvedPagePolicy,
+  DocsTocItem,
 } from '~/types/docs'
 
-const DEFAULT_BREADCRUMB_OPTIONS: DocsPageBreadcrumbProps = {
-  enabled: true,
-  includeRoot: false,
-  includePage: false,
-  includeSeparator: false,
+const DEFAULT_TOC_LABEL = 'On this page'
+const DEFAULT_SECTION_LABEL = 'Guide'
+const DEFAULT_PAGER_LABELS = {
+  previous: 'Previous',
+  next: 'Next',
+  previousDescription: 'Previous page',
+  nextDescription: 'Next page',
 }
 
-export function useDocsPage(page: Ref<DocsPageLike | null | undefined>) {
-  const title = computed(() => {
-    return page.value?.title ?? ''
-  })
+export type DocsPageDerivedOptions = {
+  tocItems: DocsTocItem[]
+  breadcrumbItems: DocsBreadcrumbItem[]
+  previous: DocsPagerItem | null
+  next: DocsPagerItem | null
+}
 
-  const description = computed(() => {
-    return page.value?.description ?? ''
-  })
-
-  const sectionLabel = computed(() => {
-    return page.value?.sectionLabel ?? 'Guide'
-  })
-
-  const full = computed(() => {
-    return page.value?.full ?? false
-  })
-
-  const toc = computed(() => {
-    const enabled = page.value?.toc ?? !full.value
-    const popover = page.value?.tocPopover ?? enabled
-
-    return {
-      items: [],
-      enabled,
-      popover,
-      label: 'On this page',
-      activeLabel: title.value,
-    }
-  })
-
-  const breadcrumb = computed(() => {
-    return {
-      items: [],
-      enabled:
-        page.value?.breadcrumb ?? DEFAULT_BREADCRUMB_OPTIONS.enabled ?? true,
-      includeRoot:
-        page.value?.breadcrumbRoot ??
-        DEFAULT_BREADCRUMB_OPTIONS.includeRoot ??
-        false,
-      includePage:
-        page.value?.breadcrumbPage ??
-        DEFAULT_BREADCRUMB_OPTIONS.includePage ??
-        false,
-      includeSeparator:
-        page.value?.breadcrumbSeparator ??
-        DEFAULT_BREADCRUMB_OPTIONS.includeSeparator ??
-        false,
-    }
-  })
-
-  const footer = computed(() => {
-    return {
-      enabled: page.value?.pager ?? true,
-    }
-  })
-
-  function createHeader(
-    breadcrumbs: DocsBreadcrumbItem[],
-    enabled = true,
-  ): DocsPageHeaderOptions {
-    return {
-      enabled,
-      title: title.value,
-      description: description.value || undefined,
-      sectionLabel: sectionLabel.value,
-      breadcrumbs,
-    }
-  }
-
-  const options = computed<DocsResolvedPageOptions>(() => {
-    return {
-      full: full.value,
-      toc: toc.value,
-      breadcrumb: breadcrumb.value,
-      footer: footer.value,
-    }
-  })
+export function resolveDocsPagePolicy(
+  metadata: DocsPageMeta | null | undefined,
+): DocsResolvedPagePolicy {
+  const full = metadata?.full ?? false
+  const tocEnabled = metadata?.toc ?? !full
 
   return {
-    title,
-    description,
-    sectionLabel,
     full,
-    toc,
-    breadcrumb,
-    footer,
-    createHeader,
-    options,
+    header: {
+      enabled: true,
+      title: metadata?.title ?? '',
+      description: metadata?.description,
+      sectionLabel: metadata?.sectionLabel ?? DEFAULT_SECTION_LABEL,
+    },
+    toc: {
+      enabled: tocEnabled,
+      popover: metadata?.tocPopover ?? tocEnabled,
+      label: DEFAULT_TOC_LABEL,
+      activeLabel: metadata?.title ?? DEFAULT_TOC_LABEL,
+    },
+    breadcrumb: {
+      enabled: metadata?.breadcrumb ?? true,
+      includeRoot: metadata?.breadcrumbRoot ?? false,
+      includePage: metadata?.breadcrumbPage ?? false,
+      includeSeparator: metadata?.breadcrumbSeparator ?? false,
+    },
+    footer: {
+      enabled: metadata?.pager ?? true,
+      pagerLabels: { ...DEFAULT_PAGER_LABELS },
+    },
+  }
+}
+
+export function resolveDocsPageOptions(
+  policy: DocsResolvedPagePolicy,
+  derived: DocsPageDerivedOptions,
+): DocsResolvedPageOptions {
+  return {
+    full: policy.full,
+    header: {
+      ...policy.header,
+      // The standalone breadcrumb is the only visible breadcrumb owner.
+      breadcrumbs: [],
+    },
+    toc: {
+      ...policy.toc,
+      items: derived.tocItems,
+    },
+    breadcrumb: {
+      ...policy.breadcrumb,
+      items: derived.breadcrumbItems,
+    },
+    footer: {
+      ...policy.footer,
+      previous: derived.previous,
+      next: derived.next,
+    },
+  }
+}
+
+export function useDocsPage(
+  page: Ref<Pick<DocsContentPage, 'docsMetadata'> | null | undefined>,
+) {
+  const policy = computed(() => {
+    return resolveDocsPagePolicy(page.value?.docsMetadata)
+  })
+
+  const breadcrumbOptions = computed<DocsBreadcrumbOptions>(() => {
+    if (!policy.value.breadcrumb.enabled) {
+      return {
+        includeRoot: false,
+        includePage: false,
+        includeSeparator: false,
+      }
+    }
+
+    return {
+      includeRoot: policy.value.breadcrumb.includeRoot,
+      includePage: policy.value.breadcrumb.includePage,
+      includeSeparator: policy.value.breadcrumb.includeSeparator,
+    }
+  })
+
+  function resolveOptions(derived: DocsPageDerivedOptions) {
+    return resolveDocsPageOptions(policy.value, derived)
+  }
+
+  return {
+    policy,
+    breadcrumbOptions,
+    resolveOptions,
   }
 }
