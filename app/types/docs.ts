@@ -81,7 +81,6 @@ export type DocsContentPage = DocsPageLike & {
 export type DocsPageRecord = {
   path: string
   stem?: string
-  slug?: string
   docsMetadata: DocsPageMeta
 }
 

@@ -8,6 +8,7 @@ import type {
 import {
   docsNavigationFields,
   findDocsPageRecordByRoute,
+  resolveDocsPageIdentity,
   resolveDocsRecordSourcePath,
   resolveDocsSourcePath,
 } from '~/utils/docs-navigation'
@@ -28,9 +29,7 @@ const { data: navigation } = await useAsyncData('docs-navigation', () => {
 })
 
 const { data: docsPages } = await useAsyncData('docs-pages', () => {
-  return queryCollection('docs')
-    .select('path', 'stem', 'slug', 'docsMetadata')
-    .all()
+  return queryCollection('docs').select('path', 'stem', 'docsMetadata').all()
 })
 
 const { data: docsSearchPages } = await useAsyncData(
@@ -59,6 +58,11 @@ const docsPageRecords = computed<DocsPageRecord[]>(() => {
 
 const currentPageRecord = computed(() => {
   return findDocsPageRecordByRoute(docsPageRecords.value, route.path)
+})
+const currentPageIdentity = computed(() => {
+  return currentPageRecord.value
+    ? resolveDocsPageIdentity(currentPageRecord.value)
+    : null
 })
 
 const pageSourcePath = computed(() => {
@@ -159,7 +163,11 @@ const pageDescription = computed(() => {
 })
 const pageSeoTitle = computed(() => createDocsSeoTitle(title.value, site))
 const canonicalUrl = computed(() => {
-  return createDocsCanonicalUrl(route.path, site, requestUrl.origin)
+  return createDocsCanonicalUrl(
+    currentPageIdentity.value?.routePath ?? '/',
+    site,
+    requestUrl.origin,
+  )
 })
 const pageToc = computed(() => {
   return {

@@ -3,6 +3,7 @@ import { readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
+  createDocsIdentityIndex,
   normalizeDocsRoutePath,
   normalizeDocsSourcePath,
   resolveDocsRoutePath,
@@ -11,7 +12,7 @@ import {
 const DOC_EXTENSION_RE = /\.(?:md|mdx)$/i
 const EXTERNAL_HREF_RE = /^[a-z][a-z\d+.-]*:/i
 const ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)))
-const CONTENT_DIR = path.join(ROOT, 'content')
+const CONTENT_DIR = path.resolve(process.argv[2] ?? path.join(ROOT, 'content'))
 
 function toPosixPath(value) {
   return value.replace(/\\/g, '/')
@@ -212,6 +213,50 @@ async function walkDocsFiles(dir) {
   return files
 }
 
+async function walkMetaFiles(dir) {
+  const entries = await readdir(dir, { withFileTypes: true })
+  const files = []
+
+  for (const entry of entries) {
+    const entryPath = path.join(dir, entry.name)
+    if (entry.isDirectory()) {
+      files.push(...(await walkMetaFiles(entryPath)))
+    } else if (entry.isFile() && entry.name === 'meta.json') {
+      files.push(entryPath)
+    }
+  }
+
+  return files
+}
+
+async function validateMetaDirectories(markdownFiles) {
+  const metaFiles = await walkMetaFiles(CONTENT_DIR)
+  const failures = []
+
+  for (const metaFile of metaFiles) {
+    const directory = path.dirname(metaFile)
+    const hasPage = markdownFiles.some((file) => {
+      const relative = path.relative(directory, file)
+      return (
+        relative !== '' &&
+        !relative.startsWith(`..${path.sep}`) &&
+        relative !== '..'
+      )
+    })
+
+    if (!hasPage) {
+      const stem = normalizeDocsSourcePath(
+        toPosixPath(path.relative(CONTENT_DIR, directory)),
+      )
+      failures.push(
+        `${toPosixPath(path.relative(CONTENT_DIR, metaFile))} (directory stem ${stem}: meta-only directory is unsupported; add a content page or delete this meta file)`,
+      )
+    }
+  }
+
+  return failures
+}
+
 function resolveRelativeSourcePath(currentSourcePath, target) {
   const { pathname, search, hash } = splitPathSuffix(target)
   const baseSegments = normalizeDocsFileSourcePath(currentSourcePath)
@@ -341,8 +386,7 @@ function validateLink(link, page, indexes, failures) {
   }
 }
 
-async function createDocsPages() {
-  const files = await walkDocsFiles(CONTENT_DIR)
+async function createDocsPages(files) {
   const pages = []
 
   for (const file of files) {
@@ -353,6 +397,9 @@ async function createDocsPages() {
 
     pages.push({
       file,
+      path: sourcePath,
+      stem: sourcePath,
+      docsMetadata: meta,
       sourcePath,
       routePath: resolveDocsRoutePath(sourcePath, meta),
       anchors: collectAnchors(markdown),
@@ -368,10 +415,23 @@ async function main() {
     throw new Error(`Content directory not found: ${CONTENT_DIR}`)
   }
 
-  const pages = await createDocsPages()
+  const files = await walkDocsFiles(CONTENT_DIR)
+  const pages = await createDocsPages(files)
+  const metaFailures = await validateMetaDirectories(files)
+  const identityIndex = createDocsIdentityIndex(pages)
   const indexes = {
-    bySourcePath: new Map(pages.map((page) => [page.sourcePath, page])),
-    byRoutePath: new Map(pages.map((page) => [page.routePath, page])),
+    bySourcePath: new Map(
+      identityIndex.entries.map(({ identity, record }) => [
+        identity.sourcePath,
+        record,
+      ]),
+    ),
+    byRoutePath: new Map(
+      identityIndex.entries.map(({ identity, record }) => [
+        identity.routePath,
+        record,
+      ]),
+    ),
   }
   const failures = []
 
@@ -381,8 +441,11 @@ async function main() {
     }
   }
 
-  if (failures.length > 0) {
+  if (metaFailures.length > 0 || failures.length > 0) {
     console.error('Docs link validation failed:')
+    for (const failure of metaFailures) {
+      console.error(`- ${failure}`)
+    }
     for (const failure of failures) {
       console.error(
         `- ${failure.file}:${failure.line} ${failure.target} (${failure.reason})`,

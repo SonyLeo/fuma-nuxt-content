@@ -110,7 +110,7 @@ function resolveRouteFromSourcePath(
     return `${normalizedSource}${suffix}`
   }
 
-  return `${resolveDocsRoutePath(resolveDocsRecordSourcePath(match), match)}${suffix}`
+  return `${resolveDocsRoutePath(resolveDocsRecordSourcePath(match), match.docsMetadata)}${suffix}`
 }
 
 export function resolveDocsLink(

@@ -10,12 +10,15 @@ import type {
   DocsPageMeta,
 } from '~/types/docs'
 import {
+  createDocsIdentityIndex,
   normalizeDocsRoutePath,
   normalizeDocsSourcePath,
+  resolveDocsPageIdentity as resolveSharedDocsPageIdentity,
   resolveDocsRoutePath,
 } from '#shared/docs-identity.js'
 
 export {
+  createDocsIdentityIndex,
   normalizeDocsRoutePath,
   normalizeDocsSourcePath,
   resolveDocsRoutePath,
@@ -40,6 +43,7 @@ type DocsRouteRecord = {
   path: string
   stem?: string
   slug?: string
+  docsMetadata?: DocsPageMeta
 }
 
 type DocsNavigationItem = ContentNavigationItem & {
@@ -144,17 +148,9 @@ function createDocsNodeId(parts: Array<string | number | undefined>) {
 }
 
 export function resolveDocsPageIdentity(
-  record: Pick<DocsRouteRecord, 'path' | 'stem' | 'slug'>,
+  record: Pick<DocsRouteRecord, 'path' | 'stem' | 'slug' | 'docsMetadata'>,
 ): DocsPageIdentity {
-  const sourcePath = resolveDocsRecordSourcePath(record)
-
-  return {
-    contentPath: record.path,
-    sourcePath,
-    routePath: resolveDocsRoutePath(sourcePath, record),
-    stem: record.stem,
-    slug: record.slug,
-  }
+  return resolveSharedDocsPageIdentity(record) as DocsPageIdentity
 }
 
 function getLevel(path?: string) {
@@ -1149,31 +1145,7 @@ export function createDocsMetaMap(
 export function assertUniqueDocsRoutePaths(
   items: DocsRouteRecord[] | null | undefined,
 ) {
-  const routeToSources = new Map<string, string[]>()
-
-  for (const item of items ?? []) {
-    const identity = resolveDocsPageIdentity(item)
-    const routePath = identity.routePath
-    const sources = routeToSources.get(routePath) ?? []
-    sources.push(identity.sourcePath)
-    routeToSources.set(routePath, sources)
-  }
-
-  const duplicates = Array.from(routeToSources.entries()).filter(
-    ([, sources]) => sources.length > 1,
-  )
-
-  if (duplicates.length === 0) {
-    return
-  }
-
-  const detail = duplicates
-    .map(([routePath, sources]) => {
-      return `${routePath}: ${sources.join(', ')}`
-    })
-    .join('; ')
-
-  throw new Error(`Duplicate docs route paths detected: ${detail}`)
+  createDocsIdentityIndex(items ?? [])
 }
 
 export function createDirectoryMetaMap(
@@ -1205,30 +1177,18 @@ export function resolveDocsSourcePath(
   items: DocsRouteRecord[] | null | undefined,
   routePath: string,
 ) {
-  const normalizedRoutePath = normalizeDocsRoutePath(routePath)
-  const match = (items ?? []).find((item) => {
-    return resolveDocsPageIdentity(item).routePath === normalizedRoutePath
-  })
-
-  return match ? resolveDocsPageIdentity(match).sourcePath : null
+  return (
+    createDocsIdentityIndex(items ?? []).getByRoutePath(routePath)?.identity
+      .sourcePath ?? null
+  )
 }
 
 export function findDocsPageRecordByRoute<T extends DocsRouteRecord>(
   items: T[] | null | undefined,
   routePath: string,
 ) {
-  const normalizedRoutePath = normalizeDocsRoutePath(routePath)
-
-  return (
-    (items ?? []).find((item) => {
-      const identity = resolveDocsPageIdentity(item)
-
-      return (
-        identity.routePath === normalizedRoutePath ||
-        normalizeDocsRoutePath(item.path) === normalizedRoutePath
-      )
-    }) ?? null
-  )
+  const match = createDocsIdentityIndex(items ?? []).getByRoutePath(routePath)
+  return match ? (match.record as T) : null
 }
 
 export function flattenDocsNodes(items: DocsNode[]): DocsNode[] {

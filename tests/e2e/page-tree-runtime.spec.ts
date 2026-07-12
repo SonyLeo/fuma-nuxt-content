@@ -48,6 +48,33 @@ test.describe('@fast @shell page tree runtime', () => {
     await expect(page.locator('html')).not.toContainText('Page not found')
   })
 
+  test('uses only the resolved public route and canonical identity', async ({
+    page,
+  }) => {
+    await page.goto(
+      '/guide/protocol-playground/route-contract?from=identity#expected',
+    )
+    await expect(page.locator('h1').first()).toContainText('Routing Contract')
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+      'href',
+      /\/guide\/protocol-playground\/route-contract$/,
+    )
+
+    const legacyResponse = await page.request.get(
+      '/guide/protocol-playground/routing',
+    )
+    expect(legacyResponse.status()).toBe(404)
+
+    await page.goto(
+      '/guide/protocol-playground/%E7%9C%9F%E5%AE%9E%20%E8%B7%AF%E5%BE%84',
+    )
+    await expect(page.locator('h1').first()).toContainText('Path Policy')
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+      'href',
+      /\/guide\/protocol-playground\/%E7%9C%9F%E5%AE%9E%20%E8%B7%AF%E5%BE%84$/,
+    )
+  })
+
   test('@responsive uses context tree for excluded route breadcrumbs', async ({
     page,
   }) => {
