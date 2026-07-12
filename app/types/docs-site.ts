@@ -1,5 +1,12 @@
 import type { DocsThemeConfig } from '~/types/docs-theme'
-import type { DocsNavLink, DocsNavOptions } from '~/types/docs'
+import type {
+  DocsDirection,
+  DocsHomeLayoutProps,
+  DocsLayoutProps,
+  DocsNavLink,
+  DocsNavOptions,
+  DocsResolvedRootProviderProps,
+} from '~/types/docs'
 
 export type DocsSiteBrandConfig = {
   label: string
@@ -36,6 +43,11 @@ export type DocsSiteSearchConfig = {
   emptyLabel?: string
 }
 
+export type DocsSiteLanguageConfig = {
+  enabled?: boolean
+  label?: string
+}
+
 export type DocsSiteFeedbackProvider = 'local' | 'static'
 
 export type DocsSiteFeedbackConfig = {
@@ -69,15 +81,62 @@ export type DocsSiteConfig = {
   title: string
   description?: string
   url?: string
+  direction?: DocsDirection
   brand: DocsSiteBrandConfig
   github?: DocsSiteGithubConfig
   nav?: DocsSiteNavConfig
   pageActions?: DocsSitePageActionsConfig
   search?: DocsSiteSearchConfig
+  language?: DocsSiteLanguageConfig
   feedback?: DocsSiteFeedbackConfig
   seo?: DocsSiteSeoConfig
   images?: DocsSiteImageConfig
   theme?: DocsThemeConfig
+}
+
+export type DocsSiteLayoutProps = Pick<
+  DocsLayoutProps,
+  'title' | 'headline' | 'brand' | 'githubUrl' | 'links' | 'nav'
+>
+
+export type DocsSiteHomeLayoutProps = Omit<DocsHomeLayoutProps, 'currentPath'>
+
+export type DocsSiteResolvedPageActionsConfig =
+  Required<DocsSitePageActionsConfig>
+
+export type DocsSiteResolvedSearchConfig = DocsSiteSearchConfig & {
+  enabled: boolean
+}
+
+export type DocsSiteResolvedFeedbackConfig = DocsSiteFeedbackConfig & {
+  enabled: boolean
+}
+
+export type DocsSiteSeoDefaults = {
+  siteTitle: string
+  siteUrl?: string
+  titleTemplate?: string
+  defaultDescription?: string
+  defaultOgImage?: string
+}
+
+export type DocsSiteAdapter = {
+  root: DocsResolvedRootProviderProps
+  docsLayout: DocsSiteLayoutProps
+  homeLayout: DocsSiteHomeLayoutProps
+  page: {
+    actions: DocsSiteResolvedPageActionsConfig
+    search: DocsSiteResolvedSearchConfig
+    feedback: DocsSiteResolvedFeedbackConfig
+    github?: DocsSiteGithubConfig
+    seo: DocsSiteSeoDefaults
+  }
+  theme: DocsThemeConfig | undefined
+  content: {
+    name: string
+    title: string
+    description?: string
+  }
 }
 
 export function defineDocsSiteConfig(config: DocsSiteConfig) {

@@ -1,22 +1,11 @@
 <script setup lang="ts">
-import type {
-  DocsDirection,
-  DocsRootLanguageOptions,
-  DocsRootSearchOptions,
-} from '~/types/docs'
+import type { DocsRootProviderProps } from '~/types/docs'
 
-const props = withDefaults(
-  defineProps<{
-    dir?: DocsDirection
-    search?: DocsRootSearchOptions
-    language?: DocsRootLanguageOptions
-  }>(),
-  {
-    dir: 'ltr',
-    search: undefined,
-    language: undefined,
-  },
-)
+const props = defineProps<DocsRootProviderProps>()
+
+defineSlots<{
+  default(): unknown
+}>()
 
 const root = provideDocsRootProvider(props)
 

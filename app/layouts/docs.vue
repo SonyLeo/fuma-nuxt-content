@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { DocsLayoutProps } from '~/types/docs'
+import type { DocsLayoutProps, DocsLayoutPublicSlots } from '~/types/docs'
 
 withDefaults(defineProps<DocsLayoutProps>(), {
   navigation: () => [],
   currentPath: '/',
 })
 
-const slots = useSlots()
+const slots = defineSlots<DocsLayoutPublicSlots>()
 const layoutSlots = useDocsLayoutSlots(slots)
 </script>
 
@@ -35,10 +35,7 @@ const layoutSlots = useDocsLayoutSlots(slots)
       <DocsThemeSwitch v-else-if="layoutSlots.showDefaultThemeSwitch.value" />
     </template>
     <template #language-select>
-      <slot
-        v-if="layoutSlots.hasLanguageSelect.value"
-        name="language-select"
-      />
+      <slot v-if="layoutSlots.hasLanguageSelect.value" name="language-select" />
     </template>
     <slot />
   </DocsLayoutShell>

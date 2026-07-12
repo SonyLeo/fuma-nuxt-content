@@ -1,3 +1,4 @@
+import type { VNode } from 'vue'
 import type {
   DocsDirectoryMetadata,
   DocsMetaPageEntry as DocsIngestionMetaPageEntry,
@@ -189,6 +190,19 @@ export type DocsLayoutProps = {
   nav?: DocsNavOptions
 }
 
+export type DocsHomeLayoutProps = Pick<
+  DocsLayoutProps,
+  'title' | 'brand' | 'currentPath' | 'githubUrl' | 'links'
+>
+
+export type DocsLayoutPublicSlots = {
+  default(): VNode[]
+  banner(): VNode[]
+  'search-trigger'(): VNode[]
+  'theme-switch'(): VNode[]
+  'language-select'(): VNode[]
+}
+
 export type DocsDirection = 'ltr' | 'rtl'
 
 export type DocsRootSearchOptions = {
@@ -198,6 +212,32 @@ export type DocsRootSearchOptions = {
 export type DocsRootLanguageOptions = {
   enabled?: boolean
   label?: string
+}
+
+export type DocsRootProviderProps = {
+  dir?: DocsDirection
+  search?: DocsRootSearchOptions
+  language?: DocsRootLanguageOptions
+}
+
+export type DocsResolvedRootProviderProps = {
+  dir: DocsDirection
+  search: {
+    enabled: boolean
+  }
+  language: {
+    enabled: boolean
+    label: string
+  }
+}
+
+export type DocsNotFoundProps = {
+  layout?: DocsHomeLayoutProps
+  statusCode?: number
+  title?: string
+  description?: string
+  actionLabel?: string
+  actionHref?: string
 }
 
 export type DocsTocProps = {

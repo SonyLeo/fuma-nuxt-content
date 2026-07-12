@@ -7,7 +7,7 @@ import {
   resolveDocsRecordSourcePath,
   resolveDocsSourcePath,
 } from '~/utils/docs-navigation'
-import { getDocsGithubEditUrl, getDocsGithubSourceUrl } from '~/utils/docs-site'
+import { createDocsSitePageActions } from '~/utils/docs-site'
 import { writeDocsClipboardText } from '~/utils/docs-clipboard'
 import { readDocsMarkdownSource } from '~/utils/docs-markdown'
 import { createDocsCanonicalUrl, createDocsSeoTitle } from '~/utils/docs-seo'
@@ -15,7 +15,7 @@ import { createDocsSearchIndex } from '~/utils/docs-search'
 
 const route = useRoute()
 const requestUrl = useRequestURL()
-const { site, layout: siteLayout } = useDocsSite()
+const site = useDocsSite()
 const copyMarkdownState = shallowRef<DocsPageActionState>('idle')
 let copyMarkdownResetTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -125,114 +125,30 @@ const pageOptions = computed(() => {
 })
 const pageDescription = computed(() => {
   return (
-    pageOptions.value.header.description ||
-    site.seo?.defaultDescription ||
-    site.description
+    pageOptions.value.header.description || site.page.seo.defaultDescription
   )
 })
 const pageSeoTitle = computed(() => {
-  return createDocsSeoTitle(pageOptions.value.header.title, site)
+  return createDocsSeoTitle(pageOptions.value.header.title, site.page.seo)
 })
 const canonicalUrl = computed(() => {
   return createDocsCanonicalUrl(
     currentPageIdentity.value?.routePath ?? '/',
-    site,
+    site.page.seo,
     requestUrl.origin,
   )
 })
 const siteFooterEnabled = computed(() => {
-  return pageOptions.value.footer.enabled || site.feedback?.enabled === true
+  return pageOptions.value.footer.enabled || site.page.feedback.enabled
 })
 const pageActions = computed<DocsPageAction[]>(() => {
-  const actions: DocsPageAction[] = []
-  const sourceUrl = getDocsGithubSourceUrl(site.github, pageSourcePath.value)
-  const editUrl = getDocsGithubEditUrl(site.github, pageSourcePath.value)
-
-  if (site.pageActions?.source !== false && sourceUrl) {
-    actions.push({
-      id: 'open-github',
-      type: 'link',
-      label: 'Open in GitHub',
-      href: sourceUrl,
-      external: true,
-      icon: 'github',
-      ariaLabel: 'Open source on GitHub',
-    })
-  }
-
-  if (site.pageActions?.edit && editUrl) {
-    actions.push({
-      id: 'edit-page',
-      type: 'link',
-      label: 'Edit page',
-      href: editUrl,
-      external: true,
-      icon: 'edit',
-      ariaLabel: 'Edit this page on GitHub',
-    })
-  }
-
-  if (site.pageActions?.copyMarkdown && pageSourcePath.value) {
-    actions.push({
-      id: 'copy-markdown',
-      type: 'button',
-      label: 'Copy Markdown',
-      icon: 'copy',
-      ariaLabel: 'Copy Markdown source',
-      state: copyMarkdownState.value,
-      disabled: copyMarkdownState.value === 'loading',
-    })
-  }
-
-  if (site.pageActions?.openInAi === true) {
-    const prompt = createPageActionPrompt(canonicalUrl.value)
-
-    actions.push(
-      {
-        id: 'open-scira',
-        type: 'link',
-        label: 'Open in Scira AI',
-        href: withSearchParams('https://scira.ai/', {
-          q: prompt,
-        }),
-        external: true,
-        ariaLabel: 'Open this page in Scira AI',
-      },
-      {
-        id: 'open-chatgpt',
-        type: 'link',
-        label: 'Open in ChatGPT',
-        href: withSearchParams('https://chatgpt.com/', {
-          prompt,
-          hints: 'search',
-        }),
-        external: true,
-        ariaLabel: 'Open this page in ChatGPT',
-      },
-      {
-        id: 'open-claude',
-        type: 'link',
-        label: 'Open in Claude',
-        href: withSearchParams('https://claude.ai/new', {
-          q: prompt,
-        }),
-        external: true,
-        ariaLabel: 'Open this page in Claude',
-      },
-      {
-        id: 'open-cursor',
-        type: 'link',
-        label: 'Open in Cursor',
-        href: withSearchParams('https://cursor.com/link/prompt', {
-          text: prompt,
-        }),
-        external: true,
-        ariaLabel: 'Open this page in Cursor',
-      },
-    )
-  }
-
-  return actions
+  return createDocsSitePageActions({
+    config: site.page.actions,
+    github: site.page.github,
+    sourcePath: pageSourcePath.value,
+    canonicalUrl: canonicalUrl.value,
+    copyMarkdownState: copyMarkdownState.value,
+  })
 })
 const searchIndex = computed(() => {
   return createDocsSearchIndex(docsSearchPages.value ?? [], runtime.value)
@@ -243,7 +159,7 @@ useSeoMeta({
   description: pageDescription,
   ogTitle: pageSeoTitle,
   ogDescription: pageDescription,
-  ogImage: computed(() => site.seo?.defaultOgImage),
+  ogImage: computed(() => site.page.seo.defaultOgImage),
 })
 
 useHead({
@@ -263,14 +179,6 @@ function scheduleCopyMarkdownReset() {
   copyMarkdownResetTimer = setTimeout(() => {
     copyMarkdownState.value = 'idle'
   }, 1800)
-}
-
-function createPageActionPrompt(url: string) {
-  return `Read ${url}, I want to ask questions about it.`
-}
-
-function withSearchParams(url: string, params: Record<string, string>) {
-  return `${url}?${new URLSearchParams(params)}`
 }
 
 async function copyCurrentMarkdown() {
@@ -307,17 +215,17 @@ onBeforeUnmount(() => {
 <template>
   <NuxtLayout
     name="docs"
-    :title="siteLayout.title"
+    :title="site.docsLayout.title"
     :headline="headline"
-    :brand="siteLayout.brand"
+    :brand="site.docsLayout.brand"
     :navigation="sidebarItems"
     :current-path="route.path"
-    :github-url="siteLayout.githubUrl"
-    :links="siteLayout.links"
-    :nav="siteLayout.nav"
+    :github-url="site.docsLayout.githubUrl"
+    :links="site.docsLayout.links"
+    :nav="site.docsLayout.nav"
   >
     <template #search-trigger>
-      <DocsSearch :config="site.search" :index="searchIndex" />
+      <DocsSearch :config="site.page.search" :index="searchIndex" />
     </template>
 
     <DocsPage v-bind="pageOptions">
@@ -337,7 +245,7 @@ onBeforeUnmount(() => {
           :pager-labels="pageOptions.footer.pagerLabels"
         >
           <DocsFeedback
-            :config="site.feedback"
+            :config="site.page.feedback"
             :path="route.path"
             :source-path="pageSourcePath"
           />

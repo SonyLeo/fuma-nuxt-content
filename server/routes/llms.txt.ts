@@ -1,60 +1,25 @@
 import { queryCollection } from '@nuxt/content/server'
-import { docsSiteConfig } from '~/config/docs-site'
-import {
-  resolveDocsRecordSourcePath,
-  resolveDocsRoutePath,
-} from '~/utils/docs-navigation'
-import { createDocsCanonicalUrl } from '~/utils/docs-seo'
-
-type LlmsPage = {
-  id?: string
-  path?: string
-  stem?: string
-  slug?: string
-  title?: string
-  description?: string
-  hidden?: boolean
-}
-
-function createPageRecord(page: LlmsPage) {
-  return {
-    path: page.path ?? page.stem ?? page.id ?? '/',
-    stem: page.stem,
-    slug: page.slug,
-  }
-}
+import { docsSiteAdapter } from '~/config/docs-site'
+import type { DocsGeneratedPageRecord } from '../utils/docs-generated-pages'
+import { createDocsGeneratedPageEntries } from '../utils/docs-generated-pages'
 
 export default defineEventHandler(async (event) => {
   const requestUrl = getRequestURL(event)
   const pages = (await queryCollection(event, 'docs')
-    .select('id', 'stem', 'slug', 'title', 'description', 'hidden')
-    .all()) as unknown as LlmsPage[]
-  const entries = pages
-    .filter((page) => !page.hidden && (page.path || page.stem || page.id))
-    .map((page) => {
-      const record = createPageRecord(page)
-      const sourcePath = resolveDocsRecordSourcePath(record)
-      const routePath = resolveDocsRoutePath(sourcePath, record)
-      const url = createDocsCanonicalUrl(
-        routePath,
-        docsSiteConfig,
-        requestUrl.origin,
-      )
-
-      return {
-        title: page.title ?? sourcePath,
-        description: page.description,
-        url,
-      }
-    })
-    .toSorted((left, right) => left.url.localeCompare(right.url))
+    .select('path', 'stem', 'docsMetadata')
+    .all()) as unknown as DocsGeneratedPageRecord[]
+  const entries = createDocsGeneratedPageEntries(
+    pages,
+    docsSiteAdapter.page.seo,
+    requestUrl.origin,
+  )
 
   setHeader(event, 'content-type', 'text/plain; charset=utf-8')
 
   return [
-    `# ${docsSiteConfig.title}`,
+    `# ${docsSiteAdapter.content.title}`,
     '',
-    docsSiteConfig.description ?? '',
+    docsSiteAdapter.content.description ?? '',
     '',
     '## Docs',
     '',

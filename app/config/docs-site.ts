@@ -1,6 +1,7 @@
 import { defineDocsSiteConfig } from '~/types/docs-site'
+import { createDocsSiteAdapter } from '~/utils/docs-site'
 
-export const docsSiteConfig = defineDocsSiteConfig({
+const rawDocsSiteConfig = defineDocsSiteConfig({
   name: 'Fumadocs',
   title: 'Fumadocs',
   description:
@@ -115,3 +116,8 @@ export const docsSiteConfig = defineDocsSiteConfig({
     disableTransitionOnChange: true,
   },
 })
+
+export const docsSiteAdapter = createDocsSiteAdapter(rawDocsSiteConfig)
+
+// Batch 6 retains the existing client theme entry while consuming adapter output.
+export const docsSiteConfig = docsSiteAdapter

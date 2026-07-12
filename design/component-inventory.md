@@ -36,20 +36,20 @@ Status meanings follow [Foundation Status](./foundation-status.md).
 
 ## Page And Shell Components
 
-| Surface              | Local owner                   | Status      | Primary contract              |
-| -------------------- | ----------------------------- | ----------- | ----------------------------- |
-| Root provider        | `DocsRootProvider`            | First Pass+ | `layout-provider.spec.ts`     |
-| Shared layout slots  | layout composables/components | First Pass+ | `layout-provider.spec.ts`     |
-| Theme runtime/switch | theme composable and switch   | First Pass+ | `theme.spec.ts`               |
-| Desktop sidebar      | `DocsSidebar`                 | First Pass+ | `sidebar.spec.ts`             |
-| Mobile drawer        | `DocsMobileNav`               | First Pass+ | `sidebar.spec.ts` mobile tags |
-| TOC rail             | `DocsToc`                     | First Pass+ | `toc.spec.ts`                 |
-| Responsive TOC       | `DocsTocPopover`              | First Pass+ | `toc-responsive.spec.ts`      |
-| Page actions         | `DocsPageActions`             | First Pass+ | `page-actions.spec.ts`        |
-| Feedback             | `DocsFeedback`                | First Pass  | `page-actions.spec.ts`        |
-| Pager                | `DocsPager`                   | First Pass+ | `page-actions.spec.ts`        |
-| Home layout          | `DocsHomeLayout`              | First Pass+ | `layout-provider.spec.ts`     |
-| Not-found shell      | `DocsNotFound`                | First Pass+ | `layout-provider.spec.ts`     |
+| Surface              | Local owner                   | Status      | Primary contract                                       |
+| -------------------- | ----------------------------- | ----------- | ------------------------------------------------------ |
+| Root provider        | `DocsRootProvider`            | Gate Passed | Adapter Nuxt tests, `layout-provider.spec.ts`          |
+| Shared layout slots  | layout composables/components | Gate Passed | Replacement-slot Nuxt tests, `layout-provider.spec.ts` |
+| Theme runtime/switch | theme composable and switch   | First Pass+ | `theme.spec.ts`                                        |
+| Desktop sidebar      | `DocsSidebar`                 | First Pass+ | `sidebar.spec.ts`                                      |
+| Mobile drawer        | `DocsMobileNav`               | First Pass+ | `sidebar.spec.ts` mobile tags                          |
+| TOC rail             | `DocsToc`                     | First Pass+ | `toc.spec.ts`                                          |
+| Responsive TOC       | `DocsTocPopover`              | First Pass+ | `toc-responsive.spec.ts`                               |
+| Page actions         | `DocsPageActions`             | First Pass+ | `page-actions.spec.ts`                                 |
+| Feedback             | `DocsFeedback`                | First Pass  | `page-actions.spec.ts`                                 |
+| Pager                | `DocsPager`                   | First Pass+ | `page-actions.spec.ts`                                 |
+| Home layout          | `DocsHomeLayout`              | Gate Passed | Adapter Nuxt tests, `layout-provider.spec.ts`          |
+| Not-found shell      | `DocsNotFound`                | Gate Passed | Props-driven Nuxt test, `layout-provider.spec.ts`      |
 
 ## Interaction Primitives
 

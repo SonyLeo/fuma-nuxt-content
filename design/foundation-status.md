@@ -28,20 +28,20 @@ The foundation is beyond initial rendering and is currently `L2-`: the core
 contracts exist, but several protocol boundaries still need to become
 `Gate Passed` before broad product composition.
 
-| Foundation area                       | Status      | Evidence                                              | Remaining gate                                          |
-| ------------------------------------- | ----------- | ----------------------------------------------------- | ------------------------------------------------------- |
-| Content collection and page identity  | Gate Passed | Ingestion, identity, collision, canonical-route tests | Keep future sources on normalized metadata and identity |
-| Source path / route path separation   | Gate Passed | Shared identity helpers and nested index coverage     | Keep all new consumers on the shared resolver           |
-| Page tree and context tree runtime    | Gate Passed | Tree policy/search/directory Nuxt and browser tests   | Keep future adapters on normalized publishable input    |
-| Root provider and layout slots        | First Pass+ | Layout-provider Playwright contracts                  | Document public provider/slot API as stable             |
-| Theme runtime and presets             | First Pass+ | Theme project tests and parity profile                | Treat product preset adapter separately                 |
-| Docs page protocol                    | Gate Passed | Normalized page policy tests and focused shell checks | Keep site adapters outside metadata policy              |
-| Default MDC mapping and link protocol | First Pass+ | Runtime content tests and browser contracts           | Complete authoring edge cases and external-link policy  |
-| Markdown transform pipeline           | First Pass  | Heading ids, structured data, code meta baseline      | Steps/package-manager/code-tab/image transform policy   |
-| Code system and preview               | First Pass+ | CodeBlock, tabs, preview and copy tests               | Complete transform-driven authoring contract            |
-| Content components                    | First Pass+ | Component inventory and responsive tests              | Maintain parity; no broad new component batch           |
-| UI interaction primitives             | First Pass+ | Reka-backed local wrappers                            | Keep public wrappers stable; Tree remains deferred      |
-| Verification infrastructure           | Gate Passed | Runtime tests, Playwright webServer, CI shards        | Maintain zero stale entry points and bounded runtime    |
+| Foundation area                       | Status      | Evidence                                                      | Remaining gate                                          |
+| ------------------------------------- | ----------- | ------------------------------------------------------------- | ------------------------------------------------------- |
+| Content collection and page identity  | Gate Passed | Ingestion, identity, collision, canonical-route tests         | Keep future sources on normalized metadata and identity |
+| Source path / route path separation   | Gate Passed | Shared identity helpers and nested index coverage             | Keep all new consumers on the shared resolver           |
+| Page tree and context tree runtime    | Gate Passed | Tree policy/search/directory Nuxt and browser tests           | Keep future adapters on normalized publishable input    |
+| Root provider and layout slots        | Gate Passed | Adapter/slot Nuxt tests and layout-provider browser contracts | Keep app adapters on explicit props and public slots    |
+| Theme runtime and presets             | First Pass+ | Theme project tests and parity profile                        | Treat product preset adapter separately                 |
+| Docs page protocol                    | Gate Passed | Normalized page policy tests and focused shell checks         | Keep site adapters outside metadata policy              |
+| Default MDC mapping and link protocol | First Pass+ | Runtime content tests and browser contracts                   | Complete authoring edge cases and external-link policy  |
+| Markdown transform pipeline           | First Pass  | Heading ids, structured data, code meta baseline              | Steps/package-manager/code-tab/image transform policy   |
+| Code system and preview               | First Pass+ | CodeBlock, tabs, preview and copy tests                       | Complete transform-driven authoring contract            |
+| Content components                    | First Pass+ | Component inventory and responsive tests                      | Maintain parity; no broad new component batch           |
+| UI interaction primitives             | First Pass+ | Reka-backed local wrappers                                    | Keep public wrappers stable; Tree remains deferred      |
+| Verification infrastructure           | Gate Passed | Runtime tests, Playwright webServer, CI shards                | Maintain zero stale entry points and bounded runtime    |
 
 ## Contract Ownership
 
@@ -75,7 +75,16 @@ contracts exist, but several protocol boundaries still need to become
 ### Provider, layout, and page
 
 - `DocsRootProvider` owns root-level shared state and feature availability.
-- Layout components consume normalized options and stable slots.
+- Its public state is limited to direction, search availability, and language
+  availability plus label; it does not hold site config, page-tree runtime,
+  navigation, page actions, feedback, SEO, or theme runtime services.
+- The app site adapter is the sole raw site-config owner and derives root,
+  docs-layout, home-layout, page-integration, content, and theme inputs.
+- The public Nuxt docs layout slots are `default`, `banner`, `search-trigger`,
+  `theme-switch`, and `language-select`. Header, sidebar, and mobile navigation
+  replacement slots remain internal to `DocsLayoutShell`.
+- Public replacement slots suppress their matching default implementation;
+  absent slots preserve the current defaults and capability gates.
 - `useDocsPage` owns normalized page metadata policy and final resolved page
   props. It reads only `docsMetadata`; tree/content owners supply breadcrumb,
   pager, and TOC derived data as explicit inputs.
@@ -119,13 +128,12 @@ contracts exist, but several protocol boundaries still need to become
 - Define image metadata, sizing, and placeholder policy.
 - Keep UI component contracts separate from authoring transforms.
 
-### P1: freeze public provider and page contracts
+### P1: maintain public provider and page contracts
 
-- List stable root provider state and replacement slots.
-- Keep the resolved page options contract and standalone breadcrumb ownership
-  covered while public provider and layout slots are documented.
-- Confirm product adapters generate foundation props instead of being read by
-  foundation components.
+- Keep the root provider, public layout slot list, replacement semantics,
+  resolved page options, and standalone breadcrumb ownership covered.
+- Keep product adapters generating foundation props; foundation components must
+  not read global site config.
 
 ### P1: maintain component parity
 

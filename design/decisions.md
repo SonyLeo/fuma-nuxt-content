@@ -56,8 +56,20 @@ superseded experiments belong in Git history or the archive summaries.
 
 ## D005: Explicit provider/layout/page ownership
 
-- Root shared state belongs to `DocsRootProvider`.
-- Layouts consume normalized options and slots.
+- Raw site config is private to the app site adapter. The adapter derives root
+  props, docs/home layout props, page actions, search, feedback, GitHub, SEO,
+  content, and the unchanged theme input used by current theme entry points.
+- Root shared state belongs to `DocsRootProvider` and is limited to direction,
+  search availability, and language availability plus label. It is not a
+  service locator for site config, runtime trees, navigation, page options,
+  page actions, feedback, SEO, GitHub, or theme services.
+- The public Nuxt docs layout slots are `default`, `banner`, `search-trigger`,
+  `theme-switch`, and `language-select`. `DocsLayoutShell` may retain internal
+  `header`, `sidebar`, and `mobile-nav` composition slots without exposing them
+  as Nuxt layout API.
+- A public replacement slot suppresses its matching default implementation;
+  slot absence preserves the default, and search/language surfaces remain
+  gated by root capabilities.
 - `useDocsPage` is the single page protocol owner: it resolves normalized
   `docsMetadata` policy first, then assembles complete header, TOC, standalone
   breadcrumb, and footer props from explicit tree/content-derived inputs.
@@ -65,7 +77,8 @@ superseded experiments belong in Git history or the archive summaries.
   assembly, but do not reinterpret metadata defaults or rebuild page options.
 - `DocsPage` renders the resolved contract and owns only DOM composition,
   slots, TOC interaction state, and rendered-heading fallback.
-- Site actions, feedback, search, and SEO stay integration inputs. They may
+- Site actions, feedback, search, GitHub, and SEO stay adapter-owned integration
+  inputs. They may
   affect outer assembly, such as keeping a footer container for feedback, but
   do not mutate page metadata policy.
 - Home and not-found reuse shared layout contracts.

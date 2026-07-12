@@ -5,7 +5,7 @@ import { createDocsCanonicalUrl, createDocsSeoTitle } from '~/utils/docs-seo'
 
 const route = useRoute()
 const requestUrl = useRequestURL()
-const { site, layout: siteLayout } = useDocsSite()
+const site = useDocsSite()
 
 const { data: page } = await useAsyncData('page-home', () => {
   return queryCollection('docs').path('/').first()
@@ -57,12 +57,12 @@ const foundationEntries = computed(() => {
   return homepageNavigation.value.featured
 })
 
-const homeDescription = computed(
-  () => site.seo?.defaultDescription ?? site.description,
+const homeDescription = computed(() => site.page.seo.defaultDescription)
+const homeTitle = computed(() =>
+  createDocsSeoTitle(site.content.title, site.page.seo),
 )
-const homeTitle = computed(() => createDocsSeoTitle(site.title, site))
 const canonicalUrl = computed(() => {
-  return createDocsCanonicalUrl(route.path, site, requestUrl.origin)
+  return createDocsCanonicalUrl(route.path, site.page.seo, requestUrl.origin)
 })
 
 useSeoMeta({
@@ -70,7 +70,7 @@ useSeoMeta({
   description: homeDescription,
   ogTitle: homeTitle,
   ogDescription: homeDescription,
-  ogImage: computed(() => site.seo?.defaultOgImage),
+  ogImage: computed(() => site.page.seo.defaultOgImage),
 })
 
 useHead({
@@ -84,18 +84,12 @@ useHead({
 </script>
 
 <template>
-  <DocsHomeLayout
-    :title="siteLayout.title"
-    :brand="siteLayout.brand"
-    :links="siteLayout.links"
-    :github-url="siteLayout.githubUrl"
-    :current-path="route.path"
-  >
+  <DocsHomeLayout v-bind="site.homeLayout" :current-path="route.path">
     <section class="docs-home-hero">
-      <p class="docs-home-kicker">{{ site.name }}</p>
-      <h1 class="docs-home-title">{{ site.title }}</h1>
+      <p class="docs-home-kicker">{{ site.content.name }}</p>
+      <h1 class="docs-home-title">{{ site.content.title }}</h1>
       <p class="docs-home-description">
-        {{ site.description }}
+        {{ site.content.description }}
       </p>
     </section>
 

@@ -1,28 +1,21 @@
 <script setup lang="ts">
-import type { DocsBrandOptions, DocsNavLink } from '~/types/docs'
+import type { DocsHomeLayoutProps, DocsNavLink } from '~/types/docs'
 import { isDocsLinkActive } from '~/utils/docs-link'
 
-const props = withDefaults(
-  defineProps<{
-    title?: string
-    brand?: DocsBrandOptions
-    links?: DocsNavLink[]
-    currentPath?: string
-    githubUrl?: string
-  }>(),
-  {
-    title: 'Documentation',
-    brand: undefined,
-    links: () => [],
-    currentPath: '/',
-    githubUrl: undefined,
-  },
-)
+const props = withDefaults(defineProps<DocsHomeLayoutProps>(), {
+  title: 'Documentation',
+  brand: undefined,
+  links: () => [],
+  currentPath: '/',
+  githubUrl: undefined,
+})
 
 const slots = useSlots()
 const layoutSlots = useDocsLayoutSlots(slots)
 const brandLabel = computed(() => props.brand?.label ?? props.title)
-const brandMark = computed(() => props.brand?.mark ?? brandLabel.value.charAt(0))
+const brandMark = computed(
+  () => props.brand?.mark ?? brandLabel.value.charAt(0),
+)
 const brandHref = computed(() => props.brand?.href ?? '/')
 const navLinks = computed(() => {
   return props.links.filter((link) => {
@@ -32,7 +25,7 @@ const navLinks = computed(() => {
 const showGithubShortcut = computed(() => {
   return Boolean(
     props.githubUrl &&
-      !navLinks.value.some((link) => link.href === props.githubUrl),
+    !navLinks.value.some((link) => link.href === props.githubUrl),
   )
 })
 
@@ -80,7 +73,10 @@ function isActive(link: DocsNavLink) {
         </nav>
 
         <div class="docs-home-tools">
-          <slot v-if="layoutSlots.hasSearchTrigger.value" name="search-trigger" />
+          <slot
+            v-if="layoutSlots.hasSearchTrigger.value"
+            name="search-trigger"
+          />
           <slot
             v-if="layoutSlots.hasThemeSwitchReplacement.value"
             name="theme-switch"
