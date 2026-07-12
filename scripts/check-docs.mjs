@@ -7,6 +7,7 @@ const designDir = join(root, 'design')
 const activeDocs = new Map([
   ['roadmap.md', 200],
   ['foundation-status.md', 350],
+  ['foundation-audit-handbook.md', 450],
   ['product-backlog.md', 300],
   ['component-inventory.md', 300],
   ['verification-runbook.md', 400],
@@ -20,7 +21,7 @@ const archiveDocs = new Map([
   ['verification-history.md', 120],
 ])
 
-const activeLineBudget = 1200
+const activeLineBudget = 1500
 const archiveLineBudget = 300
 
 const requiredFrontmatter = ['status', 'type', 'owner', 'lastReviewed']

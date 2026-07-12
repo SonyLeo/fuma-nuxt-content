@@ -138,6 +138,8 @@ the information to an existing source of truth:
 
 - priority, stage, or document map -> `design/roadmap.md`
 - foundation maturity, gaps, or exit gate -> `design/foundation-status.md`
+- foundation-wide audit method or fresh-session handoff ->
+  `design/foundation-audit-handbook.md`
 - unfinished integration or product work -> `design/product-backlog.md`
 - component ownership or regression coverage -> `design/component-inventory.md`
 - testing policy, commands, or failure handling -> `design/verification-runbook.md`
