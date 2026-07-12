@@ -6,7 +6,6 @@ import type {
   DocsPageRecord,
 } from '~/types/docs'
 import {
-  docsNavigationFields,
   findDocsPageRecordByRoute,
   resolveDocsPageIdentity,
   resolveDocsRecordSourcePath,
@@ -25,7 +24,7 @@ const copyMarkdownState = shallowRef<DocsPageActionState>('idle')
 let copyMarkdownResetTimer: ReturnType<typeof setTimeout> | undefined
 
 const { data: navigation } = await useAsyncData('docs-navigation', () => {
-  return queryCollectionNavigation('docs', [...docsNavigationFields])
+  return queryCollectionNavigation('docs')
 })
 
 const { data: docsPages } = await useAsyncData('docs-pages', () => {
@@ -36,18 +35,7 @@ const { data: docsSearchPages } = await useAsyncData(
   'docs-search-pages',
   () => {
     return queryCollection('docs')
-      .select(
-        'path',
-        'stem',
-        'title',
-        'description',
-        'sectionLabel',
-        'hidden',
-        'slug',
-        'docsMetadata',
-        'structuredData',
-        'body',
-      )
+      .select('path', 'stem', 'docsMetadata', 'structuredData', 'body')
       .all()
   },
 )
@@ -280,10 +268,7 @@ const pageActions = computed<DocsPageAction[]>(() => {
   return actions
 })
 const searchIndex = computed(() => {
-  return createDocsSearchIndex(
-    (docsSearchPages.value ?? []) as DocsContentPage[],
-    runtime.value,
-  )
+  return createDocsSearchIndex(docsSearchPages.value ?? [], runtime.value)
 })
 
 useSeoMeta({

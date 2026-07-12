@@ -8,13 +8,13 @@ import type {
   DocsNode,
   DocsPageIdentity,
   DocsPageMeta,
+  DocsPageTreePageInput,
 } from '~/types/docs'
 import {
   createDocsIdentityIndex,
   normalizeDocsRoutePath,
   normalizeDocsSourcePath,
   resolveDocsPageIdentity as resolveSharedDocsPageIdentity,
-  resolveDocsRoutePath,
 } from '#shared/docs-identity.js'
 
 export {
@@ -24,11 +24,9 @@ export {
   resolveDocsRoutePath,
 } from '#shared/docs-identity.js'
 
-export const docsNavigationFields = ['docsMetadata'] as const
-
 type DocsTreeOptions = {
   navigation: ContentNavigationItem[] | null | undefined
-  pageMetaByPath?: Map<string, DocsPageMeta>
+  pageBySourcePath: ReadonlyMap<string, DocsPageTreePageInput>
   directoryMetaByStem?: Map<string, DocsDirectoryMeta>
   preserveExcluded?: boolean
   includeHidden?: boolean
@@ -43,10 +41,6 @@ type DocsRouteRecord = {
   path: string
   stem?: string
   slug?: string
-  docsMetadata?: DocsPageMeta
-}
-
-type DocsNavigationItem = ContentNavigationItem & {
   docsMetadata?: DocsPageMeta
 }
 
@@ -234,18 +228,6 @@ function compareNodes(left: DocsNode, right: DocsNode) {
   )
 }
 
-function applyPageMeta(
-  item: ContentNavigationItem,
-  fallback: DocsPageMeta | undefined,
-): DocsPageMeta {
-  return (
-    (item as DocsNavigationItem).docsMetadata ??
-    fallback ?? {
-      title: item.title,
-    }
-  )
-}
-
 function cloneNode(node: DocsNode): DocsNode {
   return {
     ...node,
@@ -277,80 +259,153 @@ function decorateNode(
   }
 }
 
+function createPageNode(
+  item: ContentNavigationItem,
+  input: DocsPageTreePageInput,
+): DocsNode {
+  const { identity, metadata } = input
+
+  return {
+    id: createDocsNodeId(['page', identity.sourcePath]),
+    type: 'page',
+    title: metadata.title,
+    path: identity.routePath,
+    sourcePath: identity.sourcePath,
+    stem: identity.stem ?? item.stem,
+    dirname: getDirnameFromPath(identity.sourcePath),
+    parentPath: getParentPath(identity.routePath),
+    level: getLevel(identity.routePath),
+    description: metadata.description,
+    sectionLabel: metadata.sectionLabel,
+    order: metadata.order,
+    hidden: metadata.hidden,
+    badge: metadata.badge,
+    icon: metadata.icon,
+    status: metadata.status,
+    defaultOpen: metadata.defaultOpen,
+    collapsible: metadata.collapsible,
+    full: metadata.full,
+    toc: metadata.toc,
+    tocPopover: metadata.tocPopover,
+    pager: metadata.pager,
+    breadcrumb: metadata.breadcrumb,
+    breadcrumbRoot: metadata.breadcrumbRoot,
+    breadcrumbPage: metadata.breadcrumbPage,
+    breadcrumbSeparator: metadata.breadcrumbSeparator,
+    children: [],
+  }
+}
+
 function createNodeFromNavigation(
   item: ContentNavigationItem,
-  pageMetaByPath: Map<string, DocsPageMeta>,
+  pageBySourcePath: ReadonlyMap<string, DocsPageTreePageInput>,
   directoryMetaByStem: Map<string, DocsDirectoryMeta>,
 ): DocsNode {
-  const sourcePath = item.stem
+  const rawSourcePath = item.stem
     ? normalizeDocsSourcePath(item.stem)
-    : item.path
-      ? normalizeDocsSourcePath(item.path)
-      : undefined
-  const stem = item.stem
-  const pageMeta = sourcePath ? pageMetaByPath.get(sourcePath) : undefined
-  const mergedMeta = applyPageMeta(item, pageMeta)
-  const path = sourcePath
-    ? resolveDocsRoutePath(sourcePath, mergedMeta)
     : undefined
-  const children = (item.children ?? []).map((child) =>
-    createNodeFromNavigation(child, pageMetaByPath, directoryMetaByStem),
+  const pageInput = rawSourcePath
+    ? pageBySourcePath.get(rawSourcePath)
+    : undefined
+  const childNodes = (item.children ?? []).map((child) =>
+    createNodeFromNavigation(child, pageBySourcePath, directoryMetaByStem),
   )
-  const normalizedStem = normalizeStem(stem)
-  const isGroup = children.length > 0 || item.page === false
-  const directoryMeta = isGroup
-    ? (directoryMetaByStem.get(normalizedStem) ??
-      directoryMetaByStem.get(normalizeStem(getDirnameFromPath(sourcePath))))
-    : directoryMetaByStem.get(normalizedStem)
-  const groupCollapsible = isGroup
-    ? (directoryMeta?.collapsible ?? pageMeta?.collapsible)
-    : mergedMeta.collapsible
-  const groupDefaultOpen = isGroup
-    ? (directoryMeta?.defaultOpen ??
-      pageMeta?.defaultOpen ??
-      (groupCollapsible === false ? true : undefined))
-    : mergedMeta.defaultOpen
+  const isGroup = childNodes.length > 0 || item.page === false
 
+  if (!isGroup) {
+    if (!rawSourcePath) {
+      throw new Error(
+        `Missing docs source identity for navigation page "${item.path ?? item.title}"`,
+      )
+    }
+
+    if (!pageInput) {
+      throw new Error(
+        `Missing normalized docs page input for navigation source "${rawSourcePath}"`,
+      )
+    }
+
+    return createPageNode(item, pageInput)
+  }
+
+  const pageBackedChild = pageInput ? createPageNode(item, pageInput) : null
+  const sourcePath = pageBackedChild
+    ? normalizeDocsSourcePath(
+        `/${getDirnameFromPath(pageBackedChild.sourcePath)}`,
+      )
+    : rawSourcePath
+      ? normalizeDocsSourcePath(normalizeStem(rawSourcePath))
+      : item.path
+        ? normalizeDocsSourcePath(item.path)
+        : undefined
+  const stem = sourcePath?.replace(/^\//, '')
+  const children = pageBackedChild
+    ? [pageBackedChild, ...childNodes]
+    : childNodes
+  const indexSourcePath = sourcePath
+    ? normalizeDocsSourcePath(`${sourcePath}/index`)
+    : undefined
+  const indexPageInput = indexSourcePath
+    ? pageBySourcePath.get(indexSourcePath)
+    : undefined
+  const directoryMeta = sourcePath
+    ? directoryMetaByStem.get(sourcePath.replace(/^\//, ''))
+    : undefined
+  const groupCollapsible =
+    directoryMeta?.collapsible ?? indexPageInput?.metadata.collapsible
+  const groupDefaultOpen =
+    directoryMeta?.defaultOpen ??
+    indexPageInput?.metadata.defaultOpen ??
+    (groupCollapsible === false ? true : undefined)
+  const path = item.path
+    ? normalizeDocsRoutePath(item.path)
+    : sourcePath
+      ? normalizeDocsRoutePath(sourcePath)
+      : undefined
   const baseNode: DocsNode = {
     id: createDocsNodeId([
-      isGroup ? 'group' : 'page',
-      sourcePath ?? stem ?? path ?? mergedMeta.title,
+      'group',
+      sourcePath ?? stem ?? path ?? directoryMeta?.title ?? item.title,
     ]),
-    type: isGroup ? 'group' : 'page',
-    title: directoryMeta?.title ?? mergedMeta.title,
+    type: 'group',
+    title:
+      directoryMeta?.title ??
+      indexPageInput?.metadata.title ??
+      item.title ??
+      getPathSegments(sourcePath).at(-1) ??
+      'Docs',
     path,
     sourcePath,
     stem,
     dirname: getDirnameFromPath(sourcePath),
     parentPath: getParentPath(path),
     level: getLevel(path),
-    description: directoryMeta?.description ?? mergedMeta.description,
-    sectionLabel: mergedMeta.sectionLabel,
-    order: directoryMeta?.order ?? mergedMeta.order,
-    hidden: directoryMeta?.hidden ?? mergedMeta.hidden,
-    badge: directoryMeta?.badge ?? mergedMeta.badge,
-    icon: directoryMeta?.icon ?? mergedMeta.icon,
-    status: mergedMeta.status,
+    description:
+      directoryMeta?.description ?? indexPageInput?.metadata.description,
+    sectionLabel: indexPageInput?.metadata.sectionLabel,
+    order: directoryMeta?.order ?? indexPageInput?.metadata.order,
+    hidden: directoryMeta?.hidden ?? indexPageInput?.metadata.hidden,
+    badge: directoryMeta?.badge ?? indexPageInput?.metadata.badge,
+    icon: directoryMeta?.icon ?? indexPageInput?.metadata.icon,
+    status: indexPageInput?.metadata.status,
     root: directoryMeta?.root,
     defaultOpen: groupDefaultOpen,
     collapsible: groupCollapsible,
-    full: mergedMeta.full,
-    toc: mergedMeta.toc,
-    tocPopover: mergedMeta.tocPopover,
-    pager: mergedMeta.pager,
-    breadcrumb: mergedMeta.breadcrumb,
-    breadcrumbRoot: mergedMeta.breadcrumbRoot,
-    breadcrumbPage: mergedMeta.breadcrumbPage,
-    breadcrumbSeparator: mergedMeta.breadcrumbSeparator,
+    full: indexPageInput?.metadata.full,
+    toc: indexPageInput?.metadata.toc,
+    tocPopover: indexPageInput?.metadata.tocPopover,
+    pager: indexPageInput?.metadata.pager,
+    breadcrumb: indexPageInput?.metadata.breadcrumb,
+    breadcrumbRoot: indexPageInput?.metadata.breadcrumbRoot,
+    breadcrumbPage: indexPageInput?.metadata.breadcrumbPage,
+    breadcrumbSeparator: indexPageInput?.metadata.breadcrumbSeparator,
     children,
   }
-
-  if (!isGroup) {
-    return baseNode
-  }
-
   const indexChild = children.find(
-    (child) => child.path === path && child.type === 'page',
+    (child) =>
+      child.type === 'page' &&
+      Boolean(indexSourcePath) &&
+      child.sourcePath === indexSourcePath,
   )
 
   if (!indexChild) {
@@ -359,6 +414,7 @@ function createNodeFromNavigation(
 
   return {
     ...baseNode,
+    path: indexChild.path ?? baseNode.path,
     children: children.filter((child) => child !== indexChild),
     index: decorateNode(indexChild, {
       title: baseNode.title,
@@ -695,8 +751,6 @@ function createVirtualMetaGroupNode(
   return {
     ...groupBase,
     path: index?.path,
-    sourcePath: index?.sourcePath,
-    stem: index?.stem,
     description: index?.description,
     index,
     children,
@@ -1121,7 +1175,7 @@ function flattenNode(node: DocsNode): DocsNode[] {
   return [...index, ...current, ...node.children.flatMap(flattenNode)]
 }
 
-export function createDocsMetaMap(
+export function createDocsPageTreePageMap(
   items:
     | Array<
         DocsRouteRecord & {
@@ -1131,13 +1185,21 @@ export function createDocsMetaMap(
     | null
     | undefined,
 ) {
-  assertUniqueDocsRoutePaths(items)
+  const records = items ?? []
+  assertUniqueDocsRoutePaths(records)
 
-  return new Map(
-    (items ?? []).map((item) => {
-      const identity = resolveDocsPageIdentity(item)
+  return new Map<string, DocsPageTreePageInput>(
+    records.map((record) => {
+      const identity = resolveDocsPageIdentity(record)
 
-      return [identity.sourcePath, item.docsMetadata] as const
+      return [
+        identity.sourcePath,
+        {
+          identity,
+          metadata: record.docsMetadata,
+          publishable: true,
+        },
+      ] as const
     }),
   )
 }
@@ -1155,13 +1217,15 @@ export function createDirectoryMetaMap(
 }
 
 export function buildDocsTree(options: DocsTreeOptions): DocsNode[] {
-  const pageMetaByPath =
-    options.pageMetaByPath ?? new Map<string, DocsPageMeta>()
   const directoryMetaByStem =
     options.directoryMetaByStem ?? new Map<string, DocsDirectoryMeta>()
 
   const nodes = (options.navigation ?? []).map((item) =>
-    createNodeFromNavigation(item, pageMetaByPath, directoryMetaByStem),
+    createNodeFromNavigation(
+      item,
+      options.pageBySourcePath,
+      directoryMetaByStem,
+    ),
   )
 
   return annotateTree(

@@ -1,15 +1,15 @@
-import type { DocsContentPage, DocsNode, DocsTocTreeItem } from '~/types/docs'
+import type {
+  DocsContentPage,
+  DocsPageMeta,
+  DocsStructuredData,
+  DocsTocTreeItem,
+} from '~/types/docs'
 import type {
   DocsSearchIndexEntry,
   DocsSearchResult,
 } from '~/types/docs-search'
 import type { DocsPageTreeRuntime } from '~/utils/docs-page-tree-runtime'
-import {
-  flattenDocsNodes,
-  resolveDocsRecordSourcePath,
-  resolveDocsRoutePath,
-} from '~/utils/docs-navigation'
-import { isDocsPageTreeRuntime } from '~/utils/docs-page-tree-runtime'
+import { resolveDocsRecordSourcePath } from '~/utils/docs-navigation'
 
 type ContentAstNode = {
   type?: string
@@ -21,9 +21,16 @@ type ContentAstNode = {
   children?: ContentAstNode[]
 }
 
-type DocsSearchPageRecord = DocsContentPage & {
+export type DocsSearchPageInput = {
+  path?: string
+  stem?: string
+  docsMetadata: DocsPageMeta
+  structuredData?: DocsStructuredData
+  body?: DocsContentPage['body']
+}
+
+type DocsSearchPageRecord = DocsSearchPageInput & {
   path: string
-  hidden?: boolean
 }
 
 function normalizeSearchText(value: string | null | undefined) {
@@ -63,32 +70,21 @@ function createExcerpt(value: string) {
   return value.replace(/\s+/g, ' ').trim().slice(0, 180)
 }
 
-function createNodeMap(nodes: DocsNode[] | DocsPageTreeRuntime) {
-  if (isDocsPageTreeRuntime(nodes)) {
-    return nodes.nodeBySourcePath
-  }
-
-  return new Map(
-    flattenDocsNodes(nodes).map((node) => [
-      node.sourcePath ?? node.path ?? node.id,
-      node,
-    ]),
-  )
-}
-
 export function createDocsSearchIndex(
-  pages: DocsContentPage[] | null | undefined,
-  nodes: DocsNode[] | DocsPageTreeRuntime | null | undefined,
+  pages: DocsSearchPageInput[] | null | undefined,
+  runtime: DocsPageTreeRuntime,
 ): DocsSearchIndexEntry[] {
-  const nodeBySourcePath = createNodeMap(nodes ?? [])
-
   return (pages ?? [])
     .filter((page): page is DocsSearchPageRecord => Boolean(page.path))
-    .filter((page) => !page.hidden)
-    .map((page) => {
+    .flatMap((page) => {
       const sourcePath = resolveDocsRecordSourcePath(page)
-      const node = nodeBySourcePath.get(sourcePath)
-      const routePath = resolveDocsRoutePath(sourcePath, page)
+      const node = runtime.getNodeBySourcePath(sourcePath)
+      const policy = runtime.getPagePolicy(sourcePath)
+
+      if (!node?.path || !policy?.searchable) {
+        return []
+      }
+
       const headings =
         page.structuredData?.headings.map((heading) => heading.content) ??
         collectHeadingsFromToc(page.body?.toc?.links)
@@ -99,15 +95,15 @@ export function createDocsSearchIndex(
 
       return {
         id: sourcePath,
-        title: page.title ?? node?.title ?? sourcePath,
-        description: page.description ?? node?.description,
-        path: routePath,
-        section: page.sectionLabel ?? node?.sectionLabel,
+        title: page.docsMetadata.title,
+        description: page.docsMetadata.description ?? node.description,
+        path: node.path,
+        section: page.docsMetadata.sectionLabel ?? node.sectionLabel,
         sourcePath,
         headings,
         body,
         excerpt: createExcerpt(body),
-      }
+      } satisfies DocsSearchIndexEntry
     })
 }
 

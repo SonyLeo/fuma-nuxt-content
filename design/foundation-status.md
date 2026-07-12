@@ -28,20 +28,20 @@ The foundation is beyond initial rendering and is currently `L2-`: the core
 contracts exist, but several protocol boundaries still need to become
 `Gate Passed` before broad product composition.
 
-| Foundation area                       | Status      | Evidence                                          | Remaining gate                                         |
-| ------------------------------------- | ----------- | ------------------------------------------------- | ------------------------------------------------------ |
-| Content collection and page identity  | First Pass+ | Ingestion metadata tests, identity tests, links   | Complete collision diagnostics                         |
-| Source path / route path separation   | Gate Passed | Shared identity helpers and nested index coverage | Keep all new consumers on the shared resolver          |
-| Page tree and context tree runtime    | First Pass+ | Sidebar, breadcrumb, pager, excluded-route tests  | Freeze transformer and directory-meta ownership        |
-| Root provider and layout slots        | First Pass+ | Layout-provider Playwright contracts              | Document public provider/slot API as stable            |
-| Theme runtime and presets             | First Pass+ | Theme project tests and parity profile            | Treat product preset adapter separately                |
-| Docs layout and page protocol         | First Pass+ | Shell, TOC, sidebar, page actions tests           | Freeze slot ownership and page option normalization    |
-| Default MDC mapping and link protocol | First Pass+ | Runtime content tests and browser contracts       | Complete authoring edge cases and external-link policy |
-| Markdown transform pipeline           | First Pass  | Heading ids, structured data, code meta baseline  | Steps/package-manager/code-tab/image transform policy  |
-| Code system and preview               | First Pass+ | CodeBlock, tabs, preview and copy tests           | Complete transform-driven authoring contract           |
-| Content components                    | First Pass+ | Component inventory and responsive tests          | Maintain parity; no broad new component batch          |
-| UI interaction primitives             | First Pass+ | Reka-backed local wrappers                        | Keep public wrappers stable; Tree remains deferred     |
-| Verification infrastructure           | Gate Passed | Runtime tests, Playwright webServer, CI shards    | Maintain zero stale entry points and bounded runtime   |
+| Foundation area                       | Status      | Evidence                                              | Remaining gate                                          |
+| ------------------------------------- | ----------- | ----------------------------------------------------- | ------------------------------------------------------- |
+| Content collection and page identity  | Gate Passed | Ingestion, identity, collision, canonical-route tests | Keep future sources on normalized metadata and identity |
+| Source path / route path separation   | Gate Passed | Shared identity helpers and nested index coverage     | Keep all new consumers on the shared resolver           |
+| Page tree and context tree runtime    | Gate Passed | Tree policy/search/directory Nuxt and browser tests   | Keep future adapters on normalized publishable input    |
+| Root provider and layout slots        | First Pass+ | Layout-provider Playwright contracts                  | Document public provider/slot API as stable             |
+| Theme runtime and presets             | First Pass+ | Theme project tests and parity profile                | Treat product preset adapter separately                 |
+| Docs layout and page protocol         | First Pass+ | Shell, TOC, sidebar, page actions tests               | Freeze slot ownership and page option normalization     |
+| Default MDC mapping and link protocol | First Pass+ | Runtime content tests and browser contracts           | Complete authoring edge cases and external-link policy  |
+| Markdown transform pipeline           | First Pass  | Heading ids, structured data, code meta baseline      | Steps/package-manager/code-tab/image transform policy   |
+| Code system and preview               | First Pass+ | CodeBlock, tabs, preview and copy tests               | Complete transform-driven authoring contract            |
+| Content components                    | First Pass+ | Component inventory and responsive tests              | Maintain parity; no broad new component batch           |
+| UI interaction primitives             | First Pass+ | Reka-backed local wrappers                            | Keep public wrappers stable; Tree remains deferred      |
+| Verification infrastructure           | Gate Passed | Runtime tests, Playwright webServer, CI shards        | Maintain zero stale entry points and bounded runtime    |
 
 ## Contract Ownership
 
@@ -65,8 +65,12 @@ contracts exist, but several protocol boundaries still need to become
   after normalization.
 - Folder, separator, external link, page, index link, and hidden page semantics
   remain distinct.
-- Sidebar, breadcrumb, pager, search context, and homepage navigation must use
-  the same runtime identity and tree semantics.
+- The runtime owns visible/context membership, ordinary-search inclusion,
+  pager/homepage eligibility, and directory-target resolution.
+- Navigation-excluded pages remain contextual and searchable by default;
+  hidden pages remain contextual but are excluded from ordinary search.
+- Sidebar, breadcrumb, pager, search entries, and homepage navigation use
+  runtime-derived results and resolved public identity.
 
 ### Provider, layout, and page
 

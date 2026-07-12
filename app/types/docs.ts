@@ -92,6 +92,12 @@ export type DocsPageIdentity = {
   slug?: string
 }
 
+export type DocsPageTreePageInput = {
+  identity: DocsPageIdentity
+  metadata: DocsPageMeta
+  publishable: true
+}
+
 export type DocsNode = {
   id: string
   type: DocsNodeType
@@ -260,6 +266,18 @@ export type DocsPagerItem = Pick<
   DocsNode,
   'id' | 'title' | 'path' | 'description'
 >
+
+export type DocsHomepageNavigationItem = Pick<
+  DocsNode,
+  'id' | 'title' | 'description' | 'badge'
+> & {
+  path: string
+}
+
+export type DocsHomepageNavigation = {
+  sections: DocsHomepageNavigationItem[]
+  featured: DocsHomepageNavigationItem[]
+}
 
 export type DocsPagerLabels = {
   previous?: string

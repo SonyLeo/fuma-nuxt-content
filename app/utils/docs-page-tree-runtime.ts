@@ -3,10 +3,13 @@ import type {
   DocsBreadcrumbItem,
   DocsBreadcrumbOptions,
   DocsDirectoryMeta,
+  DocsHomepageNavigation,
+  DocsHomepageNavigationItem,
   DocsNode,
-  DocsPageMeta,
+  DocsPageTreePageInput,
   DocsPagerItem,
 } from '~/types/docs'
+import type { DocsNodePolicy } from '~/utils/docs-page-tree-policy'
 import {
   buildDocsTree,
   createDocsBreadcrumbItems,
@@ -17,6 +20,10 @@ import {
   normalizeDocsSourcePath,
   resolveSectionHeadline,
 } from '~/utils/docs-navigation'
+import {
+  resolveDocsDirectoryTarget,
+  resolveDocsNodePolicy,
+} from '~/utils/docs-page-tree-policy'
 
 export type DocsPageTreeTransformTree = 'visible' | 'context'
 
@@ -58,7 +65,7 @@ export type DocsPageTreeTransformer = {
 
 export type DocsPageTreeRuntimeOptions = {
   navigation: ContentNavigationItem[] | null | undefined
-  pageMetaByPath?: Map<string, DocsPageMeta>
+  pageBySourcePath: ReadonlyMap<string, DocsPageTreePageInput>
   directoryMetaByStem?: Map<string, DocsDirectoryMeta>
   transformers?: DocsPageTreeTransformer[]
 }
@@ -72,6 +79,8 @@ export type DocsPageTreeRuntime = {
   visibleByPath: ReadonlyMap<string, DocsNode>
   contextByPath: ReadonlyMap<string, DocsNode>
   nodeBySourcePath: ReadonlyMap<string, DocsNode>
+  pagePolicyBySourcePath: ReadonlyMap<string, DocsNodePolicy>
+  homepageNavigation: DocsHomepageNavigation
   getVisibleCurrent: (path: string) => DocsNode | null
   getCurrent: (path: string) => DocsNode | null
   getContextualTree: (path: string) => DocsNode[]
@@ -91,6 +100,7 @@ export type DocsPageTreeRuntime = {
     tree?: DocsPageTreeTransformTree,
   ) => DocsNode | null
   getNodeBySourcePath: (sourcePath: string) => DocsNode | null
+  getPagePolicy: (sourcePath: string) => DocsNodePolicy | null
 }
 
 function normalizePathKey(path?: string) {
@@ -138,47 +148,6 @@ function createSourcePathMap(nodes: DocsNode[]) {
   }
 
   return output
-}
-
-function getNodeTargetPath(node: DocsNode) {
-  if (node.type === 'page') {
-    return node.path
-  }
-
-  if (node.type === 'link' && !node.external && node.href?.startsWith('/')) {
-    return node.href
-  }
-
-  if (node.index?.path) {
-    return node.index.path
-  }
-
-  if (
-    node.index?.type === 'link' &&
-    !node.index.external &&
-    node.index.href?.startsWith('/')
-  ) {
-    return node.index.href
-  }
-
-  return undefined
-}
-
-function findFirstNavigablePath(node: DocsNode): string | null {
-  const targetPath = getNodeTargetPath(node)
-  if (targetPath) {
-    return targetPath
-  }
-
-  for (const child of node.children) {
-    const childTargetPath = findFirstNavigablePath(child)
-
-    if (childTargetPath) {
-      return childTargetPath
-    }
-  }
-
-  return null
 }
 
 function applyTransformerForNode(
@@ -289,7 +258,7 @@ function createTree(
 ) {
   const nodes = buildDocsTree({
     navigation: options.navigation,
-    pageMetaByPath: options.pageMetaByPath,
+    pageBySourcePath: options.pageBySourcePath,
     directoryMetaByStem: options.directoryMetaByStem,
     includeHidden: context.includeHidden,
     preserveExcluded: context.preserveExcluded,
@@ -300,12 +269,6 @@ function createTree(
     options.transformers ?? [],
     context,
   )
-}
-
-export function isDocsPageTreeRuntime(
-  value: DocsNode[] | DocsPageTreeRuntime,
-): value is DocsPageTreeRuntime {
-  return !Array.isArray(value) && value.kind === 'docs-page-tree-runtime'
 }
 
 export function createDocsPageTreeRuntime(
@@ -325,7 +288,79 @@ export function createDocsPageTreeRuntime(
   const contextFlat = flattenDocsNodes(contextTree)
   const visibleByPath = createPathMap(visibleTree)
   const contextByPath = createPathMap(contextTree)
+  const visibleBySourcePath = createSourcePathMap(visibleTree)
   const nodeBySourcePath = createSourcePathMap(contextTree)
+  const pagePolicyBySourcePath = new Map<string, DocsNodePolicy>()
+
+  for (const [sourcePath, node] of nodeBySourcePath) {
+    const input = options.pageBySourcePath.get(sourcePath)
+
+    pagePolicyBySourcePath.set(
+      sourcePath,
+      resolveDocsNodePolicy(node, {
+        visible: visibleBySourcePath.has(sourcePath),
+        contextual: true,
+        publishable: input?.publishable ?? false,
+      }),
+    )
+  }
+
+  function getPagePolicy(sourcePath: string) {
+    return (
+      pagePolicyBySourcePath.get(normalizeDocsSourcePath(sourcePath)) ?? null
+    )
+  }
+
+  function getHomepagePath(node: DocsNode) {
+    if (node.type === 'page') {
+      return node.path ?? null
+    }
+
+    if (node.type !== 'group') {
+      return null
+    }
+
+    const target = resolveDocsDirectoryTarget(node)
+    return target ? (node.path ?? target) : null
+  }
+
+  function createHomepageItem(
+    node: DocsNode,
+  ): DocsHomepageNavigationItem | null {
+    const policy = resolveDocsNodePolicy(node, {
+      visible: true,
+      contextual: true,
+    })
+    const path = policy.homepage ? getHomepagePath(node) : null
+
+    if (!path) {
+      return null
+    }
+
+    return {
+      id: node.id,
+      title: node.title,
+      description: node.description,
+      badge: node.badge,
+      path,
+    }
+  }
+
+  const homepageNavigation: DocsHomepageNavigation = {
+    sections: visibleTree
+      .flatMap((node) => {
+        const item = createHomepageItem(node)
+        return item ? [item] : []
+      })
+      .slice(0, 4),
+    featured: visibleTree
+      .flatMap((node) => (node.children.length > 0 ? node.children : [node]))
+      .flatMap((node) => {
+        const item = createHomepageItem(node)
+        return item ? [item] : []
+      })
+      .slice(0, 6),
+  }
 
   function getNodeByPath(
     path: string,
@@ -361,7 +396,11 @@ export function createDocsPageTreeRuntime(
   }
 
   function getPager(path: string) {
-    const pages = visibleFlat.filter((item) => item.path)
+    const pages = visibleFlat.filter((item) => {
+      return item.sourcePath
+        ? (getPagePolicy(item.sourcePath)?.pager ?? false)
+        : false
+    })
     const normalizedCurrentPath = normalizeDocsRoutePath(path)
     const currentIndex = pages.findIndex((item) => {
       return normalizeDocsRoutePath(item.path) === normalizedCurrentPath
@@ -379,13 +418,13 @@ export function createDocsPageTreeRuntime(
 
   function getFallbackPath(path: string) {
     const normalizedCurrentPath = normalizeDocsRoutePath(path)
-    const current = getCurrent(path)
+    const current = getVisibleCurrent(path)
 
     if (!current || current.type !== 'group') {
       return null
     }
 
-    const targetPath = findFirstNavigablePath(current)
+    const targetPath = resolveDocsDirectoryTarget(current)
 
     if (
       !targetPath ||
@@ -406,6 +445,8 @@ export function createDocsPageTreeRuntime(
     visibleByPath,
     contextByPath,
     nodeBySourcePath,
+    pagePolicyBySourcePath,
+    homepageNavigation,
     getVisibleCurrent,
     getCurrent,
     getContextualTree,
@@ -419,5 +460,6 @@ export function createDocsPageTreeRuntime(
     getNodeByPath,
     getNodeBySourcePath: (sourcePath) =>
       nodeBySourcePath.get(normalizeDocsSourcePath(sourcePath)) ?? null,
+    getPagePolicy,
   }
 }

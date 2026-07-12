@@ -5,7 +5,7 @@ import { describe, expect, test } from 'vitest'
 import {
   assertUniqueDocsRoutePaths,
   createDocsIdentityIndex,
-  createDocsMetaMap,
+  createDocsPageTreePageMap,
   findDocsPageRecordByRoute,
   normalizeDocsSourcePath,
   resolveDocsPageIdentity,
@@ -200,7 +200,7 @@ describe('docs page tree identity', () => {
     ]
     const runtime = createDocsPageTreeRuntime({
       navigation,
-      pageMetaByPath: createDocsMetaMap(pages),
+      pageBySourcePath: createDocsPageTreePageMap(pages),
     })
 
     expect(runtime.getVisibleCurrent('/guide/hidden')).toBeNull()

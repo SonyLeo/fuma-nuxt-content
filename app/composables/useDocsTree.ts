@@ -2,7 +2,7 @@ import type { ContentNavigationItem } from '@nuxt/content'
 import type { DocsDirectoryMeta, DocsNode, DocsPageRecord } from '~/types/docs'
 import {
   createDirectoryMetaMap,
-  createDocsMetaMap,
+  createDocsPageTreePageMap,
 } from '~/utils/docs-navigation'
 import { createDocsPageTreeRuntime } from '~/utils/docs-page-tree-runtime'
 
@@ -16,7 +16,9 @@ export function useDocsTree(
   directoryMeta: Ref<DocsMetaRecord[] | null>,
   currentPath: Ref<string>,
 ) {
-  const pageMetaByPath = computed(() => createDocsMetaMap(pages.value))
+  const pageBySourcePath = computed(() =>
+    createDocsPageTreePageMap(pages.value),
+  )
   const directoryMetaByStem = computed(() =>
     createDirectoryMetaMap(
       directoryMeta.value?.map((record) => record.docsMetadata),
@@ -25,7 +27,7 @@ export function useDocsTree(
   const runtime = computed(() =>
     createDocsPageTreeRuntime({
       navigation: navigation.value,
-      pageMetaByPath: pageMetaByPath.value,
+      pageBySourcePath: pageBySourcePath.value,
       directoryMetaByStem: directoryMetaByStem.value,
     }),
   )
@@ -52,6 +54,10 @@ export function useDocsTree(
     return runtime.value.getSidebarItems(currentPath.value)
   })
 
+  const homepageNavigation = computed(() => {
+    return runtime.value.homepageNavigation
+  })
+
   return {
     runtime,
     items,
@@ -61,5 +67,6 @@ export function useDocsTree(
     current,
     headline,
     sidebarItems,
+    homepageNavigation,
   }
 }

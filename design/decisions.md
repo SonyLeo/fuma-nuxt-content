@@ -41,9 +41,18 @@ superseded experiments belong in Git history or the archive summaries.
 ## D004: Normalize page-tree consumers
 
 - `DocsNode[]` is the project navigation protocol.
-- Visible tree and context tree have different inclusion rules.
-- Sidebar, breadcrumbs, pager, search context, and homepage navigation consume
-  the normalized runtime rather than raw Nuxt Content navigation.
+- Page-tree construction consumes publishable page inputs containing normalized
+  metadata and resolved identity; raw Nuxt navigation contributes only source
+  structure that the normalized input cannot replace.
+- Visible, contextual, searchable, pager/homepage, and directory-target policy
+  belongs to the page-tree runtime and its policy helpers. Navigation exclusion
+  does not imply search exclusion; `hidden` excludes ordinary search.
+- Directory targets resolve in this order: page index, internal link index,
+  first visible internal descendant, then no redirect. External indexes are not
+  redirect targets.
+- Sidebar and mobile navigation receive derived `DocsNode[]`; breadcrumbs,
+  pager, homepage, and search receive their own derived results. Feature
+  components do not consume raw Nuxt Content navigation or rebuild identity.
 
 ## D005: Explicit provider/layout/page ownership
 

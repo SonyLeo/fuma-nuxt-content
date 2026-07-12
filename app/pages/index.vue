@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import type { DocsNode, DocsPageRecord } from '~/types/docs'
-import {
-  docsNavigationFields,
-  normalizeDocsSourcePath,
-} from '~/utils/docs-navigation'
+import type { DocsPageRecord } from '~/types/docs'
+import { normalizeDocsSourcePath } from '~/utils/docs-navigation'
 import { createDocsCanonicalUrl, createDocsSeoTitle } from '~/utils/docs-seo'
 
 const route = useRoute()
@@ -15,13 +12,11 @@ const { data: page } = await useAsyncData('page-home', () => {
 })
 
 const { data: navigation } = await useAsyncData('home-docs-navigation', () => {
-  return queryCollectionNavigation('docs', [...docsNavigationFields])
+  return queryCollectionNavigation('docs')
 })
 
 const { data: docsPages } = await useAsyncData('home-docs-pages', () => {
-  return queryCollection('docs')
-    .select('path', 'stem', 'slug', 'docsMetadata')
-    .all()
+  return queryCollection('docs').select('path', 'stem', 'docsMetadata').all()
 })
 
 const { data: docsMeta } = await useAsyncData('home-docs-meta', () => {
@@ -47,30 +42,19 @@ provideDocsLinkContext({
   pages: docsPageRecords,
 })
 
-const { items } = useDocsTree(
+const { homepageNavigation } = useDocsTree(
   computed(() => navigation.value ?? null),
   computed(() => docsPageRecords.value),
   computed(() => docsMeta.value ?? null),
   computed(() => '/'),
 )
 
-function resolveNodePath(item: DocsNode) {
-  return item.path ?? item.index?.path ?? item.href
-}
-
 const sectionEntries = computed(() => {
-  return items.value
-    .filter((item) => item.type === 'group' || item.type === 'page')
-    .filter((item) => resolveNodePath(item))
-    .slice(0, 4)
+  return homepageNavigation.value.sections
 })
 
 const foundationEntries = computed(() => {
-  return items.value
-    .flatMap((item) => (item.children.length > 0 ? item.children : [item]))
-    .filter((item) => item.type === 'group' || item.type === 'page')
-    .filter((item) => resolveNodePath(item))
-    .slice(0, 6)
+  return homepageNavigation.value.featured
 })
 
 const homeDescription = computed(
@@ -126,7 +110,7 @@ useHead({
           v-for="entry in sectionEntries"
           :key="entry.id"
           class="docs-home-card"
-          :href="resolveNodePath(entry)!"
+          :href="entry.path"
         >
           <span class="docs-home-card-title">{{ entry.title }}</span>
           <span v-if="entry.description" class="docs-home-card-description">
@@ -147,7 +131,7 @@ useHead({
           v-for="entry in foundationEntries"
           :key="entry.id"
           class="docs-home-link"
-          :href="resolveNodePath(entry)!"
+          :href="entry.path"
         >
           <span>{{ entry.title }}</span>
           <span v-if="entry.badge" class="docs-home-link-badge">
