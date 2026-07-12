@@ -5,7 +5,7 @@ export const themeProfile = {
     'D:\\Projects\\Learning\\gh\\fumadocs\\packages\\base-ui\\src\\provider\\base.tsx',
     'D:\\Projects\\Learning\\gh\\fumadocs\\packages\\base-ui\\src\\layouts\\shared\\slots\\theme-switch.tsx',
     'D:\\Projects\\Learning\\gh\\fumadocs\\packages\\base-ui\\css\\purple.css',
-    'D:\\Projects\\Work\\fuma-nuxt-content\\design\\theme-runtime-parity-plan.md',
+    'D:\\Projects\\Work\\fuma-nuxt-content\\design\\decisions.md',
   ],
   selector: '.docs-theme-switch',
 
@@ -189,7 +189,9 @@ export const themeProfile = {
         label: `${width}px theme root initialized`,
         pass:
           initial.root.dataDocsTheme === expectedPreset &&
-          ['light', 'dark', 'system'].includes(initial.root.dataDocsThemeMode) &&
+          ['light', 'dark', 'system'].includes(
+            initial.root.dataDocsThemeMode,
+          ) &&
           ['light', 'dark'].includes(initial.root.dataDocsThemeResolved),
         message: `preset=${initial.root.dataDocsTheme}, mode=${initial.root.dataDocsThemeMode}, resolved=${initial.root.dataDocsThemeResolved}`,
       })
@@ -220,13 +222,14 @@ export const themeProfile = {
           ),
         ),
         message: initial.switches
-          .map((item) =>
-            `${item.surface}:${item.buttons
-              .map(
-                (button) =>
-                  `${button?.ariaLabel || 'missing'}=${button?.ariaPressed}`,
-              )
-              .join('/')}`,
+          .map(
+            (item) =>
+              `${item.surface}:${item.buttons
+                .map(
+                  (button) =>
+                    `${button?.ariaLabel || 'missing'}=${button?.ariaPressed}`,
+                )
+                .join('/')}`,
           )
           .join('; '),
       })
@@ -267,20 +270,32 @@ export const themeProfile = {
         label: `${width}px active switch state follows mode`,
         pass:
           dark.switches.every((item) =>
-            item.activeButtons.some((button) => button.dataThemeMode === 'dark'),
+            item.activeButtons.some(
+              (button) => button.dataThemeMode === 'dark',
+            ),
           ) &&
           light.switches.every((item) =>
-            item.activeButtons.some((button) => button.dataThemeMode === 'light'),
+            item.activeButtons.some(
+              (button) => button.dataThemeMode === 'light',
+            ),
           ) &&
           system.switches.every((item) =>
-            item.activeButtons.some((button) => button.dataThemeMode === 'system'),
+            item.activeButtons.some(
+              (button) => button.dataThemeMode === 'system',
+            ),
           ),
         message: `dark=${dark.switches
-          .map((item) => item.activeButtons.map((button) => button.dataThemeMode).join('/'))
+          .map((item) =>
+            item.activeButtons.map((button) => button.dataThemeMode).join('/'),
+          )
           .join(';')}, light=${light.switches
-          .map((item) => item.activeButtons.map((button) => button.dataThemeMode).join('/'))
+          .map((item) =>
+            item.activeButtons.map((button) => button.dataThemeMode).join('/'),
+          )
           .join(';')}, system=${system.switches
-          .map((item) => item.activeButtons.map((button) => button.dataThemeMode).join('/'))
+          .map((item) =>
+            item.activeButtons.map((button) => button.dataThemeMode).join('/'),
+          )
           .join(';')}`,
       })
 

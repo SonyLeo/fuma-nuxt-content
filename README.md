@@ -11,10 +11,11 @@ demos are intentionally later.
 Planning starts here:
 
 - `design/roadmap.md`
-- `design/foundation-roadmap.md`
-- `design/foundation-alignment-matrix.md`
+- `design/foundation-status.md`
+- `design/product-backlog.md`
+- `design/component-inventory.md`
 - `design/verification-runbook.md`
-- `design/development-workflow-audit.md`
+- `design/decisions.md`
 
 ## Setup
 
@@ -39,6 +40,7 @@ Useful commands:
 
 ```bash
 pnpm test:nuxt
+pnpm validate:docs
 pnpm test:e2e -- tests/e2e/sidebar.spec.ts --project=chromium-desktop
 pnpm test:e2e:full
 ```

@@ -41,6 +41,9 @@ jobs:
       - name: Validate documentation links
         run: pnpm validate:links
 
+      - name: Validate documentation governance
+        run: pnpm validate:docs
+
   browser-pr:
     if: github.event_name == 'pull_request'
     needs: static

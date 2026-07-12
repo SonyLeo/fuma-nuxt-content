@@ -17,6 +17,7 @@
     "test:e2e": "playwright test",
     "test:e2e:full": "playwright test --max-failures=1 --workers=2",
     "typecheck": "node scripts/run-typecheck.mjs",
+    "validate:docs": "node scripts/check-docs.mjs",
     "validate:links": "node scripts/validate-docs-links.mjs"
   },
   "dependencies": {

@@ -11,8 +11,8 @@ added later, the closest file to the edited path wins.
 - Package manager: pnpm.
 - Current goal: build a stable Vue docs system foundation before product-layer
   features.
-- Current planning source of truth: `design/roadmap.md`, with active foundation
-  hardening in `design/foundation-alignment-matrix.md`.
+- Current planning source of truth: `design/roadmap.md`, with foundation
+  maturity in `design/foundation-status.md`.
 
 ## Reference Priority
 
@@ -107,8 +107,8 @@ Foundation work does not include:
 - Use `scripts/parity/run.mjs` for parity profiles and suites.
 - Playwright tests use `webServer` and own only the process they start. Legacy
   parity profiles still require their target URL to be available separately.
-- Treat `design/parity-reconstruction-workflow.md` as a historical case archive,
-  not the daily execution entry point.
+- Historical parity lessons live in `design/archive/parity-cases.md`; daily
+  execution starts from the skill and current verification runbook.
 
 ## CSS Rules
 
@@ -125,13 +125,49 @@ Foundation work does not include:
 
 - Keep planning centralized. Do not add another roadmap unless it has a distinct
   role and is linked from `design/roadmap.md`.
-- Stage 0 preparation is complete and retained in
-  `design/foundation-prep-plan.md` as historical evidence.
-- Record durable conclusions in `design/implementation-notes.md`.
-- Keep product-layer ideas in `design/product-roadmap.md` until the foundation
-  protocol is stable.
+- Record durable boundaries in `design/decisions.md`, not append-only logs.
+- Keep foundation status in `design/foundation-status.md` and unfinished upper
+  layer work in `design/product-backlog.md`.
+- Close completed plans after extracting durable decisions; Git history keeps
+  the full superseded text.
+
+### Documentation Creation Gate
+
+Do not create a new governance or planning Markdown file by default. First route
+the information to an existing source of truth:
+
+- priority, stage, or document map -> `design/roadmap.md`
+- foundation maturity, gaps, or exit gate -> `design/foundation-status.md`
+- unfinished integration or product work -> `design/product-backlog.md`
+- component ownership or regression coverage -> `design/component-inventory.md`
+- testing policy, commands, or failure handling -> `design/verification-runbook.md`
+- remaining Reka work -> `design/reka-migration.md`
+- durable architecture or workflow decision -> `design/decisions.md`
+
+A new document is allowed only when all of these are true:
+
+1. The content has a durable owner and purpose not covered by an existing source
+   of truth.
+2. Adding it to an existing document would mix unrelated responsibilities, not
+   merely make that document longer.
+3. Its lifecycle is explicit: active source of truth or historical summary.
+4. The new entry is added to the approved-document manifest in
+   `scripts/check-docs.mjs`; active documents are also linked from
+   `design/roadmap.md`.
+5. The change replaces or consolidates information instead of copying an
+   existing plan, chat transcript, task log, or implementation diary.
+
+Before creating the file, state which existing document was considered and why
+it cannot own the content. Temporary task plans belong in the Agent plan or Git
+history, not in `design/`. Archive documents are curated summaries, not a place
+to move completed documents unchanged. Run `pnpm validate:docs` after any
+documentation-governance change.
 
 ## Verification Rules
+
+The complete testing standard, command matrix, server lifecycle, viewport tag
+semantics, CI sharding, and failure classification live in
+`design/verification-runbook.md`. Keep this section as the mandatory summary.
 
 - Documentation-only changes: inspect diffs and run static checks only when
   needed.
@@ -163,6 +199,7 @@ Foundation work does not include:
   surface still lacks a Playwright contract, or when hidden DOM/reference
   comparison is the point of the task.
 - If a runtime check is skipped, say which check was skipped and why.
+- Documentation governance changes must run `pnpm validate:docs`.
 
 ## Git Rules
 

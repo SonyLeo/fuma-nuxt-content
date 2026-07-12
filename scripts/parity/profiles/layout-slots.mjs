@@ -3,7 +3,7 @@ export const layoutSlotsProfile = {
   name: 'layout-slots',
   references: [
     'D:\\Projects\\Learning\\gh\\fumadocs\\packages\\base-ui\\src\\layouts\\shared\\client.tsx',
-    'D:\\Projects\\Work\\fuma-nuxt-content\\design\\layout-provider-parity-plan.md',
+    'D:\\Projects\\Work\\fuma-nuxt-content\\design\\decisions.md',
   ],
   selector: '.docs-shell',
 
@@ -62,9 +62,7 @@ export const layoutSlotsProfile = {
 
       addCheck(report, {
         label: `${viewport.width}px search replacement slot`,
-        pass:
-          data.initial.headerSearch >= 1 &&
-          data.initial.sidebarSearch >= 1,
+        pass: data.initial.headerSearch >= 1 && data.initial.sidebarSearch >= 1,
         message: `header=${data.initial.headerSearch}, sidebar=${data.initial.sidebarSearch}`,
       })
 

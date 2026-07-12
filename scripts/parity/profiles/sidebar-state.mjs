@@ -3,7 +3,7 @@ export const sidebarStateProfile = {
   name: 'sidebar-state',
   references: [
     'D:\\Projects\\Learning\\gh\\fumadocs\\packages\\base-ui\\src\\components\\sidebar\\base.tsx',
-    'D:\\Projects\\Work\\fuma-nuxt-content\\design\\layout-provider-parity-plan.md',
+    'D:\\Projects\\Work\\fuma-nuxt-content\\design\\decisions.md',
   ],
   selector: '#nd-sidebar',
 
