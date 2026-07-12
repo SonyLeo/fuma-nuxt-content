@@ -30,7 +30,7 @@ contracts exist, but several protocol boundaries still need to become
 
 | Foundation area                       | Status      | Evidence                                          | Remaining gate                                         |
 | ------------------------------------- | ----------- | ------------------------------------------------- | ------------------------------------------------------ |
-| Content collection and page identity  | First Pass+ | Nuxt runtime identity tests, link validation      | Freeze metadata schema and collision diagnostics       |
+| Content collection and page identity  | First Pass+ | Ingestion metadata tests, identity tests, links   | Complete collision diagnostics                         |
 | Source path / route path separation   | Gate Passed | Shared identity helpers and nested index coverage | Keep all new consumers on the shared resolver          |
 | Page tree and context tree runtime    | First Pass+ | Sidebar, breadcrumb, pager, excluded-route tests  | Freeze transformer and directory-meta ownership        |
 | Root provider and layout slots        | First Pass+ | Layout-provider Playwright contracts              | Document public provider/slot API as stable            |
@@ -48,6 +48,9 @@ contracts exist, but several protocol boundaries still need to become
 ### Content and identity
 
 - `content.config.ts` owns collection schemas.
+- `shared/docs-metadata.ts` owns the normalized page and directory metadata
+  contract; `build/docs-metadata-ingestion.ts` adapts native Nuxt Content parsed
+  records into that contract before persistence.
 - `shared/docs-identity.js` owns source/route normalization shared by runtime
   and tooling.
 - `DocsPageIdentity` separates content query identity, source file identity,
@@ -95,7 +98,6 @@ contracts exist, but several protocol boundaries still need to become
 
 ### P0: freeze the source and tree boundary
 
-- Confirm the final directory metadata schema and defaults.
 - Document route collision and source identity diagnostics.
 - Remove remaining direct or duplicated route/source normalization.
 - Add focused coverage whenever a new content source shape is introduced.

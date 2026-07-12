@@ -21,26 +21,7 @@ export {
   resolveDocsRoutePath,
 } from '#shared/docs-identity.js'
 
-export const docsNavigationFields = [
-  'description',
-  'sectionLabel',
-  'slug',
-  'order',
-  'hidden',
-  'badge',
-  'icon',
-  'status',
-  'defaultOpen',
-  'collapsible',
-  'full',
-  'toc',
-  'tocPopover',
-  'pager',
-  'breadcrumb',
-  'breadcrumbRoot',
-  'breadcrumbPage',
-  'breadcrumbSeparator',
-] as const
+export const docsNavigationFields = ['docsMetadata'] as const
 
 type DocsTreeOptions = {
   navigation: ContentNavigationItem[] | null | undefined
@@ -61,50 +42,8 @@ type DocsRouteRecord = {
   slug?: string
 }
 
-function readString(item: ContentNavigationItem, key: string) {
-  const value = item[key]
-  return typeof value === 'string' ? value : undefined
-}
-
-function readNumber(item: ContentNavigationItem, key: string) {
-  const value = item[key]
-  return typeof value === 'number' ? value : undefined
-}
-
-function readBoolean(item: ContentNavigationItem, key: string) {
-  const value = item[key]
-  return typeof value === 'boolean' ? value : undefined
-}
-
-function readBreadcrumbRoot(
-  item: ContentNavigationItem,
-  key: string,
-): DocsBreadcrumbRootOption | undefined {
-  const value = item[key]
-
-  if (typeof value === 'boolean') {
-    return value
-  }
-
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return undefined
-  }
-
-  const path =
-    'path' in value && typeof value.path === 'string' ? value.path : undefined
-  const title =
-    'title' in value && typeof value.title === 'string'
-      ? value.title
-      : undefined
-
-  if (!path && !title) {
-    return undefined
-  }
-
-  return {
-    path,
-    title,
-  }
+type DocsNavigationItem = ContentNavigationItem & {
+  docsMetadata?: DocsPageMeta
 }
 
 function normalizeStem(value?: string) {
@@ -303,30 +242,12 @@ function applyPageMeta(
   item: ContentNavigationItem,
   fallback: DocsPageMeta | undefined,
 ): DocsPageMeta {
-  return {
-    title: item.title || fallback?.title,
-    description: readString(item, 'description') ?? fallback?.description,
-    sectionLabel: readString(item, 'sectionLabel') ?? fallback?.sectionLabel,
-    slug: readString(item, 'slug') ?? fallback?.slug,
-    order: readNumber(item, 'order') ?? fallback?.order,
-    hidden: readBoolean(item, 'hidden') ?? fallback?.hidden,
-    badge: readString(item, 'badge') ?? fallback?.badge,
-    icon: readString(item, 'icon') ?? fallback?.icon,
-    status: readString(item, 'status') ?? fallback?.status,
-    defaultOpen: readBoolean(item, 'defaultOpen') ?? fallback?.defaultOpen,
-    collapsible: readBoolean(item, 'collapsible') ?? fallback?.collapsible,
-    full: readBoolean(item, 'full') ?? fallback?.full,
-    toc: readBoolean(item, 'toc') ?? fallback?.toc,
-    tocPopover: readBoolean(item, 'tocPopover') ?? fallback?.tocPopover,
-    pager: readBoolean(item, 'pager') ?? fallback?.pager,
-    breadcrumb: readBoolean(item, 'breadcrumb') ?? fallback?.breadcrumb,
-    breadcrumbRoot:
-      readBreadcrumbRoot(item, 'breadcrumbRoot') ?? fallback?.breadcrumbRoot,
-    breadcrumbPage:
-      readBoolean(item, 'breadcrumbPage') ?? fallback?.breadcrumbPage,
-    breadcrumbSeparator:
-      readBoolean(item, 'breadcrumbSeparator') ?? fallback?.breadcrumbSeparator,
-  }
+  return (
+    (item as DocsNavigationItem).docsMetadata ??
+    fallback ?? {
+      title: item.title,
+    }
+  )
 }
 
 function cloneNode(node: DocsNode): DocsNode {
@@ -397,10 +318,10 @@ function createNodeFromNavigation(
   const baseNode: DocsNode = {
     id: createDocsNodeId([
       isGroup ? 'group' : 'page',
-      sourcePath ?? stem ?? path ?? mergedMeta.title ?? 'untitled',
+      sourcePath ?? stem ?? path ?? mergedMeta.title,
     ]),
     type: isGroup ? 'group' : 'page',
-    title: directoryMeta?.title ?? mergedMeta.title ?? 'Untitled',
+    title: directoryMeta?.title ?? mergedMeta.title,
     path,
     sourcePath,
     stem,
@@ -1207,9 +1128,8 @@ function flattenNode(node: DocsNode): DocsNode[] {
 export function createDocsMetaMap(
   items:
     | Array<
-        DocsPageMeta & {
-          path: string
-          stem?: string
+        DocsRouteRecord & {
+          docsMetadata: DocsPageMeta
         }
       >
     | null
@@ -1221,30 +1141,7 @@ export function createDocsMetaMap(
     (items ?? []).map((item) => {
       const identity = resolveDocsPageIdentity(item)
 
-      return [
-        identity.sourcePath,
-        {
-          title: item.title,
-          description: item.description,
-          sectionLabel: item.sectionLabel,
-          slug: item.slug,
-          order: item.order,
-          hidden: item.hidden,
-          badge: item.badge,
-          icon: item.icon,
-          status: item.status,
-          defaultOpen: item.defaultOpen,
-          collapsible: item.collapsible,
-          full: item.full,
-          toc: item.toc,
-          tocPopover: item.tocPopover,
-          pager: item.pager,
-          breadcrumb: item.breadcrumb,
-          breadcrumbRoot: item.breadcrumbRoot,
-          breadcrumbPage: item.breadcrumbPage,
-          breadcrumbSeparator: item.breadcrumbSeparator,
-        } satisfies DocsPageMeta,
-      ] as const
+      return [identity.sourcePath, item.docsMetadata] as const
     }),
   )
 }
@@ -1280,34 +1177,9 @@ export function assertUniqueDocsRoutePaths(
 }
 
 export function createDirectoryMetaMap(
-  items:
-    | Array<
-        Omit<DocsDirectoryMeta, 'stem'> & {
-          stem: string
-        }
-      >
-    | null
-    | undefined,
+  items: DocsDirectoryMeta[] | null | undefined,
 ) {
-  return new Map(
-    (items ?? []).map((item) => [
-      normalizeStem(item.stem.replace(/\/meta$/, '')),
-      {
-        stem: normalizeStem(item.stem.replace(/\/meta$/, '')),
-        title: item.title,
-        description: item.description,
-        order: item.order,
-        pages: item.pages,
-        pagesIndex: item.pagesIndex,
-        root: item.root,
-        hidden: item.hidden,
-        defaultOpen: item.defaultOpen,
-        collapsible: item.collapsible,
-        badge: item.badge,
-        icon: item.icon,
-      } satisfies DocsDirectoryMeta,
-    ]),
-  )
+  return new Map((items ?? []).map((item) => [item.stem, item]))
 }
 
 export function buildDocsTree(options: DocsTreeOptions): DocsNode[] {
@@ -1330,15 +1202,7 @@ export function buildDocsTree(options: DocsTreeOptions): DocsNode[] {
 }
 
 export function resolveDocsSourcePath(
-  items:
-    | Array<
-        DocsPageMeta & {
-          path: string
-          stem?: string
-        }
-      >
-    | null
-    | undefined,
+  items: DocsRouteRecord[] | null | undefined,
   routePath: string,
 ) {
   const normalizedRoutePath = normalizeDocsRoutePath(routePath)
@@ -1349,12 +1213,10 @@ export function resolveDocsSourcePath(
   return match ? resolveDocsPageIdentity(match).sourcePath : null
 }
 
-export function findDocsPageRecordByRoute<
-  T extends DocsPageMeta & {
-    path: string
-    stem?: string
-  },
->(items: T[] | null | undefined, routePath: string) {
+export function findDocsPageRecordByRoute<T extends DocsRouteRecord>(
+  items: T[] | null | undefined,
+  routePath: string,
+) {
   const normalizedRoutePath = normalizeDocsRoutePath(routePath)
 
   return (

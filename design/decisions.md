@@ -102,6 +102,22 @@ superseded experiments belong in Git history or the archive summaries.
 - Git history preserves full superseded plans; the repository keeps only
   curated historical summaries.
 
+## D012: Metadata is normalized at content ingestion
+
+- `shared/docs-metadata.ts` owns strict page and directory schemas, exported
+  metadata types, field ownership, and pure normalization.
+- `build/docs-metadata-ingestion.ts` is the Nuxt Content adapter. A Content
+  transformer captures metadata from the framework's native parsed record
+  before heading/path title fallback, and `content:file:afterParse` writes the
+  normalized `docsMetadata` result before SQL insertion.
+- The adapter does not parse Markdown or YAML itself. Route, component, and
+  runtime consumers never read raw frontmatter.
+- Foundation consumers read the normalized `docsMetadata` JSON field instead of
+  reconstructing missing, explicit-false, or invalid values from Boolean SQL
+  columns, where Nuxt Content runtime refinement collapses `NULL` to `false`.
+- Ordinary docs pages require an explicit non-empty frontmatter title. Draft
+  filtering and filename-derived titles remain source-adapter responsibilities.
+
 ## Decision Maintenance
 
 - Add a decision only when it changes a durable boundary.

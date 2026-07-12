@@ -15,7 +15,7 @@ const DEFAULT_BREADCRUMB_OPTIONS: DocsPageBreadcrumbProps = {
 
 export function useDocsPage(page: Ref<DocsPageLike | null | undefined>) {
   const title = computed(() => {
-    return page.value?.title ?? 'Untitled'
+    return page.value?.title ?? ''
   })
 
   const description = computed(() => {

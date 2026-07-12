@@ -68,6 +68,26 @@ Runtime tests own contracts that do not require a real browser:
 - Markdown transform output
 - normalized data contracts
 
+`pnpm test:nuxt` also includes the metadata persistence integration gate. That
+spec runs one isolated production Nuxt build, owns its build/output/SQLite
+paths, and normally adds about 45–70 seconds on the current Windows baseline.
+Treat the complete command as a batch-closeout runtime/integration gate, not the
+fastest metadata inner loop.
+
+Use file selection while iterating on the lightweight contract and adapter
+tests:
+
+```powershell
+pnpm test:nuxt -- tests/nuxt/docs-metadata-ingestion.nuxt.spec.ts
+```
+
+Run the persistence spec when changing Content hooks, transformers, collection
+schemas, SQL-facing metadata, or test isolation:
+
+```powershell
+pnpm test:nuxt -- tests/nuxt/docs-metadata-persistence.nuxt.spec.ts
+```
+
 ### Focused Playwright
 
 Entry:

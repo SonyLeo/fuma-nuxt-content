@@ -160,8 +160,8 @@ onUpdated(() => {
 
       <slot name="header" :header="header">
         <DocsPageHeader
-          v-if="header?.enabled !== false"
-          :title="header?.title ?? 'Untitled'"
+          v-if="header && header.enabled !== false"
+          :title="header.title"
           :description="header?.description"
           :section-label="header?.sectionLabel"
           :breadcrumbs="header?.breadcrumbs ?? []"

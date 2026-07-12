@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { DocsPageAction, DocsPageActionState } from '~/types/docs-actions'
-import type { DocsContentPage, DocsPageRecord } from '~/types/docs'
+import type {
+  DocsContentPage,
+  DocsPageMeta,
+  DocsPageRecord,
+} from '~/types/docs'
 import {
   docsNavigationFields,
   findDocsPageRecordByRoute,
@@ -9,10 +13,7 @@ import {
 } from '~/utils/docs-navigation'
 import { getDocsGithubEditUrl, getDocsGithubSourceUrl } from '~/utils/docs-site'
 import { writeDocsClipboardText } from '~/utils/docs-clipboard'
-import {
-  readDocsFrontmatterBoolean,
-  readDocsMarkdownSource,
-} from '~/utils/docs-markdown'
+import { readDocsMarkdownSource } from '~/utils/docs-markdown'
 import { createDocsCanonicalUrl, createDocsSeoTitle } from '~/utils/docs-seo'
 import { createDocsSearchIndex } from '~/utils/docs-search'
 
@@ -28,29 +29,7 @@ const { data: navigation } = await useAsyncData('docs-navigation', () => {
 
 const { data: docsPages } = await useAsyncData('docs-pages', () => {
   return queryCollection('docs')
-    .select(
-      'path',
-      'stem',
-      'title',
-      'description',
-      'sectionLabel',
-      'slug',
-      'order',
-      'hidden',
-      'badge',
-      'icon',
-      'status',
-      'defaultOpen',
-      'collapsible',
-      'full',
-      'toc',
-      'tocPopover',
-      'pager',
-      'breadcrumb',
-      'breadcrumbRoot',
-      'breadcrumbPage',
-      'breadcrumbSeparator',
-    )
+    .select('path', 'stem', 'slug', 'docsMetadata')
     .all()
 })
 
@@ -66,6 +45,7 @@ const { data: docsSearchPages } = await useAsyncData(
         'sectionLabel',
         'hidden',
         'slug',
+        'docsMetadata',
         'structuredData',
         'body',
       )
@@ -106,47 +86,8 @@ const { data: page } = await useAsyncData<DocsContentPage | null>(
       .first()) as DocsContentPage | null
   },
 )
-const { data: pageFrontmatter } = await useAsyncData(
-  'page-frontmatter-' + route.path,
-  async () => {
-    if (!pageSourcePath.value) {
-      return {}
-    }
-
-    const markdown = await readDocsMarkdownSource(pageSourcePath.value)
-
-    return {
-      full: readDocsFrontmatterBoolean(markdown, 'full'),
-      toc: readDocsFrontmatterBoolean(markdown, 'toc'),
-      tocPopover: readDocsFrontmatterBoolean(markdown, 'tocPopover'),
-      pager: readDocsFrontmatterBoolean(markdown, 'pager'),
-      breadcrumb: readDocsFrontmatterBoolean(markdown, 'breadcrumb'),
-      breadcrumbPage: readDocsFrontmatterBoolean(markdown, 'breadcrumbPage'),
-      breadcrumbSeparator: readDocsFrontmatterBoolean(
-        markdown,
-        'breadcrumbSeparator',
-      ),
-    }
-  },
-)
-
 const { data: docsMeta } = await useAsyncData('docs-meta', () => {
-  return queryCollection('docsMeta')
-    .select(
-      'stem',
-      'title',
-      'description',
-      'order',
-      'pages',
-      'pagesIndex',
-      'root',
-      'hidden',
-      'defaultOpen',
-      'collapsible',
-      'badge',
-      'icon',
-    )
-    .all()
+  return queryCollection('docsMeta').select('docsMetadata').all()
 })
 
 const { runtime, headline, sidebarItems } = useDocsTree(
@@ -177,21 +118,8 @@ const { previous, next } = useDocsPager(
   runtime,
   computed(() => route.path),
 )
-const pageForOptions = computed<DocsContentPage | null>(() => {
-  if (!page.value) {
-    return null
-  }
-
-  return {
-    ...page.value,
-    full: pageFrontmatter.value?.full,
-    toc: pageFrontmatter.value?.toc,
-    tocPopover: pageFrontmatter.value?.tocPopover,
-    pager: pageFrontmatter.value?.pager,
-    breadcrumb: pageFrontmatter.value?.breadcrumb,
-    breadcrumbPage: pageFrontmatter.value?.breadcrumbPage,
-    breadcrumbSeparator: pageFrontmatter.value?.breadcrumbSeparator,
-  }
+const pageForOptions = computed<DocsPageMeta | null>(() => {
+  return page.value?.docsMetadata ?? null
 })
 const {
   title,
@@ -224,7 +152,9 @@ const pageHeader = computed(() => {
 })
 const pageDescription = computed(() => {
   return (
-    page.value?.description || site.seo?.defaultDescription || site.description
+    page.value?.docsMetadata.description ||
+    site.seo?.defaultDescription ||
+    site.description
   )
 })
 const pageSeoTitle = computed(() => createDocsSeoTitle(title.value, site))
@@ -232,16 +162,9 @@ const canonicalUrl = computed(() => {
   return createDocsCanonicalUrl(route.path, site, requestUrl.origin)
 })
 const pageToc = computed(() => {
-  const tocOptions = pageOptions.value.toc
-  const popover =
-    pageFrontmatter.value?.tocPopover === undefined
-      ? tocOptions.enabled
-      : pageFrontmatter.value.tocPopover
-
   return {
-    ...tocOptions,
+    ...pageOptions.value.toc,
     items: toc.value,
-    popover,
   }
 })
 const pageBreadcrumb = computed(() => {

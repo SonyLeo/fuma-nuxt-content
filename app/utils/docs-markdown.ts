@@ -28,36 +28,3 @@ export async function readDocsMarkdownSource(sourcePath: string) {
 
   return await loader()
 }
-
-export function readDocsFrontmatterBoolean(
-  markdown: string,
-  key: string,
-): boolean | undefined {
-  const match = /^---\r?\n(?<body>[\s\S]*?)\r?\n---/.exec(markdown)
-  const body = match?.groups?.body
-
-  if (!body) {
-    return undefined
-  }
-
-  const line = body
-    .split(/\r?\n/)
-    .map((item) => item.trim())
-    .find((item) => item.startsWith(`${key}:`))
-
-  if (!line) {
-    return undefined
-  }
-
-  const value = line.slice(key.length + 1).trim()
-
-  if (value === 'true') {
-    return true
-  }
-
-  if (value === 'false') {
-    return false
-  }
-
-  return undefined
-}

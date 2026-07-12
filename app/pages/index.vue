@@ -20,49 +20,12 @@ const { data: navigation } = await useAsyncData('home-docs-navigation', () => {
 
 const { data: docsPages } = await useAsyncData('home-docs-pages', () => {
   return queryCollection('docs')
-    .select(
-      'path',
-      'stem',
-      'title',
-      'description',
-      'sectionLabel',
-      'slug',
-      'order',
-      'hidden',
-      'badge',
-      'icon',
-      'status',
-      'defaultOpen',
-      'collapsible',
-      'full',
-      'toc',
-      'tocPopover',
-      'pager',
-      'breadcrumb',
-      'breadcrumbRoot',
-      'breadcrumbPage',
-      'breadcrumbSeparator',
-    )
+    .select('path', 'stem', 'slug', 'docsMetadata')
     .all()
 })
 
 const { data: docsMeta } = await useAsyncData('home-docs-meta', () => {
-  return queryCollection('docsMeta')
-    .select(
-      'stem',
-      'title',
-      'description',
-      'order',
-      'pages',
-      'pagesIndex',
-      'root',
-      'hidden',
-      'defaultOpen',
-      'collapsible',
-      'badge',
-      'icon',
-    )
-    .all()
+  return queryCollection('docsMeta').select('docsMetadata').all()
 })
 
 if (!page.value) {
@@ -110,7 +73,9 @@ const foundationEntries = computed(() => {
     .slice(0, 6)
 })
 
-const homeDescription = computed(() => site.seo?.defaultDescription ?? site.description)
+const homeDescription = computed(
+  () => site.seo?.defaultDescription ?? site.description,
+)
 const homeTitle = computed(() => createDocsSeoTitle(site.title, site))
 const canonicalUrl = computed(() => {
   return createDocsCanonicalUrl(route.path, site, requestUrl.origin)

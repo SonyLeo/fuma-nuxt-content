@@ -76,8 +76,16 @@ describe('docs page tree identity', () => {
       },
     ] as ContentNavigationItem[]
     const pages = [
-      { path: '/guide', stem: 'guide/index' },
-      { path: '/guide/hidden', stem: 'guide/hidden', hidden: true },
+      {
+        path: '/guide',
+        stem: 'guide/index',
+        docsMetadata: { title: 'Guide Index' },
+      },
+      {
+        path: '/guide/hidden',
+        stem: 'guide/hidden',
+        docsMetadata: { title: 'Hidden Page', hidden: true },
+      },
     ]
     const runtime = createDocsPageTreeRuntime({
       navigation,

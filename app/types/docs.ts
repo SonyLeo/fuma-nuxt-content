@@ -1,3 +1,9 @@
+import type {
+  DocsDirectoryMetadata,
+  DocsMetaPageEntry as DocsIngestionMetaPageEntry,
+  DocsPageMetadata,
+} from '../../shared/docs-metadata'
+
 export type DocsTocItem = {
   id: string
   text: string
@@ -33,71 +39,11 @@ export type DocsBreadcrumbOptions = {
   includeSeparator?: boolean
 }
 
-export type DocsMetaPageEntry =
-  | string
-  | {
-      type: 'separator'
-      title: string
-      icon?: string
-    }
-  | {
-      type: 'link'
-      title: string
-      href: string
-      external?: boolean
-      badge?: string
-      icon?: string
-    }
-  | {
-      type: 'page' | 'group'
-      name: string
-      title?: string
-      badge?: string
-      icon?: string
-      status?: string
-      hidden?: boolean
-      defaultOpen?: boolean
-      collapsible?: boolean
-      pages?: DocsMetaPageEntry[]
-      pagesIndex?: string
-    }
+export type DocsMetaPageEntry = DocsIngestionMetaPageEntry
 
-export type DocsDirectoryMeta = {
-  stem: string
-  title?: string
-  description?: string
-  order?: number
-  pages?: DocsMetaPageEntry[]
-  pagesIndex?: string
-  root?: boolean
-  hidden?: boolean
-  defaultOpen?: boolean
-  collapsible?: boolean
-  badge?: string
-  icon?: string
-}
+export type DocsDirectoryMeta = DocsDirectoryMetadata
 
-export type DocsPageMeta = {
-  title?: string
-  description?: string
-  sectionLabel?: string
-  slug?: string
-  order?: number
-  hidden?: boolean
-  badge?: string
-  icon?: string
-  status?: string
-  defaultOpen?: boolean
-  collapsible?: boolean
-  full?: boolean
-  toc?: boolean
-  tocPopover?: boolean
-  pager?: boolean
-  breadcrumb?: boolean
-  breadcrumbRoot?: DocsBreadcrumbRootOption
-  breadcrumbPage?: boolean
-  breadcrumbSeparator?: boolean
-}
+export type DocsPageMeta = DocsPageMetadata
 
 export type DocsPageLike = DocsPageMeta & {
   path?: string
@@ -123,6 +69,7 @@ export type DocsStructuredData = {
 }
 
 export type DocsContentPage = DocsPageLike & {
+  docsMetadata: DocsPageMeta
   structuredData?: DocsStructuredData
   body?: {
     toc?: {
@@ -131,9 +78,11 @@ export type DocsContentPage = DocsPageLike & {
   }
 }
 
-export type DocsPageRecord = DocsPageMeta & {
+export type DocsPageRecord = {
   path: string
   stem?: string
+  slug?: string
+  docsMetadata: DocsPageMeta
 }
 
 export type DocsPageIdentity = {

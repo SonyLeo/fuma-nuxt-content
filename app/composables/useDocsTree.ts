@@ -6,8 +6,8 @@ import {
 } from '~/utils/docs-navigation'
 import { createDocsPageTreeRuntime } from '~/utils/docs-page-tree-runtime'
 
-type DocsMetaRecord = Omit<DocsDirectoryMeta, 'stem'> & {
-  stem: string
+type DocsMetaRecord = {
+  docsMetadata: DocsDirectoryMeta
 }
 
 export function useDocsTree(
@@ -18,7 +18,9 @@ export function useDocsTree(
 ) {
   const pageMetaByPath = computed(() => createDocsMetaMap(pages.value))
   const directoryMetaByStem = computed(() =>
-    createDirectoryMetaMap(directoryMeta.value),
+    createDirectoryMetaMap(
+      directoryMeta.value?.map((record) => record.docsMetadata),
+    ),
   )
   const runtime = computed(() =>
     createDocsPageTreeRuntime({
@@ -33,10 +35,6 @@ export function useDocsTree(
   const contextItems = computed<DocsNode[]>(() => runtime.value.contextTree)
 
   const flattened = computed(() => runtime.value.visibleFlat)
-
-  const visibleCurrent = computed(() => {
-    return runtime.value.getVisibleCurrent(currentPath.value)
-  })
 
   const current = computed(() => {
     return runtime.value.getCurrent(currentPath.value)
