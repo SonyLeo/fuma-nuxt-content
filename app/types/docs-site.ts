@@ -1,4 +1,7 @@
-import type { DocsThemeConfig } from '~/types/docs-theme'
+import type {
+  DocsThemeConfig,
+  ResolvedDocsThemeConfig,
+} from '~/types/docs-theme'
 import type {
   DocsDirection,
   DocsHomeLayoutProps,
@@ -131,7 +134,7 @@ export type DocsSiteAdapter = {
     github?: DocsSiteGithubConfig
     seo: DocsSiteSeoDefaults
   }
-  theme: DocsThemeConfig | undefined
+  theme: ResolvedDocsThemeConfig
   content: {
     name: string
     title: string

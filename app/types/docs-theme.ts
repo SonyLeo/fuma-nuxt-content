@@ -4,13 +4,15 @@ export type DocsThemeMode = (typeof docsThemeModes)[number]
 export const docsThemeResolvedModes = ['light', 'dark'] as const
 export type DocsThemeResolvedMode = (typeof docsThemeResolvedModes)[number]
 
-export const docsThemeSwitchModes = [
-  'light-dark',
-  'light-dark-system',
-] as const
+export const docsThemeSwitchModes = ['light-dark', 'light-dark-system'] as const
 export type DocsThemeSwitchMode = (typeof docsThemeSwitchModes)[number]
 
-export const docsThemePresets = ['default', 'neutral', 'black', 'purple'] as const
+export const docsThemePresets = [
+  'default',
+  'neutral',
+  'black',
+  'purple',
+] as const
 export type DocsThemePreset = (typeof docsThemePresets)[number]
 
 export type DocsThemeConfig = {
@@ -62,7 +64,10 @@ export function resolveDocsThemeConfig(
 ): ResolvedDocsThemeConfig {
   return {
     ...docsThemeDefaults,
-    ...config,
+    enabled:
+      typeof config?.enabled === 'boolean'
+        ? config.enabled
+        : docsThemeDefaults.enabled,
     defaultMode: isDocsThemeMode(config?.defaultMode)
       ? config.defaultMode
       : docsThemeDefaults.defaultMode,
@@ -73,5 +78,9 @@ export function resolveDocsThemeConfig(
       ? config.preset
       : docsThemeDefaults.preset,
     storageKey: config?.storageKey?.trim() || docsThemeDefaults.storageKey,
+    disableTransitionOnChange:
+      typeof config?.disableTransitionOnChange === 'boolean'
+        ? config.disableTransitionOnChange
+        : docsThemeDefaults.disableTransitionOnChange,
   }
 }

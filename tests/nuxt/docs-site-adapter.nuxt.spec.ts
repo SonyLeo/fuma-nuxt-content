@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { describe, expect, test } from 'vitest'
 import type { DocsSiteConfig } from '~/types/docs-site'
+import { resolveDocsThemeConfig } from '~/types/docs-theme'
 import {
   createDocsSiteAdapter,
   createDocsSiteHomeLayoutProps,
@@ -138,7 +139,7 @@ describe('docs site adapter', () => {
     })
   })
 
-  test('preserves page integration inputs and passes theme config through', () => {
+  test('preserves page integration inputs and exposes resolved theme config', () => {
     const theme = {
       enabled: true,
       defaultMode: 'dark' as const,
@@ -183,7 +184,8 @@ describe('docs site adapter', () => {
       defaultDescription: 'SEO description',
       defaultOgImage: '/og.png',
     })
-    expect(adapter.theme).toBe(theme)
+    expect(adapter.theme).toEqual(resolveDocsThemeConfig(theme))
+    expect(adapter.theme).not.toBe(theme)
 
     expect(
       createDocsSitePageActions({

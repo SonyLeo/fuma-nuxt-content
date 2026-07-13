@@ -1,15 +1,15 @@
 import type {
-  DocsThemeConfig,
   DocsThemeMode,
   DocsThemePreset,
   DocsThemeResolvedMode,
   ResolvedDocsThemeConfig,
 } from '~/types/docs-theme'
-import { isDocsThemeMode, resolveDocsThemeConfig } from '~/types/docs-theme'
+import { docsThemeDefaults, isDocsThemeMode } from '~/types/docs-theme'
 import {
   applyDocsThemeDocumentState,
   getDocsSystemPrefersDark,
   readStoredDocsThemeMode,
+  resolveDocsThemeInitialState,
   resolveDocsThemeMode,
   writeStoredDocsThemeMode,
 } from '~/utils/docs-theme'
@@ -31,10 +31,20 @@ function watchSystemPreference(onChange: () => void) {
   }
 }
 
-export function useDocsTheme(config?: DocsThemeConfig) {
+function stopSystemPreferenceWatcher() {
+  stopSystemPreferenceListener?.()
+}
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    stopSystemPreferenceWatcher()
+  })
+}
+
+export function useDocsTheme(config?: ResolvedDocsThemeConfig) {
   const themeConfig = useState<ResolvedDocsThemeConfig>(
     'docs-theme-config',
-    () => resolveDocsThemeConfig(config),
+    () => config ?? docsThemeDefaults,
   )
   const mode = useState<DocsThemeMode>(
     'docs-theme-mode',
@@ -56,15 +66,16 @@ export function useDocsTheme(config?: DocsThemeConfig) {
 
   const isDark = computed(() => resolvedMode.value === 'dark')
 
-  function configure(nextConfig: DocsThemeConfig) {
-    const resolvedConfig = resolveDocsThemeConfig(nextConfig)
-
-    themeConfig.value = resolvedConfig
-    if (!isDocsThemeMode(mode.value)) {
-      mode.value = resolvedConfig.defaultMode
+  function configure(nextConfig: ResolvedDocsThemeConfig) {
+    themeConfig.value = nextConfig
+    if (!nextConfig.enabled || !isDocsThemeMode(mode.value)) {
+      mode.value = nextConfig.defaultMode
     }
     updateResolvedMode()
-    applyDocumentState(false)
+
+    if (!nextConfig.enabled) {
+      stopSystemPreferenceWatcher()
+    }
   }
 
   function updateResolvedMode() {
@@ -112,13 +123,23 @@ export function useDocsTheme(config?: DocsThemeConfig) {
       return
     }
 
-    const storedMode = readStoredDocsThemeMode(themeConfig.value.storageKey)
+    const initialState = resolveDocsThemeInitialState({
+      config: themeConfig.value,
+      storedMode: themeConfig.value.enabled
+        ? readStoredDocsThemeMode(themeConfig.value.storageKey)
+        : null,
+      prefersDark: getDocsSystemPrefersDark(),
+    })
 
-    mode.value = storedMode ?? themeConfig.value.defaultMode
-    updateResolvedMode()
+    mode.value = initialState.mode
+    resolvedMode.value = initialState.resolvedMode
     applyDocumentState(false)
 
-    stopSystemPreferenceListener?.()
+    stopSystemPreferenceWatcher()
+    if (!themeConfig.value.enabled) {
+      return
+    }
+
     watchSystemPreference(() => {
       if (mode.value !== 'system') {
         return
@@ -141,6 +162,7 @@ export function useDocsTheme(config?: DocsThemeConfig) {
     resolvedMode: readonly(resolvedMode),
     applyDocumentState,
     configure,
+    dispose: stopSystemPreferenceWatcher,
     initialize,
     markMounted,
     setMode,

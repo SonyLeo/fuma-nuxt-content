@@ -10,6 +10,7 @@ import './assets/css/prose.css'
 import './assets/css/content.css'
 
 const site = useDocsSite()
+useDocsTheme(site.theme)
 
 useHead({
   script: [

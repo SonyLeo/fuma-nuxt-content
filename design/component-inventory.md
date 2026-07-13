@@ -4,7 +4,7 @@ sectionLabel: Plan
 status: active
 type: inventory
 owner: foundation-ui
-lastReviewed: 2026-07-12
+lastReviewed: 2026-07-13
 ---
 
 # Component Inventory
@@ -40,7 +40,7 @@ Status meanings follow [Foundation Status](./foundation-status.md).
 | -------------------- | ----------------------------- | ----------- | ------------------------------------------------------ |
 | Root provider        | `DocsRootProvider`            | Gate Passed | Adapter Nuxt tests, `layout-provider.spec.ts`          |
 | Shared layout slots  | layout composables/components | Gate Passed | Replacement-slot Nuxt tests, `layout-provider.spec.ts` |
-| Theme runtime/switch | theme composable and switch   | First Pass+ | `theme.spec.ts`                                        |
+| Theme runtime/switch | theme composable and switch   | Gate Passed | `docs-theme-runtime.nuxt.spec.ts`, `theme.spec.ts`     |
 | Desktop sidebar      | `DocsSidebar`                 | First Pass+ | `sidebar.spec.ts`                                      |
 | Mobile drawer        | `DocsMobileNav`               | First Pass+ | `sidebar.spec.ts` mobile tags                          |
 | TOC rail             | `DocsToc`                     | First Pass+ | `toc.spec.ts`                                          |

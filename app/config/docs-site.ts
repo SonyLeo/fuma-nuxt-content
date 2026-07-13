@@ -118,6 +118,3 @@ const rawDocsSiteConfig = defineDocsSiteConfig({
 })
 
 export const docsSiteAdapter = createDocsSiteAdapter(rawDocsSiteConfig)
-
-// Batch 6 retains the existing client theme entry while consuming adapter output.
-export const docsSiteConfig = docsSiteAdapter

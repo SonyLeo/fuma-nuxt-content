@@ -4,7 +4,7 @@ sectionLabel: Record
 status: active
 type: record
 owner: architecture
-lastReviewed: 2026-07-12
+lastReviewed: 2026-07-13
 ---
 
 # Architecture Decisions
@@ -85,8 +85,18 @@ superseded experiments belong in Git history or the archive summaries.
 
 ## D006: Theme state lives at the document root
 
-- Root `.dark` and `data-docs-theme*` attributes are the source of truth.
-- Theme switches are synchronized consumers.
+- Raw theme config is private to the app site adapter and is resolved there
+  once into `ResolvedDocsThemeConfig`.
+- SSR state, the first-paint head script, client initialization, layout slot
+  gates, and theme switches all consume that resolved config instead of
+  applying defaults independently.
+- The first-paint script writes the configured preset before mode resolution and
+  synchronizes `.dark`, `data-docs-theme-mode`,
+  `data-docs-theme-resolved`, and `color-scheme`.
+- When theme switching is disabled, the root still receives the configured
+  preset and default mode resolution, but storage reads, stored-mode adoption,
+  and user mode actions are skipped.
+- Theme switches are synchronized consumers and do not read raw site config.
 - Presets override semantic variables, not component-local palettes.
 - Product theme adapters remain outside the foundation runtime.
 

@@ -4,7 +4,7 @@ sectionLabel: Plan
 status: active
 type: status
 owner: foundation
-lastReviewed: 2026-07-12
+lastReviewed: 2026-07-13
 ---
 
 # Foundation Status
@@ -34,7 +34,7 @@ contracts exist, but several protocol boundaries still need to become
 | Source path / route path separation   | Gate Passed | Shared identity helpers and nested index coverage             | Keep all new consumers on the shared resolver           |
 | Page tree and context tree runtime    | Gate Passed | Tree policy/search/directory Nuxt and browser tests           | Keep future adapters on normalized publishable input    |
 | Root provider and layout slots        | Gate Passed | Adapter/slot Nuxt tests and layout-provider browser contracts | Keep app adapters on explicit props and public slots    |
-| Theme runtime and presets             | First Pass+ | Theme project tests and parity profile                        | Treat product preset adapter separately                 |
+| Theme runtime and presets             | Gate Passed | Resolved config/runtime tests and theme browser contracts     | Keep product preset adapter outside foundation runtime  |
 | Docs page protocol                    | Gate Passed | Normalized page policy tests and focused shell checks         | Keep site adapters outside metadata policy              |
 | Default MDC mapping and link protocol | First Pass+ | Runtime content tests and browser contracts                   | Complete authoring edge cases and external-link policy  |
 | Markdown transform pipeline           | First Pass  | Heading ids, structured data, code meta baseline              | Steps/package-manager/code-tab/image transform policy   |
@@ -79,7 +79,8 @@ contracts exist, but several protocol boundaries still need to become
   availability plus label; it does not hold site config, page-tree runtime,
   navigation, page actions, feedback, SEO, or theme runtime services.
 - The app site adapter is the sole raw site-config owner and derives root,
-  docs-layout, home-layout, page-integration, content, and theme inputs.
+  docs-layout, home-layout, page-integration, content, and resolved theme
+  inputs.
 - The public Nuxt docs layout slots are `default`, `banner`, `search-trigger`,
   `theme-switch`, and `language-select`. Header, sidebar, and mobile navigation
   replacement slots remain internal to `DocsLayoutShell`.
@@ -97,7 +98,14 @@ contracts exist, but several protocol boundaries still need to become
 
 ### Theme and CSS
 
-- Root `.dark` and `data-docs-theme*` attributes are the theme state contract.
+- Raw theme config is resolved once by the site adapter and then consumed as a
+  complete resolved config by SSR state, first-paint head script, client
+  initialization, layout slot gates, and theme switches.
+- Root `.dark`, `data-docs-theme`, `data-docs-theme-mode`,
+  `data-docs-theme-resolved`, and `color-scheme` are the theme state contract.
+- Disabled theme keeps configured preset and default-mode resolution at the
+  root while suppressing switches, storage reads, stored-mode adoption, and
+  user mode actions.
 - `tokens.css` owns tokens only.
 - `shell.css` owns shell/sidebar/TOC/page layout.
 - `prose.css` owns generic rendered Markdown.

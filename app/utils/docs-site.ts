@@ -8,6 +8,7 @@ import type {
   DocsSiteResolvedPageActionsConfig,
 } from '~/types/docs-site'
 import { resolveDocsRootProviderProps } from '~/utils/docs-root-provider'
+import { resolveDocsThemeConfig } from '~/types/docs-theme'
 
 function trimSlashes(value: string) {
   return value.replace(/^\/+|\/+$/g, '')
@@ -101,7 +102,7 @@ export function createDocsSiteAdapter(config: DocsSiteConfig): DocsSiteAdapter {
         defaultOgImage: config.seo?.defaultOgImage,
       },
     },
-    theme: config.theme,
+    theme: resolveDocsThemeConfig(config.theme),
     content: {
       name: config.name,
       title: config.title,

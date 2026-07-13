@@ -1,20 +1,28 @@
 import type {
-  DocsThemeConfig,
   DocsThemeMode,
   DocsThemePreset,
   DocsThemeResolvedMode,
   ResolvedDocsThemeConfig,
 } from '~/types/docs-theme'
-import {
-  isDocsThemeMode,
-  resolveDocsThemeConfig,
-} from '~/types/docs-theme'
+import { isDocsThemeMode } from '~/types/docs-theme'
 
 type DocsThemeDocumentState = {
   mode: DocsThemeMode
   preset: DocsThemePreset
   resolvedMode: DocsThemeResolvedMode
   disableTransitionOnChange?: boolean
+}
+
+export type DocsThemeInitialState = {
+  mode: DocsThemeMode
+  preset: DocsThemePreset
+  resolvedMode: DocsThemeResolvedMode
+}
+
+export type ResolveDocsThemeInitialStateOptions = {
+  config: ResolvedDocsThemeConfig
+  storedMode?: string | null
+  prefersDark: boolean
 }
 
 const transitionBlockerAttribute = 'data-docs-theme-transition-lock'
@@ -35,7 +43,11 @@ export function getDocsSystemPrefersDark() {
     return false
   }
 
-  return window.matchMedia('(prefers-color-scheme: dark)').matches
+  try {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  } catch {
+    return false
+  }
 }
 
 export function readStoredDocsThemeMode(storageKey: string) {
@@ -66,11 +78,32 @@ export function writeStoredDocsThemeMode(
   }
 }
 
+export function resolveDocsThemeInitialState({
+  config,
+  storedMode,
+  prefersDark,
+}: ResolveDocsThemeInitialStateOptions): DocsThemeInitialState {
+  const mode =
+    config.enabled && isDocsThemeMode(storedMode)
+      ? storedMode
+      : config.defaultMode
+
+  return {
+    mode,
+    preset: config.preset,
+    resolvedMode: resolveDocsThemeMode(mode, prefersDark),
+  }
+}
+
 function withoutThemeTransitions(callback: () => void) {
   if (!import.meta.client || !document.head) {
     callback()
     return
   }
+
+  document.head
+    .querySelectorAll(`[${transitionBlockerAttribute}]`)
+    .forEach((node) => node.remove())
 
   const style = document.createElement('style')
   style.setAttribute(transitionBlockerAttribute, '')
@@ -110,17 +143,16 @@ export function applyDocsThemeDocumentState(state: DocsThemeDocumentState) {
   apply()
 }
 
-export function createDocsThemeInitScript(config?: DocsThemeConfig) {
-  const resolvedConfig = resolveDocsThemeConfig(config)
+export function createDocsThemeInitScript(config: ResolvedDocsThemeConfig) {
   const payload = JSON.stringify({
-    defaultMode: resolvedConfig.defaultMode,
-    enabled: resolvedConfig.enabled,
-    preset: resolvedConfig.preset,
-    storageKey: resolvedConfig.storageKey,
+    defaultMode: config.defaultMode,
+    enabled: config.enabled,
+    preset: config.preset,
+    storageKey: config.storageKey,
   } satisfies Pick<
     ResolvedDocsThemeConfig,
     'defaultMode' | 'enabled' | 'preset' | 'storageKey'
   >)
 
-  return `(function(){try{var config=${payload};var root=document.documentElement;root.setAttribute('data-docs-theme',config.preset);if(config.enabled===false){return;}var stored=null;try{stored=window.localStorage.getItem(config.storageKey);}catch(error){}var mode=stored==='light'||stored==='dark'||stored==='system'?stored:config.defaultMode;var prefersDark=!!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);var resolved=mode==='system'?(prefersDark?'dark':'light'):mode;root.classList.toggle('dark',resolved==='dark');root.setAttribute('data-docs-theme-mode',mode);root.setAttribute('data-docs-theme-resolved',resolved);root.style.colorScheme=resolved;}catch(error){}})();`
+  return `(function(){try{var config=${payload};var root=document.documentElement;root.setAttribute('data-docs-theme',config.preset);var mode=config.defaultMode;if(config.enabled!==false){var stored=null;try{stored=window.localStorage.getItem(config.storageKey);}catch(error){}if(stored==='light'||stored==='dark'||stored==='system'){mode=stored;}}var prefersDark=false;try{prefersDark=!!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);}catch(error){}var resolved=mode==='system'?(prefersDark?'dark':'light'):mode;root.classList.toggle('dark',resolved==='dark');root.setAttribute('data-docs-theme-mode',mode);root.setAttribute('data-docs-theme-resolved',resolved);root.style.colorScheme=resolved;}catch(error){}})();`
 }
