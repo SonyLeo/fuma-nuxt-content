@@ -159,6 +159,18 @@ superseded experiments belong in Git history or the archive summaries.
 - Ordinary docs pages require an explicit non-empty frontmatter title. Draft
   filtering and filename-derived titles remain source-adapter responsibilities.
 
+## D013: Coordination and execution are separate roles
+
+- The coordinator owns stage and batch scope, acceptance, actual diff review,
+  review corrections, and authorized commit/push.
+- One execution task owns one confirmed batch and its final verification
+  evidence; it does not enter the next batch or write Git history.
+- Review replays only evidence invalidated by risk or correction, not the full
+  execution matrix by default. Formatting and documentation-only changes do not
+  invalidate runtime or browser results.
+- Phase boundaries reset coordinator context from current documents, commits,
+  and open gates rather than transferring complete chat transcripts.
+
 ## Decision Maintenance
 
 - Add a decision only when it changes a durable boundary.

@@ -4,7 +4,7 @@ sectionLabel: Guide
 status: active
 type: handbook
 owner: foundation
-lastReviewed: 2026-07-12
+lastReviewed: 2026-07-13
 ---
 
 # Foundation Audit Handbook
@@ -119,11 +119,29 @@ After confirmation, implement one bounded contract at a time. If a surface
 requires changing a deeper protocol, stop and update the proposed scope before
 patching the renderer or CSS.
 
-### Small context windows
+### Session and drift control
 
-Do not audit the whole foundation in one undifferentiated pass. Complete one
-audit slice, summarize durable findings, then continue. Each slice should fit
-one of the phases below and produce its own evidence table.
+Do not audit the whole foundation in one pass. One session owns one audit slice
+or one confirmed implementation batch. At the start, state this checkpoint:
+
+```text
+Stage and objective:
+Current slice or batch:
+Allowed repair boundary:
+Explicit non-goals:
+Acceptance gates:
+Starting HEAD:
+```
+
+Treat the repository sources of truth and current diff as authoritative; chat
+history is supporting context only. Stop and re-scope when a new P0/P1 changes
+the repair order, a deeper protocol must change, the work crosses a layer
+boundary, two correction rounds do not converge, or the checkpoint can no
+longer be restated without relying on prior conversation.
+
+Use a fresh execution task for each batch. Use a fresh coordinator at a phase
+boundary or after material context drift. Carry forward confirmed decisions,
+status, commit IDs, and open gates, not complete transcripts.
 
 ## Required Audit Status
 
@@ -383,32 +401,15 @@ The audit phase, not the implementation phase, is complete when:
 - integration/product work remains blocked until the relevant foundation exit
   gates pass.
 
-## New Session Prompt
+## Fresh Session Handoff
 
-Use this prompt when starting the next Agent session:
+Start a new audit session with this compact task card:
 
 ```text
-请按照 design/foundation-audit-handbook.md 执行基础层技术审计。
-
-本轮先做审计，不修改生产实现。不要把 foundation-status.md 中的
-First Pass/First Pass+ 直接视为已经对齐，它们只是待验证的当前声明。
-
-目标：从当前最新代码、运行时行为和 Fumadocs 当前本地源码出发，确认基础层在
-协议、组件、Markdown authoring、代码高亮、文档站 shell、响应式、可访问性和
-验证覆盖方面的真实差距。后续 integration/product 工作必须等待相关基础 gate
-通过。
-
-执行要求：
-1. 先完成 Phase 0 baseline，列出事实、推断和未知项。
-2. 按 handbook 的 Phase 1 到 Phase 4 分片审计，不要一次混做所有区域。
-3. 每个结论必须包含本地 owner、Fumadocs reference owner、源码或运行时证据、
-   audit status、根因层、影响、优先级、最小修复边界和验证方式。
-4. 优先检查协议和 authoring pipeline，再检查组件与视觉表现。
-5. 不依赖截图猜测；需要结合源码、DOM、ARIA/data-state、交互、computed style、
-   geometry 和现有测试。
-6. findings first，按 P0/P1/P2/defer 排序。
-7. 审计完成后给出分批实施 plan 和逐批验收标准，等待我确认后再实现。
-
-不要新增另一份 audit/plan 文档。确认后的成熟度更新到 foundation-status.md，
-组件状态更新到 component-inventory.md，长期边界更新到 decisions.md。
+Read AGENTS.md and design/foundation-audit-handbook.md, then load only the
+sources of truth relevant to the named slice. Report the session checkpoint
+before acting. This session is review-only unless an implementation batch is
+explicitly confirmed. Findings need the handbook evidence fields and must be
+ordered by impact. Stop on any scope-expansion condition. Do not add an audit,
+plan, todo, or handoff document; route durable results to the existing owners.
 ```

@@ -165,6 +165,22 @@ history, not in `design/`. Archive documents are curated summaries, not a place
 to move completed documents unchanged. Run `pnpm validate:docs` after any
 documentation-governance change.
 
+## Coordinator And Execution Workflow
+
+- The coordinator owns the current stage, objective, batch boundary, acceptance
+  gates, final diff review, and Git commit/push when authorized.
+- One execution Agent owns one confirmed batch. It may implement and verify that
+  batch, but must not enter the next batch or stage, commit, or push.
+- Start a new execution task for a new batch. Send bounded review corrections
+  back to the same execution task while its context is still valid.
+- Execution summaries are evidence inputs, not approval. The coordinator must
+  inspect the actual diff and check it against the confirmed batch contract.
+- Stop and report before widening the batch, changing a frozen protocol,
+  crossing a layer boundary, or resolving a new P0/P1 through unapproved work.
+- At a phase boundary, or when the coordinator can no longer restate the current
+  objective without chat history, start a fresh coordinator session from the
+  repository sources of truth.
+
 ## Verification Rules
 
 The complete testing standard, command matrix, server lifecycle, viewport tag
@@ -179,8 +195,12 @@ semantics, CI sharding, and failure classification live in
 - Prefer layered local verification instead of replaying the whole stack every
   time:
   - iteration: one focused spec or one focused static check
-  - batch closeout: `typecheck` once, then the smallest relevant regression
+  - batch closeout: format/static checks first, then one final affected gate
+  - review: inspect the diff and rerun only the check invalidated by review risk
   - milestone or pre-merge: `pnpm test:e2e:full`
+- Do not replay an execution Agent's complete closeout matrix by default.
+  Documentation or formatting-only corrections do not invalidate runtime or
+  browser evidence.
 - `pnpm test:e2e:full` uses two workers because all browser workers share one
   Nuxt Content server. Focused runs may override workers when appropriate.
 - E2E viewport selection is tag-driven: untagged contracts run on desktop,

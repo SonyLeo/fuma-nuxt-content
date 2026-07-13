@@ -4,7 +4,7 @@ sectionLabel: Guide
 status: active
 type: runbook
 owner: quality
-lastReviewed: 2026-07-12
+lastReviewed: 2026-07-13
 ---
 
 # Verification Runbook
@@ -22,31 +22,35 @@ Use the smallest check that can disprove the change:
 Playwright starts or reuses Nuxt automatically. Do not add a manual `pnpm dev`,
 `app:check`, managed dev-server, or wrapper prerequisite.
 
-Stable commands:
+## Batch Verification Ownership
 
-```powershell
-pnpm typecheck
-pnpm test:nuxt
-pnpm validate:links
-pnpm validate:docs
-pnpm test:e2e -- <Playwright arguments>
-pnpm test:e2e:full
-```
+The execution Agent runs one final closeout against its final implementation
+state and reports the exact commands. Run formatting, lint, and diff review
+before that closeout so mechanical cleanup does not cause a second full pass.
+
+The coordinator reviews the actual diff and acceptance contract. It does not
+replay the complete execution matrix by default; it reruns the single check
+most likely to disprove the change, or a check invalidated by a review fix.
+
+| Change after evidence          | Checks invalidated                          |
+| ------------------------------ | ------------------------------------------- |
+| Documentation only             | docs validator and formatting               |
+| Formatting only                | formatting and diff check                   |
+| Test-only change               | affected test and static checks             |
+| Local production behavior      | affected focused test; typecheck if typed   |
+| Shared protocol/infrastructure | affected suite plus its closeout gate       |
+| Phase or pre-merge closeout    | complete runtime and browser milestone gate |
+
+One batch uses one execution task. A review correction stays in that task and
+runs only the invalidated checks. A new batch starts a new task.
 
 ## Verification Layers
 
 ### Static and tooling checks
 
-Use for documentation, configuration, pure utilities, type boundaries, and
-diff quality:
-
-```powershell
-pnpm typecheck
-pnpm validate:links
-pnpm validate:docs
-pnpm exec eslint <changed files>
-git diff --check
-```
+Use `typecheck`, the relevant validator, changed-file ESLint/Prettier, and
+`git diff --check` for documentation, configuration, pure utilities, type
+boundaries, and diff quality.
 
 Do not run browser tests for prose-only changes unless the prose is itself a
 browser fixture or changes a tested contract.
@@ -56,8 +60,9 @@ browser fixture or changes a tested contract.
 Entry:
 
 ```powershell
-pnpm test:nuxt
 pnpm test:nuxt -- tests/nuxt/docs-page-identity.nuxt.spec.ts
+pnpm test:nuxt -- --exclude tests/nuxt/docs-metadata-persistence.nuxt.spec.ts
+pnpm test:nuxt
 ```
 
 Runtime tests own contracts that do not require a real browser:
@@ -68,21 +73,11 @@ Runtime tests own contracts that do not require a real browser:
 - Markdown transform output
 - normalized data contracts
 
-`pnpm test:nuxt` also includes the metadata persistence integration gate. That
-spec runs one isolated production Nuxt build, owns its build/output/SQLite
-paths, and normally adds about 45–70 seconds on the current Windows baseline.
-Treat the complete command as a batch-closeout runtime/integration gate, not the
-fastest metadata inner loop.
-
-Use file selection while iterating on the lightweight contract and adapter
-tests:
-
-```powershell
-pnpm test:nuxt -- tests/nuxt/docs-metadata-ingestion.nuxt.spec.ts
-```
-
-Run the persistence spec when changing Content hooks, transformers, collection
-schemas, SQL-facing metadata, or test isolation:
+The persistence spec performs an isolated production build and adds about
+45–70 seconds on the current Windows baseline. Exclude it for ordinary batches.
+Run it directly for Content hooks, transformers, collection schemas,
+SQL-facing metadata, or its isolation; run complete `test:nuxt` once at a phase
+or pre-merge milestone.
 
 ```powershell
 pnpm test:nuxt -- tests/nuxt/docs-metadata-persistence.nuxt.spec.ts
@@ -94,10 +89,13 @@ Entry:
 
 ```powershell
 pnpm test:e2e -- tests/e2e/sidebar.spec.ts --project=chromium-desktop
-pnpm test:e2e -- --grep '@shell' --project=chromium-desktop
-pnpm test:e2e -- tests/e2e/toc-responsive.spec.ts --project=chromium-mobile
-pnpm test:e2e -- tests/e2e/content-components --workers=1
+pnpm test:e2e -- tests/e2e/theme.spec.ts tests/e2e/layout-provider.spec.ts `
+  --project=chromium-desktop --project=chromium-mobile --workers=1
 ```
+
+Prefer one invocation containing the affected files and projects so they share
+one `webServer` lifecycle. Use separate invocations only when project-specific
+collection would add materially unrelated coverage.
 
 Use Playwright for:
 
@@ -117,8 +115,8 @@ Entry:
 pnpm test:e2e:full
 ```
 
-Use only for milestone, main-gate, infrastructure, broad CSS, or pre-merge
-confidence. It is not the default inner loop.
+Use once for a phase/milestone, main gate, infrastructure, broad CSS, or
+pre-merge confidence. It is not a per-batch or review default.
 
 ## Service Lifecycle
 
@@ -131,12 +129,8 @@ Playwright `webServer` is the only automatic E2E service owner.
   externally owned server.
 - External callers own external server startup and cleanup.
 
-Retired entry points must not return:
-
-- `scripts/dev-server.mjs`
-- `scripts/run-playwright.mjs`
-- `scripts/check-app.mjs`
-- `app:check`
+Retired dev-server wrappers, Playwright wrappers, check-app helpers, and
+`app:check` must not return.
 
 ## Build Directory Isolation
 
@@ -155,15 +149,8 @@ Rules:
 
 ## Package Script Policy
 
-Testing package scripts remain intentionally small:
-
-```json
-{
-  "test:nuxt": "vitest run",
-  "test:e2e": "playwright test",
-  "test:e2e:full": "playwright test --max-failures=1 --workers=2"
-}
-```
+Testing package scripts remain limited to `test:nuxt`, `test:e2e`, and
+`test:e2e:full`.
 
 Do not add surface-specific scripts. Select files, tags, projects, workers,
 repeat counts, or shards through Playwright arguments.
