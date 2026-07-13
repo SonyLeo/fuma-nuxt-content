@@ -171,6 +171,15 @@ superseded experiments belong in Git history or the archive summaries.
 - Phase boundaries reset coordinator context from current documents, commits,
   and open gates rather than transferring complete chat transcripts.
 
+## D014: Markdown semantics are owned in the remark phase
+
+- One remark/MDAST plugin owns heading IDs, `[#custom-id]` parsing, the heading
+  records consumed by rendered TOC generation, and structured content.
+- Automatic heading IDs use `github-slugger`; rendered headings, `body.toc`,
+  and `structuredData` derive from the same canonical MDAST heading records.
+- Rehype plugins may enrich rendered output, such as code metadata, but do not
+  reconstruct heading or structured-content semantics.
+
 ## Decision Maintenance
 
 - Add a decision only when it changes a durable boundary.

@@ -1,5 +1,6 @@
 import tailwindcss from '@tailwindcss/vite'
 import docsMarkdownPipeline from './app/utils/docs-markdown-pipeline'
+import docsMarkdownSemantics from './app/utils/docs-markdown-semantics'
 import { normalizeDocsMetadataContent } from './build/docs-metadata-ingestion'
 
 function createLocalImportPath(url: URL) {
@@ -11,9 +12,27 @@ function createLocalImportPath(url: URL) {
 const docsMarkdownPipelinePluginPath = createLocalImportPath(
   new URL('./app/utils/docs-markdown-pipeline.ts', import.meta.url),
 )
+const docsMarkdownSemanticsPluginPath = createLocalImportPath(
+  new URL('./app/utils/docs-markdown-semantics.ts', import.meta.url),
+)
 const docsMetadataIngestionTransformerPath = createLocalImportPath(
   new URL('./build/docs-metadata-ingestion.ts', import.meta.url),
 )
+const docsMarkdownOptions = {
+  configs: [docsMarkdownSemantics],
+  remarkPlugins: {
+    docsMarkdownSemantics: {
+      instance: docsMarkdownSemantics,
+      src: docsMarkdownSemanticsPluginPath,
+    },
+  },
+  rehypePlugins: {
+    docsMarkdownPipeline: {
+      instance: docsMarkdownPipeline,
+      src: docsMarkdownPipelinePluginPath,
+    },
+  },
+}
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -21,6 +40,11 @@ export default defineNuxtConfig({
   modules: ['@nuxt/eslint', '@nuxt/content', '@nuxt/test-utils/module'],
   hooks: {
     'content:file:afterParse': normalizeDocsMetadataContent,
+    'mdc:configSources'(configs) {
+      if (!configs.includes(docsMarkdownSemanticsPluginPath)) {
+        configs.push(docsMarkdownSemanticsPluginPath)
+      }
+    },
   },
   vite: {
     plugins: [tailwindcss()],
@@ -28,14 +52,7 @@ export default defineNuxtConfig({
   content: {
     build: {
       transformers: [docsMetadataIngestionTransformerPath],
-      markdown: {
-        rehypePlugins: {
-          docsMarkdownPipeline: {
-            instance: docsMarkdownPipeline,
-            src: docsMarkdownPipelinePluginPath,
-          },
-        },
-      },
+      markdown: docsMarkdownOptions,
     },
     experimental: {
       sqliteConnector: 'native',
