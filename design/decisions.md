@@ -4,7 +4,7 @@ sectionLabel: Record
 status: active
 type: record
 owner: architecture
-lastReviewed: 2026-07-13
+lastReviewed: 2026-07-14
 ---
 
 # Architecture Decisions
@@ -179,6 +179,9 @@ superseded experiments belong in Git history or the archive summaries.
   and `structuredData` derive from the same canonical MDAST heading records.
 - Canonical TOC records are private ingestion data; the afterParse bridge
   projects them onto query-visible `body.toc.links`, then deletes them.
+- Authoring transforms that produce heading-bearing components run before this
+  semantic owner. They may mark MDAST ownership data, but do not create heading
+  IDs, structured content, or TOC projections.
 - Rehype plugins may enrich rendered output, such as code metadata, but do not
   reconstruct heading or structured-content semantics.
 

@@ -1,6 +1,7 @@
 import tailwindcss from '@tailwindcss/vite'
 import docsMarkdownPipeline from './app/utils/docs-markdown-pipeline'
 import docsMarkdownSemantics from './app/utils/docs-markdown-semantics'
+import docsMarkdownSteps from './app/utils/docs-markdown-steps'
 import { normalizeDocsContentToc } from './build/docs-content-toc-bridge'
 import { normalizeDocsMetadataContent } from './build/docs-metadata-ingestion'
 
@@ -16,12 +17,19 @@ const docsMarkdownPipelinePluginPath = createLocalImportPath(
 const docsMarkdownSemanticsPluginPath = createLocalImportPath(
   new URL('./app/utils/docs-markdown-semantics.ts', import.meta.url),
 )
+const docsMarkdownStepsPluginPath = createLocalImportPath(
+  new URL('./app/utils/docs-markdown-steps.ts', import.meta.url),
+)
 const docsMetadataIngestionTransformerPath = createLocalImportPath(
   new URL('./build/docs-metadata-ingestion.ts', import.meta.url),
 )
 const docsMarkdownOptions = {
   configs: [docsMarkdownSemantics],
   remarkPlugins: {
+    docsMarkdownSteps: {
+      instance: docsMarkdownSteps,
+      src: docsMarkdownStepsPluginPath,
+    },
     docsMarkdownSemantics: {
       instance: docsMarkdownSemantics,
       src: docsMarkdownSemanticsPluginPath,

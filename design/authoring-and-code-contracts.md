@@ -25,7 +25,7 @@ and command policy remains in the
 | Batch | Contract                  | Canonical owner               | Status      | Dependency                          |
 | ----- | ------------------------- | ----------------------------- | ----------- | ----------------------------------- |
 | B1    | Markdown semantics        | `remarkDocsMarkdownSemantics` | Gate Passed | None                                |
-| B2    | Steps authoring           | `remarkDocsMarkdownSteps`     | Draft       | B1 canonical records and TOC bridge |
+| B2    | Steps authoring           | `remarkDocsMarkdownSteps`     | Gate Passed | B1 canonical records and TOC bridge |
 | B3    | Tabs group state          | Tabs runtime state owner      | Draft       | Stable tab value/group protocol     |
 | B4    | Code-tab transform        | Remark authoring transform    | Draft       | B3 group state                      |
 | B5    | Package-manager transform | Remark authoring transform    | Draft       | B4 code-fence slot contract         |
@@ -73,15 +73,57 @@ transforms remain deferred; existing MDC components remain supported.
 - The existing isolated persistence gate proves the private transport does not
   reach stored `body` or `meta` data.
 
-## Planned Contract Boundaries
-
 ### B2 Steps
 
-- Recognize only the confirmed numbered-heading and trailing `[step]` grammar.
-- Run before B1 semantics and mark generated headings with `data-fd-step`.
-- Produce project MDC `doc-steps` and `doc-step` nodes while preserving ordinary
-  Markdown children.
-- Do not implement TOC projection, links, code, tabs, images, or UI styling.
+### Input and owner
+
+- `remarkDocsMarkdownSteps` is the only owner for ordinary Markdown Steps
+  authoring.
+- It runs in the remark/MDAST phase before `remarkDocsMarkdownSemantics` in the
+  focused parser and real Nuxt Content markdown config.
+- Existing manual `doc-steps`/`doc-step` MDC containers remain valid authoring
+  and are not rewritten by the transform.
+
+### Grammar and output
+
+- Numbered syntax is only a plain leading positive decimal `N` followed by
+  `. ` and non-empty heading content. Numbered sequences start at `1`; same
+  depth numbered continuation must be exactly `2`, `3`, and so on.
+- Numeric-looking headings that start at another number, year-like headings,
+  gaps, and out-of-order same-depth numbers remain ordinary headings at that
+  boundary.
+- Explicit marker syntax is only a trailing literal `[step]` at the end of a
+  heading, including the remark-mdc empty `span`/`textComponent` shape. The
+  transform removes only the terminal marker and adjacent trailing whitespace.
+- Step grouping is same-depth and source-order based. A Step owns following
+  Markdown children until the next same-depth Step heading or a boundary;
+  deeper headings stay inside the current Step, and nested Step sequences are
+  transformed recursively inside generated Step content.
+- Output is an MDC slot tree: outer `containerComponent` `doc-steps`, with each
+  generated item as `containerComponent` `doc-step`. The original heading and
+  following Markdown nodes remain MDAST children; code fences, lists,
+  blockquotes, paragraphs, inline markup, and custom ID markers stay semantic
+  nodes for later owners.
+
+### Lifecycle and evidence
+
+- Generated Step headings receive numeric `data-fd-step` before B1 semantics.
+- B1 remains the only owner for heading IDs, `[#custom-id]`, cleaned heading
+  text, structured data, canonical TOC records, and Step ownership records.
+- The existing afterParse bridge remains the only owner for final `body.toc`
+  projection and private-record cleanup.
+- Source owner: `app/utils/docs-markdown-steps.ts`; real authoring fixture:
+  `content/guide/steps.md`; focused coverage:
+  `tests/nuxt/docs-markdown-steps.nuxt.spec.ts`.
+- Evidence covers numbered and marker grammar, invalid boundaries, nested
+  Steps, manual MDC stability, idempotence, semantic child preservation, B1
+  cleaned ownership, one real `/guide/steps` collection query, canonical TOC
+  order, private-key cleanup, and unchanged component-local heading selection.
+- The batch does not implement TOC projection, links, code tabs, package
+  manager transforms, image transforms, UI styling, schema, hooks, SQL, or
+  persistence changes.
+
+## Planned Contract Boundaries
 
 ### B3-B5 Tabs authoring
 

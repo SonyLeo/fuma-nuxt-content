@@ -4,7 +4,7 @@ sectionLabel: Plan
 status: active
 type: status
 owner: foundation
-lastReviewed: 2026-07-13
+lastReviewed: 2026-07-14
 ---
 
 # Foundation Status
@@ -28,20 +28,20 @@ The foundation is beyond initial rendering and is currently `L2-`: the core
 contracts exist, but several protocol boundaries still need to become
 `Gate Passed` before broad product composition.
 
-| Foundation area                       | Status      | Evidence                                                      | Remaining gate                                          |
-| ------------------------------------- | ----------- | ------------------------------------------------------------- | ------------------------------------------------------- |
-| Content collection and page identity  | Gate Passed | Ingestion, identity, collision, canonical-route tests         | Keep future sources on normalized metadata and identity |
-| Source path / route path separation   | Gate Passed | Shared identity helpers and nested index coverage             | Keep all new consumers on the shared resolver           |
-| Page tree and context tree runtime    | Gate Passed | Tree policy/search/directory Nuxt and browser tests           | Keep future adapters on normalized publishable input    |
-| Root provider and layout slots        | Gate Passed | Adapter/slot Nuxt tests and layout-provider browser contracts | Keep app adapters on explicit props and public slots    |
-| Theme runtime and presets             | Gate Passed | Resolved config/runtime tests and theme browser contracts     | Keep product preset adapter outside foundation runtime  |
-| Docs page protocol                    | Gate Passed | Normalized page policy tests and focused shell checks         | Keep site adapters outside metadata policy              |
-| Default MDC mapping and link protocol | First Pass+ | Runtime content tests and browser contracts                   | Complete authoring edge cases and external-link policy  |
-| Markdown transform pipeline           | First Pass  | Heading ids, structured data, code meta baseline              | Steps/package-manager/code-tab/image transform policy   |
-| Code system and preview               | First Pass+ | CodeBlock, tabs, preview and copy tests                       | Complete transform-driven authoring contract            |
-| Content components                    | First Pass+ | Component inventory and responsive tests                      | Maintain parity; no broad new component batch           |
-| UI interaction primitives             | First Pass+ | Reka-backed local wrappers                                    | Keep public wrappers stable; Tree remains deferred      |
-| Verification infrastructure           | Gate Passed | Runtime tests, Playwright webServer, CI shards                | Maintain zero stale entry points and bounded runtime    |
+| Foundation area                       | Status      | Evidence                                                          | Remaining gate                                          |
+| ------------------------------------- | ----------- | ----------------------------------------------------------------- | ------------------------------------------------------- |
+| Content collection and page identity  | Gate Passed | Ingestion, identity, collision, canonical-route tests             | Keep future sources on normalized metadata and identity |
+| Source path / route path separation   | Gate Passed | Shared identity helpers and nested index coverage                 | Keep all new consumers on the shared resolver           |
+| Page tree and context tree runtime    | Gate Passed | Tree policy/search/directory Nuxt and browser tests               | Keep future adapters on normalized publishable input    |
+| Root provider and layout slots        | Gate Passed | Adapter/slot Nuxt tests and layout-provider browser contracts     | Keep app adapters on explicit props and public slots    |
+| Theme runtime and presets             | Gate Passed | Resolved config/runtime tests and theme browser contracts         | Keep product preset adapter outside foundation runtime  |
+| Docs page protocol                    | Gate Passed | Normalized page policy tests and focused shell checks             | Keep site adapters outside metadata policy              |
+| Default MDC mapping and link protocol | First Pass+ | Runtime content tests and browser contracts                       | Complete authoring edge cases and external-link policy  |
+| Markdown transform pipeline           | First Pass+ | Heading ids, Steps authoring, structured data, code meta baseline | Package-manager/code-tab/image transform policy         |
+| Code system and preview               | First Pass+ | CodeBlock, tabs, preview and copy tests                           | Complete transform-driven authoring contract            |
+| Content components                    | First Pass+ | Component inventory and responsive tests                          | Maintain parity; no broad new component batch           |
+| UI interaction primitives             | First Pass+ | Reka-backed local wrappers                                        | Keep public wrappers stable; Tree remains deferred      |
+| Verification infrastructure           | Gate Passed | Runtime tests, Playwright webServer, CI shards                    | Maintain zero stale entry points and bounded runtime    |
 
 ## Contract Ownership
 
@@ -130,7 +130,6 @@ contracts exist, but several protocol boundaries still need to become
 
 ### P0: complete the Markdown authoring pipeline
 
-- Define Steps authoring transform.
 - Define package-manager command tabs.
 - Define automatic code-tab grouping and persistence keys.
 - Define image metadata, sizing, and placeholder policy.
