@@ -26,7 +26,7 @@ and command policy remains in the
 | ----- | ------------------------- | ----------------------------- | ----------- | ----------------------------------- |
 | B1    | Markdown semantics        | `remarkDocsMarkdownSemantics` | Gate Passed | None                                |
 | B2    | Steps authoring           | `remarkDocsMarkdownSteps`     | Gate Passed | B1 canonical records and TOC bridge |
-| B3    | Tabs group state          | Tabs runtime state owner      | Draft       | Stable tab value/group protocol     |
+| B3    | Tabs group state          | `UiTabs`                      | Gate Passed | Stable tab value/group protocol     |
 | B4    | Code-tab transform        | Remark authoring transform    | Draft       | B3 group state                      |
 | B5    | Package-manager transform | Remark authoring transform    | Draft       | B4 code-fence slot contract         |
 | B6    | Highlight and code meta   | Shiki and code-meta pipeline  | Draft       | Stable code-fence AST               |
@@ -125,9 +125,25 @@ transforms remain deferred; existing MDC components remain supported.
 
 ## Planned Contract Boundaries
 
-### B3-B5 Tabs authoring
+### B3 Tabs group state
 
-- B3 freezes runtime group state, value identity, and persistence behavior.
+- `DocTabs` only forwards the public authoring props `groupId`, `persist`, and
+  `updateAnchor`; `UiTabs` owns the runtime group protocol.
+- Tabs with the same non-empty `groupId` synchronize only values registered by
+  each instance. A group event from an incompatible tab set is ignored rather
+  than selecting an empty panel.
+- Group selection is stored in `sessionStorage`; `persist=true` additionally
+  stores it in `localStorage`. Session state wins during restoration, invalid
+  stored value migration is not defined by B3, and unavailable storage does
+  not break tab interaction.
+- Code-tab and package-manager transforms may consume this protocol but do not
+  replace its `UiTabs` owner.
+- Browser evidence lives in
+  `tests/e2e/content-components/tabs-accordion-files.spec.ts` with the real
+  `content/guide/components.md` fixture.
+
+### B4-B5 Tabs authoring
+
 - B4 freezes automatic code-tab grouping while retaining code fence AST so
   every fence continues through build-time Shiki.
 - B5 adds package-manager synchronization on top of the same slot contract.

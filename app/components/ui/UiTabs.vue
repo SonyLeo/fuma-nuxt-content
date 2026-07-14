@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import { TabsRoot } from 'reka-ui'
-import { computed, onMounted, provide, shallowRef, useId } from 'vue'
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  provide,
+  shallowRef,
+  useId,
+  watch,
+} from 'vue'
 import { uiTabsKey } from '~/utils/ui-tabs'
 
 const props = withDefaults(
@@ -27,52 +36,142 @@ const emit = defineEmits<{
 const fallbackId = useId()
 const internalValue = shallowRef(props.defaultValue)
 const valueToId = new Map<string, string>()
+const groupEventName = 'docs-tabs-group-change'
+type ValueProvenance = 'direct' | 'peer' | 'restore'
+let isMounted = false
+let isSubscribed = false
 
 const isControlled = computed(() => props.value !== undefined)
 const activeValue = computed({
-  get: () => (isControlled.value ? props.value ?? '' : internalValue.value),
+  get: () => (isControlled.value ? (props.value ?? '') : internalValue.value),
   set: (value: string) => setValue(value),
 })
 const updateAnchor = computed(() => props.updateAnchor)
 
-function setValue(value: string) {
+function applyValue(value: string, provenance: ValueProvenance) {
   if (!isControlled.value) {
     internalValue.value = value
   }
 
-  if (props.updateAnchor && import.meta.client) {
+  if (provenance === 'direct' && props.updateAnchor && import.meta.client) {
     const id = valueToId.get(value)
     if (id) {
       window.history.replaceState(null, '', `#${id}`)
     }
   }
 
-  if (props.groupId && import.meta.client) {
-    sessionStorage.setItem(props.groupId, value)
-    if (props.persist) {
-      localStorage.setItem(props.groupId, value)
+  if (provenance === 'direct' && props.groupId && import.meta.client) {
+    try {
+      sessionStorage.setItem(props.groupId, value)
+      if (props.persist) {
+        localStorage.setItem(props.groupId, value)
+      }
+    } catch {
+      // Storage can be unavailable in private or hardened browser contexts.
     }
+
+    window.dispatchEvent(
+      new CustomEvent(groupEventName, {
+        detail: { groupId: props.groupId, sourceId: fallbackId, value },
+      }),
+    )
   }
 
   emit('update:value', value)
+}
+
+function setValue(value: string) {
+  applyValue(value, 'direct')
 }
 
 function registerContent(value: string, id: string) {
   valueToId.set(value, id)
 }
 
-onMounted(() => {
-  if (!props.groupId) {
+function queueRestore(groupId: string) {
+  try {
+    let stored = sessionStorage.getItem(groupId)
+    if (stored === null && props.persist) {
+      stored = localStorage.getItem(groupId)
+    }
+
+    if (stored !== null) {
+      applyValue(stored, 'restore')
+    }
+  } catch {
+    // Storage can be unavailable in private or hardened browser contexts.
+  }
+}
+
+function handleGroupChange(event: Event) {
+  const detail = (event as CustomEvent).detail as
+    | { groupId?: string; sourceId?: string; value?: string }
+    | undefined
+
+  if (!detail) {
     return
   }
 
-  let stored = sessionStorage.getItem(props.groupId)
-  if (!stored && props.persist) {
-    stored = localStorage.getItem(props.groupId)
+  if (
+    detail.groupId === props.groupId &&
+    detail.sourceId !== fallbackId &&
+    detail.value &&
+    valueToId.has(detail.value)
+  ) {
+    applyValue(detail.value, 'peer')
+  }
+}
+
+function subscribeToGroup() {
+  if (!isSubscribed) {
+    window.addEventListener(groupEventName, handleGroupChange)
+    isSubscribed = true
+  }
+}
+
+function unsubscribeFromGroup() {
+  if (isSubscribed) {
+    window.removeEventListener(groupEventName, handleGroupChange)
+    isSubscribed = false
+  }
+}
+
+watch(
+  () => props.groupId,
+  (groupId) => {
+    if (!import.meta.client) {
+      return
+    }
+
+    if (!isMounted) {
+      return
+    }
+
+    unsubscribeFromGroup()
+    if (!groupId) {
+      return
+    }
+
+    subscribeToGroup()
+    nextTick(() => queueRestore(groupId))
+  },
+  { immediate: true },
+)
+
+onMounted(() => {
+  isMounted = true
+  const groupId = props.groupId
+  if (!groupId) {
+    return
   }
 
-  if (stored) {
-    setValue(stored)
+  subscribeToGroup()
+  nextTick(() => queueRestore(groupId))
+})
+
+onBeforeUnmount(() => {
+  if (import.meta.client) {
+    unsubscribeFromGroup()
   }
 })
 
@@ -86,13 +185,9 @@ provide(uiTabsKey, {
 </script>
 
 <template>
-  <TabsRoot
-    v-model="activeValue"
-    :unmount-on-hide="false"
-    as-child
-  >
-  <div class="ui-tabs" :data-value="activeValue">
-    <slot :value="activeValue" />
-  </div>
+  <TabsRoot v-model="activeValue" :unmount-on-hide="false" as-child>
+    <div class="ui-tabs" :data-value="activeValue">
+      <slot :value="activeValue" />
+    </div>
   </TabsRoot>
 </template>

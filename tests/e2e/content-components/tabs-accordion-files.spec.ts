@@ -59,6 +59,77 @@ test.describe('@content-components tabs accordion files', () => {
     ).toHaveCount(1)
   })
 
+  test('B3 grouped MDC tabs synchronize and restore exact storage values', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      if (sessionStorage.getItem('__tabs-b3-initialized') === null) {
+        localStorage.removeItem('package-manager')
+        sessionStorage.removeItem('package-manager')
+        sessionStorage.setItem('__tabs-b3-initialized', 'true')
+      }
+    })
+    await gotoComponentsPage(page)
+
+    const groupedTabs = page.locator('.fd-doc-tabs').filter({
+      has: page.getByText('Package manager', { exact: true }),
+    })
+    const synchronizedTabs = page.locator('.fd-doc-tabs').filter({
+      has: page.getByText('Synchronized', { exact: true }),
+    })
+    const ungroupedTabs = page.locator('.fd-doc-tabs').filter({
+      has: page.getByText('Mode', { exact: true }),
+    })
+
+    await expect(groupedTabs).toHaveCount(1)
+    await expect(synchronizedTabs).toHaveCount(1)
+    await expect(
+      ungroupedTabs.getByRole('tab', { name: 'Code Example', exact: true }),
+    ).toHaveAttribute('aria-selected', 'true')
+
+    await groupedTabs.getByRole('tab', { name: 'npm', exact: true }).click()
+    await expect(
+      groupedTabs.getByRole('tab', { name: 'npm', exact: true }),
+    ).toHaveAttribute('aria-selected', 'true')
+    await expect(
+      synchronizedTabs.getByRole('tab', { name: 'npm', exact: true }),
+    ).toHaveAttribute('aria-selected', 'true')
+    await expect(
+      synchronizedTabs.locator('[role="tabpanel"][data-state="active"]'),
+    ).toContainText('follows npm')
+    await expect(
+      synchronizedTabs.locator(
+        '[role="tabpanel"][data-state="inactive"][hidden]',
+      ),
+    ).toHaveCount(1)
+    await expect
+      .poll(() =>
+        page.evaluate(() => sessionStorage.getItem('package-manager')),
+      )
+      .toBe('npm')
+    await expect
+      .poll(() => page.evaluate(() => localStorage.getItem('package-manager')))
+      .toBe('npm')
+
+    await page.reload()
+    await expect(
+      page
+        .locator('.fd-doc-tabs')
+        .filter({ has: page.getByText('Package manager', { exact: true }) })
+        .getByRole('tab', { name: 'npm', exact: true }),
+    ).toHaveAttribute('aria-selected', 'true')
+
+    await page.evaluate(() => sessionStorage.removeItem('package-manager'))
+    await page.evaluate(() => localStorage.setItem('package-manager', 'pnpm'))
+    await page.reload()
+    await expect(
+      page
+        .locator('.fd-doc-tabs')
+        .filter({ has: page.getByText('Package manager', { exact: true }) })
+        .getByRole('tab', { name: 'pnpm', exact: true }),
+    ).toHaveAttribute('aria-selected', 'true')
+  })
+
   test('@accordion opens accordion item and keeps hidden-until-found protocol', async ({
     page,
   }) => {

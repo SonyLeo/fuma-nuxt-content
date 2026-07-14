@@ -5,12 +5,18 @@ const props = withDefaults(
     items?: string[] | string
     defaultIndex?: number | string
     label?: string
+    groupId?: string
+    persist?: boolean
+    updateAnchor?: boolean
   }>(),
   {
     defaultValue: undefined,
     items: undefined,
     defaultIndex: 0,
     label: undefined,
+    groupId: undefined,
+    persist: false,
+    updateAnchor: false,
   },
 )
 
@@ -62,7 +68,14 @@ const resolvedDefaultValue = computed(() => {
 </script>
 
 <template>
-  <UiTabs v-bind="$attrs" class="fd-doc-tabs" :default-value="resolvedDefaultValue">
+  <UiTabs
+    v-bind="$attrs"
+    class="fd-doc-tabs"
+    :default-value="resolvedDefaultValue"
+    :group-id="groupId"
+    :persist="persist"
+    :update-anchor="updateAnchor"
+  >
     <UiTabsList class="fd-doc-tabs-list">
       <span v-if="label" class="fd-doc-tabs-label">{{ label }}</span>
       <UiTabsTrigger

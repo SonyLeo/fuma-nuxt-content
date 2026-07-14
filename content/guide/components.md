@@ -117,6 +117,26 @@ A third tab helps verify list overflow and keyboard order.
 ::
 ::
 
+::doc-tabs{items='["pnpm","npm"]' default-value="pnpm" group-id="package-manager" persist=true label="Package manager"}
+::doc-tab{value="pnpm"}
+pnpm uses the workspace package manager contract.
+::
+
+::doc-tab{value="npm"}
+npm remains available for synchronized authoring examples.
+::
+::
+
+::doc-tabs{items='["pnpm","npm"]' default-value="pnpm" group-id="package-manager" persist=true label="Synchronized"}
+::doc-tab{value="pnpm"}
+The synchronized group follows pnpm.
+::
+
+::doc-tab{value="npm"}
+The synchronized group follows npm.
+::
+::
+
 ## Code tabs
 
 <DocCodeTabs :tabs='[{"label":"pnpm","language":"bash","code":"pnpm install"},{"label":"npm","language":"bash","code":"npm install"}]'></DocCodeTabs>
