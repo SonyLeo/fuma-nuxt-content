@@ -86,29 +86,61 @@ function flattenMarkdownNode(node: MarkdownNode): string {
   return typeof node.value === 'string' ? node.value : ''
 }
 
-function trimTrailingWhitespace(node: MarkdownNode) {
-  if (!node.children) {
-    if (node.type === 'text' && typeof node.value === 'string') {
-      node.value = node.value.trimEnd()
-    }
+function isEmptySpanTextComponent(node: MarkdownNode) {
+  return (
+    node.type === 'textComponent' &&
+    node.name === 'span' &&
+    Object.keys(node.attributes ?? {}).length === 0
+  )
+}
 
-    return
+function isWhitespaceTextWrapper(node: MarkdownNode): boolean {
+  if (!isEmptySpanTextComponent(node)) {
+    return false
   }
 
-  while (node.children.length > 0) {
+  return (node.children ?? []).every((child) => {
+    if (child.type === 'text' && typeof child.value === 'string') {
+      return child.value.trim() === ''
+    }
+
+    return isWhitespaceTextWrapper(child)
+  })
+}
+
+function isTerminalWhitespaceNode(node: MarkdownNode) {
+  if (node.type === 'text' && typeof node.value === 'string') {
+    return node.value.trim() === ''
+  }
+
+  return isWhitespaceTextWrapper(node)
+}
+
+function trimTerminalMarkerWhitespace(node: MarkdownNode) {
+  while (node.children?.length) {
     const lastChild = node.children.at(-1)
 
     if (!lastChild) {
       return
     }
 
-    trimTrailingWhitespace(lastChild)
+    if (lastChild.type === 'text' && typeof lastChild.value === 'string') {
+      lastChild.value = lastChild.value.trimEnd()
 
-    if (flattenMarkdownNode(lastChild)) {
+      if (!lastChild.value) {
+        node.children.pop()
+        continue
+      }
+
       return
     }
 
-    node.children.pop()
+    if (isWhitespaceTextWrapper(lastChild)) {
+      node.children.pop()
+      continue
+    }
+
+    return
   }
 }
 
@@ -116,16 +148,12 @@ function removeCustomHeadingId(node: MarkdownNode): string | undefined {
   const lastChild = node.children?.at(-1)
 
   // remark-mdc parses the canonical `[#id]` marker as an empty span label.
-  if (
-    lastChild?.type === 'textComponent' &&
-    lastChild.name === 'span' &&
-    Object.keys(lastChild.attributes ?? {}).length === 0
-  ) {
+  if (lastChild && isEmptySpanTextComponent(lastChild)) {
     const match = flattenMarkdownNode(lastChild).match(/^#([^\]]+)$/)
 
     if (match?.[1]) {
       node.children?.pop()
-      trimTrailingWhitespace(node)
+      trimTerminalMarkerWhitespace(node)
 
       return match[1]
     }
@@ -160,8 +188,9 @@ function removeCustomHeadingId(node: MarkdownNode): string | undefined {
       continue
     }
 
-    if (!flattenMarkdownNode(child).trim()) {
+    if (isTerminalWhitespaceNode(child)) {
       node.children.splice(index, 1)
+      trimTerminalMarkerWhitespace(node)
     }
 
     return id

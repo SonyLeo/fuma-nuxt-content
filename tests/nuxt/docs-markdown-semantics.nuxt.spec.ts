@@ -28,6 +28,13 @@ type TestMarkdownNode = {
   value?: string
   depth?: number
   name?: string
+  url?: string
+  alt?: string
+  title?: string | null
+  identifier?: string
+  label?: string
+  referenceType?: string
+  attributes?: Record<string, unknown>
   data?: {
     hProperties?: Record<string, unknown>
   }
@@ -151,6 +158,15 @@ function runDocsMarkdownSemantics(tree: TestMarkdownRoot) {
   return file.data ?? {}
 }
 
+function createRemarkMdcCustomIdMarker(id: string) {
+  return {
+    type: 'textComponent',
+    name: 'span',
+    attributes: {},
+    children: [{ type: 'text', value: `#${id}` }],
+  } satisfies TestMarkdownNode
+}
+
 describe('docs Markdown semantic owner', () => {
   registerEndpoint('/__nuxt_content/docs/sql_dump.txt', async () => {
     return new Response(await readCompressedDocsDump(), {
@@ -158,6 +174,102 @@ describe('docs Markdown semantic owner', () => {
         'content-type': 'text/plain',
       },
     })
+  })
+
+  test('preserves an image before a remark-mdc custom ID marker', () => {
+    const imageNode = {
+      type: 'image',
+      url: '/media/diagram.png',
+      alt: 'Diagram',
+      title: null,
+    } satisfies TestMarkdownNode
+    const markerNode = createRemarkMdcCustomIdMarker('custom')
+    const tree: TestMarkdownRoot = {
+      type: 'root',
+      children: [
+        {
+          type: 'heading',
+          depth: 2,
+          children: [
+            { type: 'text', value: 'Keep image ' },
+            imageNode,
+            markerNode,
+          ],
+        },
+      ],
+    }
+
+    const data = runDocsMarkdownSemantics(tree)
+    const heading = tree.children[0]
+
+    expect(heading?.data?.hProperties?.id).toBe('custom')
+    expect(heading?.children).toHaveLength(2)
+    expect(heading?.children?.[1]).toBe(imageNode)
+    expect(heading?.children).not.toContain(markerNode)
+    expect(data.structuredData).toEqual({
+      headings: [{ id: 'custom', content: 'Keep image' }],
+      contents: [],
+    })
+    expect(data[docsCanonicalTocKey]).toEqual([
+      {
+        id: 'custom',
+        text: 'Keep image',
+        depth: 2,
+      },
+    ])
+    expect(JSON.stringify(heading?.children)).not.toContain('#custom')
+    expect(JSON.stringify(data.structuredData)).not.toContain('#custom')
+    expect(JSON.stringify(data[docsCanonicalTocKey])).not.toContain('#custom')
+  })
+
+  test('preserves non-text leaves while trimming whitespace before a custom ID marker', () => {
+    const imageReferenceNode = {
+      type: 'imageReference',
+      identifier: 'diagram',
+      label: 'diagram',
+      referenceType: 'full',
+      alt: 'Diagram',
+    } satisfies TestMarkdownNode
+    const markerNode = createRemarkMdcCustomIdMarker('custom-ref')
+    const tree: TestMarkdownRoot = {
+      type: 'root',
+      children: [
+        {
+          type: 'heading',
+          depth: 3,
+          children: [
+            { type: 'text', value: 'Keep reference ' },
+            imageReferenceNode,
+            { type: 'text', value: '   ' },
+            markerNode,
+          ],
+        },
+      ],
+    }
+
+    const data = runDocsMarkdownSemantics(tree)
+    const heading = tree.children[0]
+
+    expect(heading?.data?.hProperties?.id).toBe('custom-ref')
+    expect(heading?.children).toHaveLength(2)
+    expect(heading?.children?.[1]).toBe(imageReferenceNode)
+    expect(heading?.children).not.toContain(markerNode)
+    expect(data.structuredData).toEqual({
+      headings: [{ id: 'custom-ref', content: 'Keep reference' }],
+      contents: [],
+    })
+    expect(data[docsCanonicalTocKey]).toEqual([
+      {
+        id: 'custom-ref',
+        text: 'Keep reference',
+        depth: 3,
+      },
+    ])
+    expect(JSON.stringify(heading?.children)).not.toContain('#custom-ref')
+    expect(JSON.stringify(data.structuredData)).not.toContain('#custom-ref')
+    expect(JSON.stringify(data[docsCanonicalTocKey])).not.toContain(
+      '#custom-ref',
+    )
   })
 
   test('uses canonical github-slugger IDs for headings and TOC records', async () => {
