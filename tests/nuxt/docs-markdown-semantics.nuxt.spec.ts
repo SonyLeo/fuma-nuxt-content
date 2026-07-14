@@ -7,7 +7,9 @@ import { decompressTree } from '@nuxt/content/runtime'
 import { registerEndpoint } from '@nuxt/test-utils/runtime'
 import { queryCollection } from '#imports'
 import { describe, expect, test } from 'vitest'
-import docsMarkdownSemantics from '~/utils/docs-markdown-semantics'
+import docsMarkdownSemantics, {
+  docsCanonicalTocKey,
+} from '~/utils/docs-markdown-semantics'
 import type { MdcConfig } from '@nuxtjs/mdc'
 
 type ParsedMarkdown = Awaited<ReturnType<typeof parseMarkdown>>
@@ -19,6 +21,22 @@ type RenderedMarkdownNode = {
   props?: Record<string, unknown>
   children?: RenderedMarkdownNode[]
   toc?: ParsedMarkdown['toc']
+}
+
+type TestMarkdownNode = {
+  type: string
+  value?: string
+  depth?: number
+  name?: string
+  data?: {
+    hProperties?: Record<string, unknown>
+  }
+  children?: TestMarkdownNode[]
+}
+
+type TestMarkdownRoot = TestMarkdownNode & {
+  type: 'root'
+  children: TestMarkdownNode[]
 }
 
 const compressedContentDumpPath = resolve(
@@ -124,6 +142,15 @@ function flattenTocLinks(
   ])
 }
 
+function runDocsMarkdownSemantics(tree: TestMarkdownRoot) {
+  const file: { data?: Record<string, unknown> } = {}
+  const transform = docsMarkdownSemantics()
+
+  transform(tree as Parameters<typeof transform>[0], file)
+
+  return file.data ?? {}
+}
+
 describe('docs Markdown semantic owner', () => {
   registerEndpoint('/__nuxt_content/docs/sql_dump.txt', async () => {
     return new Response(await readCompressedDocsDump(), {
@@ -162,6 +189,13 @@ describe('docs Markdown semantic owner', () => {
       headings: expected.map(([id, content]) => ({ id, content })),
       contents: [],
     })
+    expect(parsed.data[docsCanonicalTocKey]).toEqual(
+      expected.map(([id, text], index) => ({
+        id,
+        text,
+        depth: index === 0 ? 1 : 2,
+      })),
+    )
 
     const renderedHeadings = collectRenderedHeadings(parsed.body)
 
@@ -176,6 +210,69 @@ describe('docs Markdown semantic owner', () => {
     expect(JSON.stringify(parsed.data.structuredData)).not.toContain(
       '[#custom-heading]',
     )
+    expect(JSON.stringify(parsed.data[docsCanonicalTocKey])).not.toContain(
+      '[#custom-heading]',
+    )
+  })
+
+  test('records generated-style data-fd-step headings as Steps-owned', () => {
+    const data = runDocsMarkdownSemantics({
+      type: 'root',
+      children: [
+        {
+          type: 'heading',
+          depth: 3,
+          data: {
+            hProperties: {
+              'data-fd-step': 2,
+            },
+          },
+          children: [{ type: 'text', value: 'Generated Step' }],
+        },
+      ],
+    })
+
+    expect(data[docsCanonicalTocKey]).toEqual([
+      {
+        id: 'generated-step',
+        text: 'Generated Step',
+        depth: 3,
+        owner: 'steps',
+        step: 2,
+      },
+    ])
+    expect(data.structuredData).toEqual({
+      headings: [{ id: 'generated-step', content: 'Generated Step' }],
+      contents: [],
+    })
+  })
+
+  test('records stable manual doc-step ancestry as Steps-owned', () => {
+    const data = runDocsMarkdownSemantics({
+      type: 'root',
+      children: [
+        {
+          type: 'containerComponent',
+          name: 'doc-step',
+          children: [
+            {
+              type: 'heading',
+              depth: 3,
+              children: [{ type: 'text', value: 'Manual Step Heading' }],
+            },
+          ],
+        },
+      ],
+    })
+
+    expect(data[docsCanonicalTocKey]).toEqual([
+      {
+        id: 'manual-step-heading',
+        text: 'Manual Step Heading',
+        depth: 3,
+        owner: 'steps',
+      },
+    ])
   })
 
   test('extracts each structured semantic block once', async () => {
@@ -311,5 +408,66 @@ Next paragraph.
     expect(JSON.stringify(page?.structuredData)).not.toContain(
       '[#custom-heading]',
     )
+    expect(JSON.stringify(page)).not.toContain(docsCanonicalTocKey)
+  })
+
+  test('bridges Step-owned headings into real collection TOC without widening ordinary component selection', async () => {
+    installNodeDecompressionStream()
+    window.localStorage.removeItem('content_checksum_docs')
+    window.localStorage.removeItem('content_collection_docs')
+
+    const page = await queryCollection('docs').path('/guide/components').first()
+
+    expect(page).toBeTruthy()
+
+    const body = page?.body as unknown as RenderedMarkdownNode
+    const renderedBody =
+      body.type === 'minimark'
+        ? decompressTree(body as unknown as CompressedMarkdownTree)
+        : body
+    const renderedHeadings = collectRenderedHeadings(renderedBody)
+    const tocLinks = flattenTocLinks(body.toc?.links ?? [])
+    const tocIds = tocLinks.map((link) => link.id)
+    const structuredData = page?.structuredData as
+      | {
+          headings?: Array<{ id: string; content: string }>
+        }
+      | undefined
+
+    expect(tocIds).toEqual([
+      '下一步',
+      'callout',
+      'cards',
+      'tabs',
+      'code-tabs',
+      'accordion',
+      'files',
+      'inline-toc',
+      'inline-toc-nested-item',
+      'type-table',
+      'steps',
+      'verify-the-shell',
+      'prose-defaults',
+      'preview',
+    ])
+    expect(tocLinks.find((link) => link.id === 'verify-the-shell')).toEqual({
+      id: 'verify-the-shell',
+      text: 'Verify the shell',
+    })
+    expect(tocIds).not.toContain('hidden-card-heading')
+
+    expect(renderedHeadings).toEqual(
+      expect.arrayContaining([
+        { id: 'verify-the-shell', text: 'Verify the shell' },
+        { id: 'hidden-card-heading', text: 'Hidden card heading' },
+      ]),
+    )
+    expect(structuredData?.headings).toEqual(
+      expect.arrayContaining([
+        { id: 'verify-the-shell', content: 'Verify the shell' },
+        { id: 'hidden-card-heading', content: 'Hidden card heading' },
+      ]),
+    )
+    expect(JSON.stringify(page)).not.toContain(docsCanonicalTocKey)
   })
 })

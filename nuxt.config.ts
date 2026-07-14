@@ -1,6 +1,7 @@
 import tailwindcss from '@tailwindcss/vite'
 import docsMarkdownPipeline from './app/utils/docs-markdown-pipeline'
 import docsMarkdownSemantics from './app/utils/docs-markdown-semantics'
+import { normalizeDocsContentToc } from './build/docs-content-toc-bridge'
 import { normalizeDocsMetadataContent } from './build/docs-metadata-ingestion'
 
 function createLocalImportPath(url: URL) {
@@ -39,7 +40,10 @@ export default defineNuxtConfig({
   buildDir: process.env.NUXT_BUILD_DIR ?? '.nuxt',
   modules: ['@nuxt/eslint', '@nuxt/content', '@nuxt/test-utils/module'],
   hooks: {
-    'content:file:afterParse': normalizeDocsMetadataContent,
+    'content:file:afterParse': (context) => {
+      normalizeDocsContentToc(context)
+      normalizeDocsMetadataContent(context)
+    },
     'mdc:configSources'(configs) {
       if (!configs.includes(docsMarkdownSemanticsPluginPath)) {
         configs.push(docsMarkdownSemanticsPluginPath)

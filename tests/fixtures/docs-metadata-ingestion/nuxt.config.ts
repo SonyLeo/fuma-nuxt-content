@@ -1,5 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import docsMarkdownSemantics from '../../../app/utils/docs-markdown-semantics'
+import { normalizeDocsContentToc } from '../../../build/docs-content-toc-bridge'
 import { normalizeDocsMetadataContent } from '../../../build/docs-metadata-ingestion'
 
 function createLocalImportPath(url: URL) {
@@ -11,6 +13,18 @@ function createLocalImportPath(url: URL) {
 const docsMetadataIngestionTransformerPath = createLocalImportPath(
   new URL('../../../build/docs-metadata-ingestion.ts', import.meta.url),
 )
+const docsMarkdownSemanticsPluginPath = createLocalImportPath(
+  new URL('../../../app/utils/docs-markdown-semantics.ts', import.meta.url),
+)
+const docsMarkdownOptions = {
+  configs: [docsMarkdownSemantics],
+  remarkPlugins: {
+    docsMarkdownSemantics: {
+      instance: docsMarkdownSemantics,
+      src: docsMarkdownSemanticsPluginPath,
+    },
+  },
+}
 
 function captureNativeAfterParse(context: {
   collection: { name: string }
@@ -48,12 +62,14 @@ export default defineNuxtConfig({
   hooks: {
     'content:file:afterParse': (context) => {
       captureNativeAfterParse(context)
+      normalizeDocsContentToc(context)
       normalizeDocsMetadataContent(context)
     },
   },
   content: {
     build: {
       transformers: [docsMetadataIngestionTransformerPath],
+      markdown: docsMarkdownOptions,
     },
     _localDatabase: process.env.NUXT_CONTENT_LOCAL_DATABASE
       ? {

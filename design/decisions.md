@@ -173,10 +173,12 @@ superseded experiments belong in Git history or the archive summaries.
 
 ## D014: Markdown semantics are owned in the remark phase
 
-- One remark/MDAST plugin owns heading IDs, `[#custom-id]` parsing, the heading
-  records consumed by rendered TOC generation, and structured content.
+- One remark/MDAST plugin owns heading IDs, `[#custom-id]` parsing, canonical
+  heading/TOC records, and structured content.
 - Automatic heading IDs use `github-slugger`; rendered headings, `body.toc`,
   and `structuredData` derive from the same canonical MDAST heading records.
+- Canonical TOC records are private ingestion data; the afterParse bridge
+  projects them onto query-visible `body.toc.links`, then deletes them.
 - Rehype plugins may enrich rendered output, such as code metadata, but do not
   reconstruct heading or structured-content semantics.
 

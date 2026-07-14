@@ -56,14 +56,14 @@ viewports without changing the component height model.
 ::
 
 ::doc-callout-container{type="success"}
-  ::doc-callout-title
-  Container API
-  ::
+::doc-callout-title
+Container API
+::
 
-  ::doc-callout-description
-  The split container/title/description API mirrors the Fumadocs component
-  protocol for pages that need lower-level composition.
-  ::
+::doc-callout-description
+The split container/title/description API mirrors the Fumadocs component
+protocol for pages that need lower-level composition.
+::
 ::
 
 ## Cards
@@ -76,6 +76,9 @@ viewports without changing the component height model.
 ::doc-card{title="External Reference" href="https://www.fumadocs.dev/docs/ui/components" description="Open the upstream component reference in a new tab." external=true icon="github"}
 ::
 ::doc-card{title="A very long card title that verifies wrapping without breaking the grid" icon="palette"}
+
+### Hidden card heading
+
 This card intentionally uses the default slot so the profile can verify body
 content, long wrapping text, and non-link card behavior.
 ::
@@ -192,6 +195,9 @@ Install dependencies with `pnpm install` before running the local docs server.
 ::
 
 ::doc-step
+
+### Verify the shell
+
 Open the [components page](/guide/components) and verify the shell, body
 components, and page tail all render together.
 ::
@@ -208,10 +214,10 @@ Default prose links include an [internal docs link](/guide/getting-started), an
 [external docs link](https://www.fumadocs.dev), and `inline code` in the same
 paragraph.
 
-| Name | Type | Notes |
-| --- | --- | --- |
-| title | string | Used by headings and page metadata. |
-| link | URL | Verifies table overflow and inline links. |
+| Name  | Type   | Notes                                     |
+| ----- | ------ | ----------------------------------------- |
+| title | string | Used by headings and page metadata.       |
+| link  | URL    | Verifies table overflow and inline links. |
 
 ![TinyRobot docs favicon](/favicon.ico)
 

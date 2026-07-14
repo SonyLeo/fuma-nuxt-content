@@ -16,6 +16,7 @@ import { DatabaseSync } from 'node:sqlite'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { afterAll, beforeAll, expect, test } from 'vitest'
+import { docsCanonicalTocKey } from '../../app/utils/docs-markdown-semantics'
 
 const execFileAsync = promisify(execFile)
 const repositoryRoot = fileURLToPath(new URL('../..', import.meta.url))
@@ -61,6 +62,15 @@ const repositoryDatabaseBefore = fingerprintFile(repositoryDatabase)
 cpSync(fixtureSourceRoot, fixtureRoot, { recursive: true })
 mkdirSync(resolve(ownedRoot, 'build'), { recursive: true })
 mkdirSync(resolve(ownedRoot, 'shared'), { recursive: true })
+mkdirSync(resolve(ownedRoot, 'app/utils'), { recursive: true })
+cpSync(
+  resolve(repositoryRoot, 'app/utils/docs-markdown-semantics.ts'),
+  resolve(ownedRoot, 'app/utils/docs-markdown-semantics.ts'),
+)
+cpSync(
+  resolve(repositoryRoot, 'build/docs-content-toc-bridge.ts'),
+  resolve(ownedRoot, 'build/docs-content-toc-bridge.ts'),
+)
 cpSync(
   resolve(repositoryRoot, 'build/docs-metadata-ingestion.ts'),
   resolve(ownedRoot, 'build/docs-metadata-ingestion.ts'),
@@ -178,6 +188,17 @@ test('persists normalized page and directory metadata in an isolated database', 
       title: 'Reference directory',
     })
     expect(Object.hasOwn(missingDirectoryMetadata, 'hidden')).toBe(false)
+
+    const docsRows = database
+      .prepare('SELECT body, meta FROM _content_docs')
+      .all() as Array<{ body: string; meta: string }>
+
+    expect(docsRows.length).toBeGreaterThan(0)
+
+    for (const row of docsRows) {
+      expect(row.body).not.toContain(docsCanonicalTocKey)
+      expect(row.meta).not.toContain(docsCanonicalTocKey)
+    }
   } finally {
     database.close()
   }

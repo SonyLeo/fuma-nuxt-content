@@ -30,6 +30,14 @@ type MarkdownStructuredData = {
   }>
 }
 
+export type DocsCanonicalTocRecord = {
+  id: string
+  text: string
+  depth: 1 | 2 | 3 | 4 | 5 | 6
+  owner?: 'steps'
+  step?: number
+}
+
 type MarkdownFile = {
   data?: Record<string, unknown>
 }
@@ -60,9 +68,11 @@ type MarkdownSemanticsPlugin = {
 
 const canonicalHeadingIdProperty = 'data-canonical-heading-id'
 const canonicalHeadingIdPropertyName = 'dataCanonicalHeadingId'
+export const docsCanonicalTocKey = '__docsCanonicalToc'
 const customHeadingIdPattern = /\s*\[#([^\]]+)]\s*$/
 const structuredBlockTypes = new Set(['blockquote', 'paragraph', 'tableCell'])
 const whitespacePattern = /\s+/g
+const docStepComponentNames = new Set(['doc-step', 'DocStep'])
 
 function flattenMarkdownNode(node: MarkdownNode): string {
   if (node.type === 'image' || node.type === 'imageReference') {
@@ -164,6 +174,65 @@ function normalizeStructuredContent(node: MarkdownNode) {
   return flattenMarkdownNode(node).replace(whitespacePattern, ' ').trim()
 }
 
+function normalizeHeadingDepth(depth: number | undefined) {
+  if (
+    typeof depth !== 'number' ||
+    !Number.isInteger(depth) ||
+    depth < 1 ||
+    depth > 6
+  ) {
+    return 1
+  }
+
+  return depth as DocsCanonicalTocRecord['depth']
+}
+
+function normalizeStepNumber(value: unknown) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+
+  if (typeof value !== 'string' || !value.trim()) {
+    return undefined
+  }
+
+  const step = Number(value)
+
+  return Number.isFinite(step) ? step : undefined
+}
+
+function readDataFdStep(node: MarkdownNode) {
+  const value =
+    node.data?.hProperties?.['data-fd-step'] ??
+    node.data?.hProperties?.dataFdStep ??
+    node.attributes?.['data-fd-step'] ??
+    node.attributes?.dataFdStep
+
+  if (typeof value === 'undefined') {
+    return undefined
+  }
+
+  const step = normalizeStepNumber(value)
+
+  return {
+    owner: 'steps' as const,
+    ...(typeof step === 'number' ? { step } : {}),
+  }
+}
+
+function readHeadingOwner(
+  node: MarkdownNode,
+  context: { inDocStepComponent: boolean },
+) {
+  const dataFdStep = readDataFdStep(node)
+
+  if (dataFdStep) {
+    return dataFdStep
+  }
+
+  return context.inDocStepComponent ? ({ owner: 'steps' } as const) : undefined
+}
+
 function restoreCanonicalHeadingIds(node: MarkdownRenderedNode | undefined) {
   if (!node) {
     return
@@ -217,11 +286,15 @@ export const remarkDocsMarkdownSemantics: MarkdownSemanticsPlugin = () => {
       headings: [],
       contents: [],
     }
+    const canonicalToc: DocsCanonicalTocRecord[] = []
     let currentHeading: string | undefined
 
     slugger.reset()
 
-    function visit(node: MarkdownNode) {
+    function visit(
+      node: MarkdownNode,
+      context = { inDocStepComponent: false },
+    ) {
       if (node.type === 'heading') {
         node.data ??= {}
         node.data.hProperties ??= {}
@@ -237,6 +310,13 @@ export const remarkDocsMarkdownSemantics: MarkdownSemanticsPlugin = () => {
 
         node.data.hProperties.id = id
         node.data.hProperties[canonicalHeadingIdProperty] = id
+
+        canonicalToc.push({
+          id,
+          text: content,
+          depth: normalizeHeadingDepth(node.depth),
+          ...readHeadingOwner(node, context),
+        })
 
         if (content) {
           structuredData.headings.push({ id, content })
@@ -259,8 +339,12 @@ export const remarkDocsMarkdownSemantics: MarkdownSemanticsPlugin = () => {
         return
       }
 
+      const nextContext = docStepComponentNames.has(node.name ?? '')
+        ? { inDocStepComponent: true }
+        : context
+
       for (const child of node.children ?? []) {
-        visit(child)
+        visit(child, nextContext)
       }
     }
 
@@ -268,6 +352,7 @@ export const remarkDocsMarkdownSemantics: MarkdownSemanticsPlugin = () => {
 
     file.data ??= {}
     file.data.structuredData = structuredData
+    file.data[docsCanonicalTocKey] = canonicalToc
   }
 }
 
