@@ -4,7 +4,7 @@ sectionLabel: Guide
 status: active
 type: handbook
 owner: foundation
-lastReviewed: 2026-07-13
+lastReviewed: 2026-07-14
 ---
 
 # Foundation Audit Handbook
@@ -119,6 +119,26 @@ After confirmation, implement one bounded contract at a time. If a surface
 requires changing a deeper protocol, stop and update the proposed scope before
 patching the renderer or CSS.
 
+### Lifecycle and causality preflight
+
+Before implementing a contract that depends on framework lifecycle, hooks, or
+an undocumented configuration path:
+
+1. inspect the source and version of the currently installed package;
+2. inspect the relevant local upstream source at a fixed revision;
+3. consult official documentation for the public lifecycle or hook contract;
+4. record uncertainty when those sources conflict or leave the owner ambiguous.
+
+When multiple candidate owners can produce the same public output, acceptance
+must include a discriminating fixture that makes the candidates produce
+different results. Output equality alone is not ownership evidence. Verify the
+applicable causal chain from authoring input through semantic owner, private
+transport, lifecycle hook, persisted or public output, and private-data cleanup.
+
+If proving or repairing that chain requires a hook, schema, SQL, persistence,
+or configuration owner outside the confirmed batch, stop and re-scope before
+implementation.
+
 ### Session and drift control
 
 Do not audit the whole foundation in one pass. One session owns one audit slice
@@ -142,6 +162,11 @@ longer be restated without relying on prior conversation.
 Use a fresh execution task for each batch. Use a fresh coordinator at a phase
 boundary or after material context drift. Carry forward confirmed decisions,
 status, commit IDs, and open gates, not complete transcripts.
+
+A fresh execution task does not require a fresh worktree. Reuse a clean
+checkout for sequential batches. Keep bounded corrections in the same task and
+checkout; create a temporary worktree only for dirty-base isolation or parallel
+execution, then remove it after integration.
 
 ## Required Audit Status
 

@@ -173,6 +173,9 @@ documentation-governance change.
   batch, but must not enter the next batch or stage, commit, or push.
 - Start a new execution task for a new batch. Send bounded review corrections
   back to the same execution task while its context is still valid.
+- Treat a new execution task as a context boundary, not a checkout requirement.
+  Reuse a clean checkout for sequential batches; create a temporary worktree
+  only for dirty-base isolation or parallel work, and remove it after integration.
 - Execution summaries are evidence inputs, not approval. The coordinator must
   inspect the actual diff and check it against the confirmed batch contract.
 - Stop and report before widening the batch, changing a frozen protocol,
