@@ -4,7 +4,7 @@ sectionLabel: Plan
 status: active
 type: roadmap
 owner: project
-lastReviewed: 2026-07-12
+lastReviewed: 2026-07-14
 ---
 
 # Roadmap
@@ -20,16 +20,17 @@ upper layers can depend on it without reopening shell or content contracts.
 
 ## Active Sources Of Truth
 
-| Topic                               | Document                                                    |
-| ----------------------------------- | ----------------------------------------------------------- |
-| Current priority and document map   | This file                                                   |
-| Foundation maturity and exit gate   | [Foundation Status](./foundation-status.md)                 |
-| Foundation audit method and handoff | [Foundation Audit Handbook](./foundation-audit-handbook.md) |
-| Unfinished integration/product work | [Product Backlog](./product-backlog.md)                     |
-| Component and regression status     | [Component Inventory](./component-inventory.md)             |
-| Test policy and commands            | [Verification Runbook](./verification-runbook.md)           |
-| Remaining Reka work                 | [Reka Migration](./reka-migration.md)                       |
-| Durable architecture decisions      | [Architecture Decisions](./decisions.md)                    |
+| Topic                               | Document                                                          |
+| ----------------------------------- | ----------------------------------------------------------------- |
+| Current priority and document map   | This file                                                         |
+| Foundation maturity and exit gate   | [Foundation Status](./foundation-status.md)                       |
+| Foundation audit method and handoff | [Foundation Audit Handbook](./foundation-audit-handbook.md)       |
+| Unfinished integration/product work | [Product Backlog](./product-backlog.md)                           |
+| Component and regression status     | [Component Inventory](./component-inventory.md)                   |
+| Test policy and commands            | [Verification Runbook](./verification-runbook.md)                 |
+| Authoring and code contracts        | [Authoring And Code Contracts](./authoring-and-code-contracts.md) |
+| Remaining Reka work                 | [Reka Migration](./reka-migration.md)                             |
+| Durable architecture decisions      | [Architecture Decisions](./decisions.md)                          |
 
 Historical summaries live under `design/archive/` and are not active execution
 inputs.

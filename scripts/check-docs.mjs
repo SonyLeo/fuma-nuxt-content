@@ -11,6 +11,7 @@ const activeDocs = new Map([
   ['product-backlog.md', 300],
   ['component-inventory.md', 300],
   ['verification-runbook.md', 400],
+  ['authoring-and-code-contracts.md', 300],
   ['reka-migration.md', 300],
   ['decisions.md', 300],
 ])
@@ -21,7 +22,7 @@ const archiveDocs = new Map([
   ['verification-history.md', 120],
 ])
 
-const activeLineBudget = 1500
+const activeLineBudget = 1800
 const archiveLineBudget = 300
 
 const requiredFrontmatter = ['status', 'type', 'owner', 'lastReviewed']
