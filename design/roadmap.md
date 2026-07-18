@@ -79,8 +79,7 @@ implicitly.
 ### P0: foundation exit work
 
 1. Freeze content metadata, page identity, and tree ownership.
-2. Complete the remaining Phase 2 authoring and code contracts:
-   - internal and external link protocol
+2. Close Phase 2 with consolidated Nuxt, validator, docs, and browser gates.
 3. Document stable provider/layout/page public contracts.
 4. Keep component and Reka wrapper regressions green.
 
@@ -102,8 +101,8 @@ source before opening each remaining Phase 2 batch:
 
 The comparison does not authorize a dependency migration or a visual rewrite.
 Each result must be classified as direct reference, Nuxt adaptation,
-intentional divergence, defer, or stop-condition evidence. B9 is the next
-implementation batch.
+intentional divergence, defer, or stop-condition evidence. B1-B9 implementation
+is complete; Phase 2 closeout is next.
 
 ### P1: integration completion
 

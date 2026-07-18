@@ -20,7 +20,7 @@ Status meanings follow [Foundation Status](./foundation-status.md).
 
 | Surface          | Local owner                | Status      | Primary browser contract                      | Remaining work                                       |
 | ---------------- | -------------------------- | ----------- | --------------------------------------------- | ---------------------------------------------------- |
-| Prose defaults   | `prose.css`, MDC mapping   | First Pass+ | Runtime rendering, code/links/images/tables   | Maintain generic authoring contract                  |
+| Prose defaults   | `prose.css`, MDC mapping   | Gate Passed | Runtime rendering, code/links/images/tables   | Maintain frozen B1-B9 authoring contracts            |
 | Code block       | `DocCodeBlock`             | Gate Passed | Nuxt code-system and `code-block.spec.ts`     | Maintain B6-B7 code contracts                        |
 | Code tabs / Tabs | `DocCodeTabs`, `DocTabs`   | First Pass+ | `tabs-accordion-files.spec.ts`                | Maintain B3-B5 authoring and state contracts         |
 | Accordion        | `DocAccordion`             | First Pass+ | `tabs-accordion-files.spec.ts`                | Maintain hidden-until-found and keyboard behavior    |

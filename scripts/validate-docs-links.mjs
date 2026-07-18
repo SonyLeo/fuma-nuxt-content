@@ -1,7 +1,10 @@
 import { existsSync } from 'node:fs'
 import { readFile, readdir } from 'node:fs/promises'
+import { createRequire } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseMarkdown } from '@nuxtjs/mdc/runtime'
+import ts from 'typescript'
 import {
   createDocsIdentityIndex,
   normalizeDocsRoutePath,
@@ -10,9 +13,32 @@ import {
 } from '../shared/docs-identity.js'
 
 const DOC_EXTENSION_RE = /\.(?:md|mdx)$/i
-const EXTERNAL_HREF_RE = /^[a-z][a-z\d+.-]*:/i
 const ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)))
 const CONTENT_DIR = path.resolve(process.argv[2] ?? path.join(ROOT, 'content'))
+const require = createRequire(import.meta.url)
+
+async function loadProjectTypeScriptModule(relativePath, aliases = {}) {
+  const filename = path.resolve(ROOT, relativePath)
+  const source = await readFile(filename, 'utf8')
+  const output = ts.transpileModule(source, {
+    compilerOptions: {
+      esModuleInterop: true,
+      module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.ES2022,
+    },
+    fileName: filename,
+  }).outputText
+  const module = { exports: {} }
+  const localRequire = (id) => aliases[id] ?? require(id)
+
+  new Function('require', 'exports', 'module', output)(
+    localRequire,
+    module.exports,
+    module,
+  )
+
+  return module.exports
+}
 
 function toPosixPath(value) {
   return value.replace(/\\/g, '/')
@@ -95,47 +121,23 @@ function stripFrontmatter(markdown) {
   return markdown.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '')
 }
 
-function slugifyHeading(value) {
-  return value
-    .toLowerCase()
-    .replace(/`([^`]+)`/g, '$1')
-    .replace(/\[([^\]]+)]\([^)]+\)/g, '$1')
-    .replace(/<[^>]+>/g, '')
-    .replace(/[^\p{L}\p{N}\s_-]/gu, '')
-    .trim()
-    .replace(/\s+/g, '-')
-}
+async function collectAnchors(markdown, markdownSteps, markdownSemantics) {
+  const parsed = await parseMarkdown(markdown, {
+    configs: [markdownSemantics.default],
+    remark: {
+      plugins: {
+        docsMarkdownSteps: {
+          instance: markdownSteps.default,
+        },
+        docsMarkdownSemantics: {
+          instance: markdownSemantics.default,
+        },
+      },
+    },
+  })
+  const canonicalToc = parsed.data[markdownSemantics.docsCanonicalTocKey] ?? []
 
-function collectAnchors(markdown) {
-  const anchors = new Set()
-  let inFence = false
-
-  for (const line of stripFrontmatter(markdown).split(/\r?\n/)) {
-    if (/^\s*```/.test(line) || /^\s*~~~/.test(line)) {
-      inFence = !inFence
-      continue
-    }
-
-    if (inFence) {
-      continue
-    }
-
-    const heading = /^(?<level>#{1,6})\s+(?<text>.+?)\s*#*\s*$/.exec(line)
-    if (heading?.groups?.text) {
-      const slug = slugifyHeading(heading.groups.text)
-      if (slug) {
-        anchors.add(slug)
-      }
-    }
-
-    for (const match of line.matchAll(/\bid=["'](?<id>[^"']+)["']/g)) {
-      if (match.groups?.id) {
-        anchors.add(match.groups.id)
-      }
-    }
-  }
-
-  return anchors
+  return new Set(canonicalToc.map((heading) => heading.id))
 }
 
 function cleanMarkdownTarget(rawTarget) {
@@ -257,35 +259,6 @@ async function validateMetaDirectories(markdownFiles) {
   return failures
 }
 
-function resolveRelativeSourcePath(currentSourcePath, target) {
-  const { pathname, search, hash } = splitPathSuffix(target)
-  const baseSegments = normalizeDocsFileSourcePath(currentSourcePath)
-    .replace(/^\//, '')
-    .split('/')
-    .filter(Boolean)
-
-  baseSegments.pop()
-
-  for (const segment of pathname.split('/')) {
-    if (!segment || segment === '.') {
-      continue
-    }
-
-    if (segment === '..') {
-      baseSegments.pop()
-      continue
-    }
-
-    baseSegments.push(segment)
-  }
-
-  return `${normalizeDocsFileSourcePath(`/${baseSegments.join('/')}`)}${search}${hash ? `#${hash}` : ''}`
-}
-
-function isExternalHref(target) {
-  return EXTERNAL_HREF_RE.test(target) || target.startsWith('//')
-}
-
 function isExternalHrefValid(target) {
   if (target.startsWith('//')) {
     return /^\/\/[^\s/$.?#].[^\s]*$/i.test(target)
@@ -297,10 +270,6 @@ function isExternalHrefValid(target) {
   } catch {
     return false
   }
-}
-
-function hasDocsFileExtension(value) {
-  return DOC_EXTENSION_RE.test(splitPathSuffix(value).pathname)
 }
 
 function hasAnchor(page, hash) {
@@ -324,69 +293,62 @@ function reportFailure(failures, file, link, target, reason) {
   })
 }
 
-function validateLink(link, page, indexes, failures) {
+function validateLink(link, page, pages, indexes, failures, resolveDocsLink) {
   const target = link.target.trim()
 
   if (!target || target === '#') {
     return
   }
 
-  if (isExternalHref(target)) {
-    if (!isExternalHrefValid(target)) {
+  const resolved = resolveDocsLink(target, {
+    authored: true,
+    currentSourcePath: page.sourcePath,
+    pages,
+  })
+
+  if (resolved.unsafe) {
+    reportFailure(failures, page.file, link, target, 'Unsafe authored scheme')
+    return
+  }
+
+  if (resolved.external) {
+    if (!isExternalHrefValid(resolved.href)) {
       reportFailure(failures, page.file, link, target, 'Invalid external URL')
     }
     return
   }
 
-  const { pathname, hash } = splitPathSuffix(target)
+  const { pathname, hash } = splitPathSuffix(resolved.href)
 
-  if (!pathname && hash) {
+  if (resolved.hashOnly) {
     if (!hasAnchor(page, hash)) {
       reportFailure(failures, page.file, link, target, 'Missing hash anchor')
     }
     return
   }
 
-  if (target.startsWith('./') || target.startsWith('../')) {
-    const sourcePath = resolveRelativeSourcePath(page.sourcePath, target)
-    const resolved = splitPathSuffix(sourcePath)
-    const normalizedSourcePath = normalizeDocsFileSourcePath(resolved.pathname)
-    const targetPage = indexes.bySourcePath.get(normalizedSourcePath)
-
-    if (!targetPage) {
-      reportFailure(
-        failures,
-        page.file,
-        link,
-        target,
-        'Missing docs source file',
-      )
-      return
-    }
-
-    if (resolved.hash && !hasAnchor(targetPage, resolved.hash)) {
-      reportFailure(failures, page.file, link, target, 'Missing hash anchor')
-    }
+  if (!pathname) {
     return
   }
 
-  if (target.startsWith('/')) {
-    const targetPage = hasDocsFileExtension(target)
-      ? indexes.bySourcePath.get(normalizeDocsFileSourcePath(pathname))
-      : indexes.byRoutePath.get(normalizeDocsRoutePath(pathname))
+  if (resolved.sourcePath && !resolved.sourceExists) {
+    reportFailure(failures, page.file, link, target, 'Missing docs source file')
+    return
+  }
 
-    if (!targetPage) {
-      reportFailure(failures, page.file, link, target, 'Missing docs route')
-      return
-    }
+  const targetPage = indexes.byRoutePath.get(normalizeDocsRoutePath(pathname))
 
-    if (hash && !hasAnchor(targetPage, hash)) {
-      reportFailure(failures, page.file, link, target, 'Missing hash anchor')
-    }
+  if (!targetPage) {
+    reportFailure(failures, page.file, link, target, 'Missing docs route')
+    return
+  }
+
+  if (hash && !hasAnchor(targetPage, hash)) {
+    reportFailure(failures, page.file, link, target, 'Missing hash anchor')
   }
 }
 
-async function createDocsPages(files) {
+async function createDocsPages(files, markdownSteps, markdownSemantics) {
   const pages = []
 
   for (const file of files) {
@@ -402,7 +364,7 @@ async function createDocsPages(files) {
       docsMetadata: meta,
       sourcePath,
       routePath: resolveDocsRoutePath(sourcePath, meta),
-      anchors: collectAnchors(markdown),
+      anchors: await collectAnchors(markdown, markdownSteps, markdownSemantics),
       links: collectLinks(markdown),
     })
   }
@@ -415,8 +377,17 @@ async function main() {
     throw new Error(`Content directory not found: ${CONTENT_DIR}`)
   }
 
+  const markdownSemantics = await loadProjectTypeScriptModule(
+    'app/utils/docs-markdown-semantics.ts',
+  )
+  const markdownSteps = await loadProjectTypeScriptModule(
+    'app/utils/docs-markdown-steps.ts',
+  )
+  const docsLink = await loadProjectTypeScriptModule('app/utils/docs-link.ts', {
+    '#shared/docs-identity.js': require('../shared/docs-identity.js'),
+  })
   const files = await walkDocsFiles(CONTENT_DIR)
-  const pages = await createDocsPages(files)
+  const pages = await createDocsPages(files, markdownSteps, markdownSemantics)
   const metaFailures = await validateMetaDirectories(files)
   const identityIndex = createDocsIdentityIndex(pages)
   const indexes = {
@@ -437,7 +408,14 @@ async function main() {
 
   for (const page of pages) {
     for (const link of page.links) {
-      validateLink(link, page, indexes, failures)
+      validateLink(
+        link,
+        page,
+        pages,
+        indexes,
+        failures,
+        docsLink.resolveDocsLink,
+      )
     }
   }
 

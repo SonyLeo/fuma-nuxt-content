@@ -14,7 +14,7 @@ const props = withDefaults(
 </script>
 
 <template>
-  <DocsLink :href="props.href" :target="props.target" :rel="props.rel">
+  <DocsLink :href="props.href" :target="props.target" :rel="props.rel" authored>
     <slot />
   </DocsLink>
 </template>

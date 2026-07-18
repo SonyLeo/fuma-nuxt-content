@@ -7,12 +7,14 @@ const props = withDefaults(
   defineProps<{
     href?: string
     external?: boolean | null
+    authored?: boolean
     target?: string
     rel?: string
   }>(),
   {
     href: '#',
     external: null,
+    authored: false,
     target: undefined,
     rel: undefined,
   },
@@ -22,6 +24,7 @@ const resolved = useDocsResolvedLink(
   computed(() => props.href),
   computed(() => ({
     external: props.external ?? undefined,
+    authored: props.authored,
     target: props.target,
     rel: props.rel,
   })),

@@ -1,6 +1,6 @@
 import type { DocsPageRecord } from '~/types/docs'
-import { resolveDocsRecordSourcePath } from '~/utils/docs-navigation'
 import {
+  createDocsIdentityIndex,
   normalizeDocsRoutePath,
   normalizeDocsSourcePath,
   resolveDocsRoutePath,
@@ -10,6 +10,9 @@ export type DocsResolvedLink = {
   href: string
   external: boolean
   hashOnly: boolean
+  unsafe: boolean
+  sourcePath?: string
+  sourceExists?: boolean
   target?: string
   rel?: string
 }
@@ -20,11 +23,13 @@ export type ResolveDocsLinkOptions = {
   currentSourcePath?: string | null
   pages?: DocsPageRecord[] | null
   external?: boolean
+  authored?: boolean
   target?: string
   rel?: string
 }
 
 const DOC_FILE_EXTENSION_RE = /\.(?:md|mdx)$/i
+const UNSAFE_AUTHORED_SCHEME_RE = /^(?:data|javascript|vbscript):/i
 
 function splitPathSuffix(value: string) {
   const suffixIndex = value.search(/[?#]/)
@@ -48,13 +53,17 @@ function hasDocsFileExtension(value: string) {
 }
 
 function mergeExternalRel(rel?: string) {
-  return [
-    ...new Set([
-      ...(rel?.split(/\s+/).filter(Boolean) ?? []),
-      'noreferrer',
-      'noopener',
-    ]),
-  ].join(' ')
+  const tokens = rel?.split(/\s+/).filter(Boolean) ?? []
+  const normalizedTokens = new Set(tokens.map((token) => token.toLowerCase()))
+
+  for (const token of ['noreferrer', 'noopener']) {
+    if (!normalizedTokens.has(token)) {
+      tokens.push(token)
+      normalizedTokens.add(token)
+    }
+  }
+
+  return tokens.join(' ')
 }
 
 export function isExternalDocsHref(href: string) {
@@ -99,18 +108,29 @@ function resolveRouteFromSourcePath(
 ) {
   const { pathname, suffix } = splitPathSuffix(sourcePath)
   const normalizedSource = normalizeDocsFileSourcePath(pathname)
-  const match = (pages ?? []).find((page) => {
-    return (
-      normalizeDocsFileSourcePath(resolveDocsRecordSourcePath(page)) ===
-      normalizedSource
-    )
-  })
+  const match = createDocsIdentityIndex(pages ?? []).getBySourcePath(
+    normalizedSource,
+  )
 
   if (!match) {
-    return `${normalizedSource}${suffix}`
+    return {
+      href: `${resolveDocsRoutePath(normalizedSource)}${suffix}`,
+      sourcePath: normalizedSource,
+      sourceExists: false,
+    }
   }
 
-  return `${resolveDocsRoutePath(resolveDocsRecordSourcePath(match), match.docsMetadata)}${suffix}`
+  return {
+    href: `${match.identity.routePath}${suffix}`,
+    sourcePath: normalizedSource,
+    sourceExists: true,
+  }
+}
+
+function normalizeRouteHref(href: string) {
+  const { pathname, suffix } = splitPathSuffix(href)
+
+  return `${normalizeDocsRoutePath(pathname)}${suffix}`
 }
 
 export function resolveDocsLink(
@@ -118,6 +138,21 @@ export function resolveDocsLink(
   options: ResolveDocsLinkOptions = {},
 ): DocsResolvedLink {
   const rawHref = href?.trim() || '#'
+  const unsafe = Boolean(
+    options.authored && UNSAFE_AUTHORED_SCHEME_RE.test(rawHref),
+  )
+
+  if (unsafe) {
+    return {
+      href: '#',
+      external: false,
+      hashOnly: true,
+      unsafe: true,
+      target: options.target,
+      rel: options.rel,
+    }
+  }
+
   const external = options.external ?? isExternalDocsHref(rawHref)
   const hashOnly = rawHref.startsWith('#')
 
@@ -126,6 +161,7 @@ export function resolveDocsLink(
       href: rawHref,
       external: true,
       hashOnly: false,
+      unsafe: false,
       target: options.target ?? '_blank',
       rel: mergeExternalRel(options.rel),
     }
@@ -136,27 +172,43 @@ export function resolveDocsLink(
       href: rawHref,
       external: false,
       hashOnly: true,
+      unsafe: false,
       target: options.target,
       rel: options.rel,
     }
   }
 
-  const resolvedHref =
-    rawHref.startsWith('./') || rawHref.startsWith('../')
-      ? resolveRouteFromSourcePath(
-          resolveRelativePath(options.currentSourcePath ?? '/', rawHref),
-          options.pages,
-        )
-      : rawHref.startsWith('/')
-        ? hasDocsFileExtension(rawHref)
-          ? resolveRouteFromSourcePath(rawHref, options.pages)
-          : normalizeDocsRoutePath(rawHref)
-        : rawHref
+  let resolvedHref: string
+  let sourceResolution:
+    | ReturnType<typeof resolveRouteFromSourcePath>
+    | undefined
+
+  if (rawHref.startsWith('?')) {
+    resolvedHref = rawHref
+  } else if (isExternalDocsHref(rawHref)) {
+    resolvedHref = rawHref
+  } else if (rawHref.startsWith('/')) {
+    if (hasDocsFileExtension(rawHref)) {
+      sourceResolution = resolveRouteFromSourcePath(rawHref, options.pages)
+      resolvedHref = sourceResolution.href
+    } else {
+      resolvedHref = normalizeRouteHref(rawHref)
+    }
+  } else {
+    sourceResolution = resolveRouteFromSourcePath(
+      resolveRelativePath(options.currentSourcePath ?? '/', rawHref),
+      options.pages,
+    )
+    resolvedHref = sourceResolution.href
+  }
 
   return {
     href: resolvedHref,
     external: false,
     hashOnly: false,
+    unsafe: false,
+    sourcePath: sourceResolution?.sourcePath,
+    sourceExists: sourceResolution?.sourceExists,
     target: options.target,
     rel: options.rel,
   }

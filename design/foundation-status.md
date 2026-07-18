@@ -36,7 +36,7 @@ contracts exist, but several protocol boundaries still need to become
 | Root provider and layout slots        | Gate Passed | Adapter/slot Nuxt tests and layout-provider browser contracts | Keep app adapters on explicit props and public slots    |
 | Theme runtime and presets             | Gate Passed | Resolved config/runtime tests and theme browser contracts     | Keep product preset adapter outside foundation runtime  |
 | Docs page protocol                    | Gate Passed | Normalized page policy tests and focused shell checks         | Keep site adapters outside metadata policy              |
-| Default MDC mapping and link protocol | First Pass+ | Runtime content tests and browser contracts                   | Complete authoring edge cases and external-link policy  |
+| Default MDC mapping and link protocol | Gate Passed | Runtime, validator, collection, and browser contracts         | Maintain shared resolver and canonical anchor policy    |
 | Markdown transform pipeline           | Gate Passed | Semantic, Steps, tabs, package and image Nuxt evidence        | Maintain frozen authoring transforms                    |
 | Code system and preview               | Gate Passed | B6 Nuxt and B7 responsive browser evidence                    | Maintain frozen code and interaction contracts          |
 | Content components                    | First Pass+ | Component inventory and responsive tests                      | Maintain parity; no broad new component batch           |
@@ -128,9 +128,9 @@ contracts exist, but several protocol boundaries still need to become
 - Remove remaining direct or duplicated route/source normalization.
 - Add focused coverage whenever a new content source shape is introduced.
 
-### P0: complete the Markdown authoring pipeline
+### P0: maintain the Markdown authoring pipeline
 
-- Freeze internal and external link behavior.
+- Keep internal, external, source-relative, and authored-safe links on B9.
 - Keep UI component contracts separate from authoring transforms.
 
 ### P1: maintain public provider and page contracts

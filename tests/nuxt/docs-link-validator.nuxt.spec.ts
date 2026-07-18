@@ -61,8 +61,167 @@ describe('docs link validator hard gate', () => {
     })
 
     const result = await runValidator(content)
-    expect(result.exitCode).toBe(0)
+    expect(result.exitCode, result.stderr).toBe(0)
     expect(result.stdout).toContain('2 pages, 1 links')
+  })
+
+  test('accepts canonical duplicate, Unicode, inline markup, and custom heading anchors', async () => {
+    const content = await createFixture({
+      'source.md': `---
+title: Source
+---
+
+[Duplicate](./target.md#duplicate-heading-1)
+[Unicode](./target.md#%E4%B8%AD%E6%96%87-%E6%A0%87%E9%A2%98)
+[Inline](./target.md#inline-emphasis-code-link)
+[Custom](./target.md#custom-heading)
+`,
+      'target.md': `---
+title: Target
+---
+
+## Duplicate Heading
+## Duplicate Heading
+## 中文 标题
+## Inline _emphasis_ \`code\` [link](/source)
+## Custom _Heading_ [#custom-heading]
+`,
+    })
+
+    const result = await runValidator(content)
+
+    expect(result.exitCode, result.stderr).toBe(0)
+    expect(result.stdout).toContain('2 pages, 5 links')
+  })
+
+  test('uses the runtime source/route policy for root, dot, and bare targets', async () => {
+    const content = await createFixture({
+      'index.md': '# Home\n',
+      'guide/index.md': '# Guide\n',
+      'guide/source.md': `# Source
+
+[Root route](/guide/)
+[Root source](/guide/target.mdx?from=root#target)
+[Dot source](./target.md#target)
+[Bare source](target#target)
+[Parent index](../index.md#home)
+[Query](?mode=compact)
+[Hash](#source)
+[Unicode](/guide/%E8%B7%AF%E5%BE%84.md#%E9%A2%84%E6%9C%9F)
+[External](https://example.com)
+[Protocol relative](//example.com/docs)
+[Email](mailto:docs@example.com)
+[Telephone](tel:+123456789)
+`,
+      'guide/target.md': `---
+title: Target
+slug: custom-target
+---
+
+# Target
+`,
+      'guide/路径.md': `---
+title: Unicode
+slug: 真实 路径
+---
+
+# Unicode
+
+## 预期
+`,
+    })
+
+    const result = await runValidator(content)
+
+    expect(result.exitCode, result.stderr).toBe(0)
+    expect(result.stdout).toContain('5 pages, 12 links')
+  })
+
+  test('rejects unsafe authored schemes that MDC can preserve', async () => {
+    const content = await createFixture({
+      'source.md': `# Source
+
+[JavaScript](<javascript:alert>)
+[Data](<data:text/plain,hello>)
+[VBScript](<vbscript:msgbox>)
+`,
+    })
+
+    const result = await runValidator(content)
+
+    expect(result.exitCode).not.toBe(0)
+    expect(result.stderr.match(/Unsafe authored scheme/g)).toHaveLength(3)
+  })
+
+  test('rejects hashes that differ from canonical duplicate and custom IDs', async () => {
+    const content = await createFixture({
+      'source.md': `# Source
+
+[Wrong duplicate](./target.md#duplicate-heading-2)
+[Wrong custom](./target.md#custom-heading-1)
+`,
+      'target.md': `# Target
+
+## Duplicate Heading
+## Duplicate Heading
+## Custom Heading [#custom-heading]
+`,
+    })
+
+    const result = await runValidator(content)
+
+    expect(result.exitCode).not.toBe(0)
+    expect(result.stderr.match(/Missing hash anchor/g)).toHaveLength(2)
+  })
+
+  test('accepts canonical numbered and marked Step heading anchors', async () => {
+    const content = await createFixture({
+      'source.md': `# Source
+
+[Numbered Step](./target.md#install)
+[Marked Step](./target.md#configure)
+`,
+      'target.md': `# Target
+
+## 1. Install
+
+Install body.
+
+## Configure [step]
+
+Configure body.
+`,
+    })
+
+    const result = await runValidator(content)
+
+    expect(result.exitCode, result.stderr).toBe(0)
+    expect(result.stdout).toContain('2 pages, 2 links')
+  })
+
+  test('rejects pre-transform Step marker-derived anchors', async () => {
+    const content = await createFixture({
+      'source.md': `# Source
+
+[Raw numbered Step](./target.md#1-install)
+[Raw marked Step](./target.md#configure-step)
+`,
+      'target.md': `# Target
+
+## 1. Install
+
+Install body.
+
+## Configure [step]
+
+Configure body.
+`,
+    })
+
+    const result = await runValidator(content)
+
+    expect(result.exitCode).not.toBe(0)
+    expect(result.stderr.match(/Missing hash anchor/g)).toHaveLength(2)
   })
 
   test('fails duplicate normalized public routes with all source owners', async () => {

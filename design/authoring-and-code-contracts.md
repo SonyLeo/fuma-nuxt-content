@@ -32,7 +32,7 @@ and command policy remains in the
 | B6    | Highlight and code meta   | `docsMarkdownCodeSystem`           | Gate Passed | Stable code-fence AST               |
 | B7    | CodeBlock interaction     | `DocCodeBlock`                     | Gate Passed | B6 rendered metadata                |
 | B8    | Image transform           | `remarkDocsMarkdownImages`         | Gate Passed | Image metadata policy               |
-| B9    | Link protocol             | Markdown link mapping              | First Pass  | Canonical route/external policy     |
+| B9    | Link protocol             | `resolveDocsLink`                  | Gate Passed | Canonical route/external policy     |
 
 Callouts intentionally use MDC authoring only in Phase 2. Additional
 admonition syntax is not part of the foundation contract. Files authoring
@@ -199,8 +199,15 @@ transforms remain deferred; existing MDC components remain supported.
 - Focused direct and collection evidence lives in
   `tests/nuxt/docs-markdown-images.nuxt.spec.ts`; responsive zoom remains in
   `tests/e2e/image-zoom.spec.ts`.
-- B9 freezes internal route identity, external-link behavior, rendered
-  attributes, and accessibility semantics.
+- `resolveDocsLink` owns B9 runtime source/route mapping, query/hash handling,
+  external classification, safe rel defaults, overrides, and authored unsafe
+  scheme rejection. `ProseA` marks Markdown links; `DocsLink` chooses native
+  anchors versus `NuxtLink` without changing attrs or slot ownership.
+- `scripts/validate-docs-links.mjs` consumes the same resolver and runs the
+  existing B2 Steps owner before B1 semantics for canonical anchor validation.
+- Focused runtime, adapter, validator, and real collection evidence lives in
+  `tests/nuxt/docs-link-protocol.nuxt.spec.ts` and
+  `tests/nuxt/docs-link-validator.nuxt.spec.ts`.
 
 ## Evidence Rules
 
