@@ -3,6 +3,8 @@ withDefaults(
   defineProps<{
     src?: string
     alt?: string
+    title?: string
+    caption?: string
     width?: string | number
     height?: string | number
     loading?: 'eager' | 'lazy'
@@ -12,6 +14,8 @@ withDefaults(
   {
     src: undefined,
     alt: undefined,
+    title: undefined,
+    caption: undefined,
     width: undefined,
     height: undefined,
     loading: 'lazy',
@@ -25,6 +29,8 @@ withDefaults(
   <DocImageZoom
     :src="src"
     :alt="alt"
+    :title="title"
+    :caption="caption"
     :width="width"
     :height="height"
     :loading="loading"

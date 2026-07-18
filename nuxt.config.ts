@@ -3,6 +3,7 @@ import docsMarkdownCodeSystem, {
   docsMarkdownCodeHighlight,
 } from './app/utils/docs-markdown-code-system'
 import docsMarkdownCodeTabs from './app/utils/docs-markdown-code-tabs'
+import remarkDocsMarkdownImages from './app/utils/docs-markdown-images'
 import docsMarkdownPackageManager from './app/utils/docs-markdown-package-manager'
 import docsMarkdownPipeline from './app/utils/docs-markdown-pipeline'
 import docsMarkdownSemantics from './app/utils/docs-markdown-semantics'
@@ -25,6 +26,9 @@ const docsMarkdownCodeSystemConfigPath = createLocalImportPath(
 const docsMarkdownCodeTabsPluginPath = createLocalImportPath(
   new URL('./app/utils/docs-markdown-code-tabs.ts', import.meta.url),
 )
+const docsMarkdownImagesPluginPath = createLocalImportPath(
+  new URL('./app/utils/docs-markdown-images.ts', import.meta.url),
+)
 const docsMarkdownPackageManagerPluginPath = createLocalImportPath(
   new URL('./app/utils/docs-markdown-package-manager.ts', import.meta.url),
 )
@@ -41,6 +45,10 @@ const docsMarkdownOptions = {
   configs: [docsMarkdownSemantics, docsMarkdownCodeSystem],
   highlight: docsMarkdownCodeHighlight,
   remarkPlugins: {
+    remarkDocsMarkdownImages: {
+      instance: remarkDocsMarkdownImages,
+      src: docsMarkdownImagesPluginPath,
+    },
     docsMarkdownSteps: {
       instance: docsMarkdownSteps,
       src: docsMarkdownStepsPluginPath,

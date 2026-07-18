@@ -18,6 +18,15 @@ test.describe('@fast @content image zoom', () => {
       'src',
       '/docs-image-zoom-sample.svg',
     )
+    await expect(trigger.locator('img')).toHaveAttribute('width', '960')
+    await expect(trigger.locator('img')).toHaveAttribute('height', '540')
+    await expect(trigger.locator('img')).toHaveAttribute(
+      'title',
+      'Docs shell regions',
+    )
+    await expect(figures.first().locator('figcaption')).toHaveText(
+      'Docs shell regions',
+    )
     await expect(trigger.locator('.fd-doc-image-zoom-hint')).toBeVisible()
 
     await trigger.click()

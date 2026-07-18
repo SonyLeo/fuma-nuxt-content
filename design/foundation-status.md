@@ -37,7 +37,7 @@ contracts exist, but several protocol boundaries still need to become
 | Theme runtime and presets             | Gate Passed | Resolved config/runtime tests and theme browser contracts     | Keep product preset adapter outside foundation runtime  |
 | Docs page protocol                    | Gate Passed | Normalized page policy tests and focused shell checks         | Keep site adapters outside metadata policy              |
 | Default MDC mapping and link protocol | First Pass+ | Runtime content tests and browser contracts                   | Complete authoring edge cases and external-link policy  |
-| Markdown transform pipeline           | First Pass+ | Heading ids, Steps, structured data, code/package tabs        | Image transform policy                                  |
+| Markdown transform pipeline           | Gate Passed | Semantic, Steps, tabs, package and image Nuxt evidence        | Maintain frozen authoring transforms                    |
 | Code system and preview               | Gate Passed | B6 Nuxt and B7 responsive browser evidence                    | Maintain frozen code and interaction contracts          |
 | Content components                    | First Pass+ | Component inventory and responsive tests                      | Maintain parity; no broad new component batch           |
 | UI interaction primitives             | First Pass+ | Reka-backed local wrappers                                    | Keep public wrappers stable; Tree remains deferred      |
@@ -130,7 +130,6 @@ contracts exist, but several protocol boundaries still need to become
 
 ### P0: complete the Markdown authoring pipeline
 
-- Define image metadata, sizing, and placeholder policy.
 - Freeze internal and external link behavior.
 - Keep UI component contracts separate from authoring transforms.
 

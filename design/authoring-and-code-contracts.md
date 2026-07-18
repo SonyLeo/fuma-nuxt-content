@@ -31,7 +31,7 @@ and command policy remains in the
 | B5    | Package-manager transform | `remarkDocsMarkdownPackageManager` | Gate Passed | B4 code-fence slot contract         |
 | B6    | Highlight and code meta   | `docsMarkdownCodeSystem`           | Gate Passed | Stable code-fence AST               |
 | B7    | CodeBlock interaction     | `DocCodeBlock`                     | Gate Passed | B6 rendered metadata                |
-| B8    | Image transform           | Markdown image transform           | Draft       | Image metadata policy               |
+| B8    | Image transform           | `remarkDocsMarkdownImages`         | Gate Passed | Image metadata policy               |
 | B9    | Link protocol             | Markdown link mapping              | First Pass  | Canonical route/external policy     |
 
 Callouts intentionally use MDC authoring only in Phase 2. Additional
@@ -190,8 +190,15 @@ transforms remain deferred; existing MDC components remain supported.
 
 ### B8-B9 Media and links
 
-- B8 freezes image metadata, dimensions, placeholder, caption, and zoom mapping
-  without introducing a product CDN adapter.
+- `remarkDocsMarkdownImages` measures root-relative public assets with
+  `image-size`, preserving source and emitting width, height, and title-first
+  caption props. Missing supported local images fail with actionable context.
+- External and content-relative sources pass through without network fetch or
+  guessed imports; placeholder remains none. `ProseImg` only adapts metadata to
+  the existing default-zoom component.
+- Focused direct and collection evidence lives in
+  `tests/nuxt/docs-markdown-images.nuxt.spec.ts`; responsive zoom remains in
+  `tests/e2e/image-zoom.spec.ts`.
 - B9 freezes internal route identity, external-link behavior, rendered
   attributes, and accessibility semantics.
 

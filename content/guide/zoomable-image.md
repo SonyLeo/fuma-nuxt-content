@@ -10,7 +10,7 @@ figure and caption contract.
 
 ## Markdown Image
 
-![Docs layout sample diagram](/docs-image-zoom-sample.svg)
+![Docs layout sample diagram](/docs-image-zoom-sample.svg 'Docs shell regions')
 
 ## Component Image
 

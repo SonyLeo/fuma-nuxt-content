@@ -26,6 +26,7 @@
     "@nuxtjs/mdc": "0.22.0",
     "@shikijs/transformers": "4.2.0",
     "github-slugger": "^2.0.0",
+    "image-size": "2.0.2",
     "npm-to-yarn": "^3.0.1",
     "nuxt": "^4.4.8",
     "reka-ui": "^2.10.1",

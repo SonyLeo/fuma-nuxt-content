@@ -80,7 +80,6 @@ implicitly.
 
 1. Freeze content metadata, page identity, and tree ownership.
 2. Complete the remaining Phase 2 authoring and code contracts:
-   - image metadata policy
    - internal and external link protocol
 3. Document stable provider/layout/page public contracts.
 4. Keep component and Reka wrapper regressions green.
@@ -103,7 +102,7 @@ source before opening each remaining Phase 2 batch:
 
 The comparison does not authorize a dependency migration or a visual rewrite.
 Each result must be classified as direct reference, Nuxt adaptation,
-intentional divergence, defer, or stop-condition evidence. B8 is the next
+intentional divergence, defer, or stop-condition evidence. B9 is the next
 implementation batch.
 
 ### P1: integration completion
