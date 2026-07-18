@@ -175,10 +175,10 @@ Current collection baseline:
 
 | Project | Tests |
 | ------- | ----: |
-| Desktop |    39 |
+| Desktop |    47 |
 | Tablet  |    23 |
 | Mobile  |    26 |
-| Total   |    88 |
+| Total   |    96 |
 
 Authoring rules:
 
@@ -220,8 +220,8 @@ Main pushes and manual runs additionally execute the full E2E matrix as two
 independent shards:
 
 ```text
-shard 1/2: 44 tests
-shard 2/2: 44 tests
+shard 1/2: 48 tests
+shard 2/2: 48 tests
 ```
 
 Each shard:

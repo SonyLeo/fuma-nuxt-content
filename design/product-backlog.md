@@ -4,7 +4,7 @@ sectionLabel: Plan
 status: active
 type: backlog
 owner: product
-lastReviewed: 2026-07-12
+lastReviewed: 2026-07-19
 ---
 
 # Product Backlog
@@ -91,12 +91,11 @@ These begin only after the relevant integration and source contracts are
 
 ## Recommended Order
 
-1. Finish the foundation Markdown authoring gate.
-2. Complete integration P0.
-3. Establish multi-source baseline.
-4. Build blog/changelog/API composition.
-5. Add story/playground and AI-assisted surfaces.
-6. Add versioning/i18n and schema-driven API integrations.
+1. With the foundation gate passed, complete integration P0 in listed order.
+2. Establish multi-source baseline.
+3. Build blog/changelog/API composition.
+4. Add story/playground and AI-assisted surfaces.
+5. Add versioning/i18n and schema-driven API integrations.
 
 ## Product Gate
 

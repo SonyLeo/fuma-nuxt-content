@@ -4,7 +4,7 @@ sectionLabel: Plan
 status: active
 type: roadmap
 owner: project
-lastReviewed: 2026-07-18
+lastReviewed: 2026-07-19
 ---
 
 # Roadmap
@@ -14,9 +14,9 @@ lastReviewed: 2026-07-18
 Build a stable Vue-first documentation foundation aligned with Fumadocs
 protocols before expanding product composition.
 
-The current stage is foundation hardening. Phase 2 batches B1-B9 and their
-consolidated closeout are complete. Phase 3 component, shell, and primitive
-audit is next; product-layer expansion remains blocked.
+Foundation hardening is complete: Phase 2 authoring/code contracts and Phase 3
+component, shell, and primitive contracts passed the Foundation Exit Gate.
+The next priority is Product Backlog P0 integration; it has not started.
 
 ## Active Sources Of Truth
 
@@ -76,11 +76,28 @@ implicitly.
 
 ## Current Priority
 
-### P0: foundation exit work
+### P0: integration completion
 
-1. Audit Phase 3 content-component contracts and ordinary prose surfaces.
-2. Audit shell components and local interaction-wrapper contracts.
-3. Repair confirmed P0/P1 gaps, then run the Phase 3 milestone gate.
+1. remote search provider/API
+2. feedback backend or GitHub issue flow
+3. RSS
+4. `llms-full.txt`
+5. per-page Markdown export
+6. image CDN adapter
+
+### P1: multi-source baseline
+
+1. docs/blog/changelog/API source boundary
+2. deterministic route, metadata, navigation, and output ownership
+
+### P2: product composition
+
+1. blog/changelog/API presentation
+2. story/playground and AI/MCP/docs assistant
+3. versioning/i18n and schema-driven API integrations
+
+Start from the ordered Product Backlog. Keep provider, transport, output, and
+adapter ownership outside foundation; reopen it only for a proven defect.
 
 ## Reference Comparison Rule
 
@@ -90,26 +107,6 @@ Nuxt UI for Nuxt/MDC, Shiki, Reka, and ARIA evidence when relevant. Classify
 results as direct reference, Nuxt adaptation, intentional divergence, defer,
 or stop-condition evidence. Comparison does not authorize dependency migration
 or visual rewriting.
-
-### P1: integration completion
-
-After the foundation exit gate:
-
-1. remote search provider/API
-2. feedback backend or GitHub issue flow
-3. RSS
-4. `llms-full.txt`
-5. per-page Markdown export
-6. image CDN adapter
-
-### P2: multi-source and product composition
-
-1. docs/blog/changelog/API source boundary
-2. blog/changelog/API presentation
-3. story/playground
-4. AI/MCP/docs assistant
-5. versioning/i18n
-6. schema-driven API integrations
 
 ## Working Rules
 
@@ -123,6 +120,6 @@ After the foundation exit gate:
 
 ## Stage Exit
 
-The current stage closes when the Foundation Exit Gate in
-[Foundation Status](./foundation-status.md#foundation-exit-gate) passes and the
-test gates in [Verification Runbook](./verification-runbook.md) are green.
+The foundation stage is closed: the Foundation Exit Gate in
+[Foundation Status](./foundation-status.md#foundation-exit-gate) passed with
+the milestone gates in [Verification Runbook](./verification-runbook.md) green.

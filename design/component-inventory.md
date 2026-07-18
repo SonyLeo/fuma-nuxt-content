@@ -4,7 +4,7 @@ sectionLabel: Plan
 status: active
 type: inventory
 owner: foundation-ui
-lastReviewed: 2026-07-18
+lastReviewed: 2026-07-19
 ---
 
 # Component Inventory
@@ -22,16 +22,16 @@ Status meanings follow [Foundation Status](./foundation-status.md).
 | ---------------- | -------------------------- | ----------- | --------------------------------------------- | ---------------------------------------------------- |
 | Prose defaults   | `prose.css`, MDC mapping   | Gate Passed | Runtime rendering, code/links/images/tables   | Maintain frozen B1-B9 authoring contracts            |
 | Code block       | `DocCodeBlock`             | Gate Passed | Nuxt code-system and `code-block.spec.ts`     | Maintain B6-B7 code contracts                        |
-| Code tabs / Tabs | `DocCodeTabs`, `DocTabs`   | First Pass+ | `tabs-accordion-files.spec.ts`                | Maintain B3-B5 authoring and state contracts         |
-| Accordion        | `DocAccordion`             | First Pass+ | `tabs-accordion-files.spec.ts`                | Maintain hidden-until-found and keyboard behavior    |
-| Files            | `DocFiles`                 | First Pass+ | `tabs-accordion-files.spec.ts`                | Maintain truncation and nesting                      |
-| Cards            | `DocCards`, `DocCard`      | First Pass+ | `cards-callout.spec.ts`                       | Maintain responsive grid                             |
-| Callout          | `DocCallout`               | First Pass+ | `cards-callout.spec.ts`                       | Maintain type/icon/split contract                    |
-| Type table       | `DocTypeTable`             | First Pass+ | `inline-toc-type-table-steps.spec.ts`         | Generator integration remains product work           |
-| Steps            | `DocSteps`, `DocStep`      | First Pass+ | `inline-toc-type-table-steps.spec.ts`         | Authoring covered by `docs-markdown-steps` Nuxt spec |
-| Inline TOC       | `DocInlineToc`             | First Pass+ | `inline-toc-type-table-steps.spec.ts`         | Maintain open/active/depth semantics                 |
-| Heading          | MDC heading wrappers       | First Pass+ | `heading-preview.spec.ts`                     | Maintain canonical semantic and TOC contract         |
-| Preview          | `DocPreview`, install card | First Pass+ | `heading-preview.spec.ts`                     | Story/playground runtime is product work             |
+| Code tabs / Tabs | `DocCodeTabs`, `DocTabs`   | Gate Passed | `tabs-accordion-files.spec.ts`                | Maintain B3-B5 authoring and state contracts         |
+| Accordion        | `DocAccordion`             | Gate Passed | `tabs-accordion-files.spec.ts`                | Maintain hidden-until-found and keyboard behavior    |
+| Files            | `DocFiles`                 | Gate Passed | `tabs-accordion-files.spec.ts`                | Maintain truncation and nesting                      |
+| Cards            | `DocCards`, `DocCard`      | Gate Passed | `cards-callout.spec.ts`                       | Maintain responsive grid                             |
+| Callout          | `DocCallout`               | Gate Passed | `cards-callout.spec.ts`                       | Maintain type/icon/split contract                    |
+| Type table       | `DocTypeTable`             | Gate Passed | `inline-toc-type-table-steps.spec.ts`         | Generator integration remains product work           |
+| Steps            | `DocSteps`, `DocStep`      | Gate Passed | `inline-toc-type-table-steps.spec.ts`         | Authoring covered by `docs-markdown-steps` Nuxt spec |
+| Inline TOC       | `DocInlineToc`             | Gate Passed | `inline-toc-type-table-steps.spec.ts`         | Maintain open/active/depth semantics                 |
+| Heading          | MDC heading wrappers       | Gate Passed | `heading-preview.spec.ts`                     | Maintain canonical semantic and TOC contract         |
+| Preview          | `DocPreview`, install card | Gate Passed | `heading-preview.spec.ts`                     | Story/playground runtime is product work             |
 | Image zoom       | `DocImageZoom`             | Gate Passed | Nuxt image transform and `image-zoom.spec.ts` | Maintain B8 transform and zoom adapter               |
 
 ## Page And Shell Components
@@ -41,13 +41,14 @@ Status meanings follow [Foundation Status](./foundation-status.md).
 | Root provider        | `DocsRootProvider`            | Gate Passed | Adapter Nuxt tests, `layout-provider.spec.ts`          |
 | Shared layout slots  | layout composables/components | Gate Passed | Replacement-slot Nuxt tests, `layout-provider.spec.ts` |
 | Theme runtime/switch | theme composable and switch   | Gate Passed | `docs-theme-runtime.nuxt.spec.ts`, `theme.spec.ts`     |
-| Desktop sidebar      | `DocsSidebar`                 | First Pass+ | `sidebar.spec.ts`                                      |
-| Mobile drawer        | `DocsMobileNav`               | First Pass+ | `sidebar.spec.ts` mobile tags                          |
-| TOC rail             | `DocsToc`                     | First Pass+ | `toc.spec.ts`                                          |
-| Responsive TOC       | `DocsTocPopover`              | First Pass+ | `toc-responsive.spec.ts`                               |
-| Page actions         | `DocsPageActions`             | First Pass+ | `page-actions.spec.ts`                                 |
-| Feedback             | `DocsFeedback`                | First Pass  | `page-actions.spec.ts`                                 |
-| Pager                | `DocsPager`                   | First Pass+ | `page-actions.spec.ts`                                 |
+| Desktop sidebar      | `DocsSidebar`                 | Gate Passed | `sidebar.spec.ts`                                      |
+| Mobile drawer        | `DocsMobileNav`               | Gate Passed | `sidebar.spec.ts` mobile tags                          |
+| TOC rail             | `DocsToc`                     | Gate Passed | `toc.spec.ts`                                          |
+| Responsive TOC       | `DocsTocPopover`              | Gate Passed | `toc-responsive.spec.ts`                               |
+| Search dialog shell  | `DocsSearchDialog`            | Gate Passed | Combobox ARIA and `layout-provider.spec.ts`            |
+| Page actions         | `DocsPageActions`             | Gate Passed | `page-actions.spec.ts`                                 |
+| Feedback shell       | `DocsFeedback`                | Gate Passed | UI contract passed; backend remains integration work   |
+| Pager                | `DocsPager`                   | Gate Passed | `page-actions.spec.ts`                                 |
 | Home layout          | `DocsHomeLayout`              | Gate Passed | Adapter Nuxt tests, `layout-provider.spec.ts`          |
 | Not-found shell      | `DocsNotFound`                | Gate Passed | Props-driven Nuxt test, `layout-provider.spec.ts`      |
 

@@ -4,7 +4,7 @@ sectionLabel: Plan
 status: active
 type: status
 owner: foundation
-lastReviewed: 2026-07-18
+lastReviewed: 2026-07-19
 ---
 
 # Foundation Status
@@ -24,9 +24,9 @@ Status vocabulary:
 
 ## Current Position
 
-The foundation is currently `L2-`: Phase 2 authoring and code contracts passed
-their consolidated gate, while Phase 3 must still verify content components,
-shell behavior, and interaction wrappers before broad product composition.
+The foundation is `Gate Passed`: Phase 2 authoring/code contracts and Phase 3
+content, shell, and interaction contracts passed their consolidated gates.
+Integration may now depend on these contracts without reopening foundation.
 
 | Foundation area                       | Status      | Evidence                                                      | Remaining gate                                          |
 | ------------------------------------- | ----------- | ------------------------------------------------------------- | ------------------------------------------------------- |
@@ -39,8 +39,8 @@ shell behavior, and interaction wrappers before broad product composition.
 | Default MDC mapping and link protocol | Gate Passed | Runtime, validator, collection, and browser contracts         | Maintain shared resolver and canonical anchor policy    |
 | Markdown transform pipeline           | Gate Passed | Semantic, Steps, tabs, package and image Nuxt evidence        | Maintain frozen authoring transforms                    |
 | Code system and preview               | Gate Passed | B6 Nuxt and B7 responsive browser evidence                    | Maintain frozen code and interaction contracts          |
-| Content components                    | First Pass+ | Component inventory and responsive tests                      | Maintain parity; no broad new component batch           |
-| UI interaction primitives             | First Pass+ | Reka-backed local wrappers                                    | Keep public wrappers stable; Tree remains deferred      |
+| Content components                    | Gate Passed | Component inventory and responsive tests                      | Maintain parity; no broad new component batch           |
+| UI interaction primitives             | Gate Passed | Reka-backed local wrappers and ARIA/browser contracts         | Keep public wrappers stable; Tree remains deferred      |
 | Verification infrastructure           | Gate Passed | Runtime tests, Playwright webServer, CI shards                | Maintain zero stale entry points and bounded runtime    |
 
 ## Contract Ownership
@@ -120,27 +120,26 @@ shell behavior, and interaction wrappers before broad product composition.
   project-owned.
 - Reka Tree is not a substitute for unresolved page-tree modeling.
 
-## Remaining Foundation Work
+## Foundation Maintenance Rules
 
-### P0: freeze the source and tree boundary
+### Source and tree boundary
 
-- Document route collision and source identity diagnostics.
-- Remove remaining direct or duplicated route/source normalization.
+- Keep route collision diagnostics and normalization on shared identity owners.
 - Add focused coverage whenever a new content source shape is introduced.
 
-### P0: maintain the Markdown authoring pipeline
+### Markdown authoring pipeline
 
 - Keep internal, external, source-relative, and authored-safe links on B9.
 - Keep UI component contracts separate from authoring transforms.
 
-### P1: maintain public provider and page contracts
+### Public provider and page contracts
 
 - Keep the root provider, public layout slot list, replacement semantics,
   resolved page options, and standalone breadcrumb ownership covered.
 - Keep product adapters generating foundation props; foundation components must
   not read global site config.
 
-### P1: maintain component parity
+### Component parity
 
 - Treat the component inventory as a regression map, not an endless feature
   backlog.
@@ -149,7 +148,7 @@ shell behavior, and interaction wrappers before broad product composition.
 
 ## Foundation Exit Gate
 
-Foundation reaches `Gate Passed` when all of the following are true:
+Foundation reached `Gate Passed` because all of the following are true:
 
 - Content metadata and page identity have one documented owner.
 - Page-tree construction and runtime consumption use the same normalized

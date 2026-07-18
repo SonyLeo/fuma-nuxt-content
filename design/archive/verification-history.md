@@ -32,9 +32,9 @@ and manually managed Nuxt services. This evolved through several stages:
 - Existing-server reuse was verified with a stable listener PID that remained
   alive after the test.
 - Full regression stabilized at two local workers.
-- Viewport-aware filtering reduced collection from 132 to 88 tests.
-- Current project distribution is desktop 39, tablet 23, mobile 26.
-- CI full regression is split into two balanced shards of 44 tests.
+- Viewport-aware filtering reduced redundant cross-project collection.
+- Current project distribution is desktop 47, tablet 23, mobile 26.
+- CI full regression is split into two balanced shards of 48 tests.
 - Blob reports and HTML report merging were verified locally.
 
 ## Performance Findings
@@ -62,7 +62,13 @@ Historical references to these names are not current instructions.
   including metadata persistence, and all 96 Playwright project tests passing.
 - Closeout added a page-backed group identity regression fixture after the
   browser gate exposed a directory matcher that used the parent dirname.
-- Phase 3 starts from this green milestone rather than replaying batch reports.
+
+## Phase 3 Closeout
+
+- Phase 3 repaired authored content-link safety, MDC Boolean adapters, search
+  combobox ARIA, content landmarks, and callout string-icon mapping.
+- Closeout passed typecheck, docs/link validators, all 154 Nuxt tests, all 96
+  Playwright project tests, and balanced 48/48 shard collection.
 
 ## Current Source Of Truth
 
