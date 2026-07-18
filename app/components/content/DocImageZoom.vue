@@ -8,6 +8,7 @@ import {
   useTemplateRef,
   watch,
 } from 'vue'
+import { readBooleanLike } from '~/utils/doc-accordion'
 
 const props = withDefaults(
   defineProps<{
@@ -20,7 +21,7 @@ const props = withDefaults(
     loading?: 'eager' | 'lazy'
     zoomSrc?: string
     zoomAlt?: string
-    zoom?: boolean
+    zoom?: boolean | 'true' | 'false'
   }>(),
   {
     src: undefined,
@@ -39,7 +40,9 @@ const props = withDefaults(
 const open = shallowRef(false)
 const triggerRef = useTemplateRef<HTMLButtonElement>('trigger')
 const fallbackId = useId()
-const isZoomable = computed(() => props.zoom && Boolean(props.src))
+const isZoomable = computed(
+  () => readBooleanLike(props.zoom, true) && Boolean(props.src),
+)
 const resolvedAlt = computed(() => props.alt ?? '')
 const resolvedCaption = computed(
   () => props.caption ?? props.title ?? props.alt ?? '',

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { readBooleanLike } from '~/utils/doc-accordion'
+
 const props = withDefaults(
   defineProps<{
     defaultValue?: string
@@ -6,8 +8,8 @@ const props = withDefaults(
     defaultIndex?: number | string
     label?: string
     groupId?: string
-    persist?: boolean
-    updateAnchor?: boolean
+    persist?: boolean | 'true' | 'false'
+    updateAnchor?: boolean | 'true' | 'false'
   }>(),
   {
     defaultValue: undefined,
@@ -51,6 +53,8 @@ function escapeTabValue(value: string) {
 }
 
 const resolvedItems = computed(() => parseItems(props.items))
+const persistState = computed(() => readBooleanLike(props.persist))
+const updateAnchorState = computed(() => readBooleanLike(props.updateAnchor))
 const resolvedDefaultIndex = computed(() => {
   const index = Number(props.defaultIndex)
 
@@ -73,8 +77,8 @@ const resolvedDefaultValue = computed(() => {
     class="fd-doc-tabs"
     :default-value="resolvedDefaultValue"
     :group-id="groupId"
-    :persist="persist"
-    :update-anchor="updateAnchor"
+    :persist="persistState"
+    :update-anchor="updateAnchorState"
   >
     <UiTabsList class="fd-doc-tabs-list">
       <span v-if="label" class="fd-doc-tabs-label">{{ label }}</span>

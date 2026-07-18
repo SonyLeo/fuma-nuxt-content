@@ -1,5 +1,7 @@
 <script setup lang="ts">
-withDefaults(
+import { readBooleanLike } from '~/utils/doc-accordion'
+
+const props = withDefaults(
   defineProps<{
     src?: string
     alt?: string
@@ -8,7 +10,7 @@ withDefaults(
     width?: string | number
     height?: string | number
     loading?: 'eager' | 'lazy'
-    zoom?: boolean
+    zoom?: boolean | 'true' | 'false'
     zoomSrc?: string
   }>(),
   {
@@ -23,6 +25,8 @@ withDefaults(
     zoomSrc: undefined,
   },
 )
+
+const zoomState = computed(() => readBooleanLike(props.zoom, true))
 </script>
 
 <template>
@@ -34,7 +38,7 @@ withDefaults(
     :width="width"
     :height="height"
     :loading="loading"
-    :zoom="zoom"
+    :zoom="zoomState"
     :zoom-src="zoomSrc"
   />
 </template>
