@@ -27,7 +27,7 @@ and command policy remains in the
 | B1    | Markdown semantics        | `remarkDocsMarkdownSemantics` | Gate Passed | None                                |
 | B2    | Steps authoring           | `remarkDocsMarkdownSteps`     | Gate Passed | B1 canonical records and TOC bridge |
 | B3    | Tabs group state          | `UiTabs`                      | Gate Passed | Stable tab value/group protocol     |
-| B4    | Code-tab transform        | Remark authoring transform    | Draft       | B3 group state                      |
+| B4    | Code-tab transform        | `remarkDocsMarkdownCodeTabs`  | Gate Passed | B3 group state                      |
 | B5    | Package-manager transform | Remark authoring transform    | Draft       | B4 code-fence slot contract         |
 | B6    | Highlight and code meta   | Shiki and code-meta pipeline  | Draft       | Stable code-fence AST               |
 | B7    | CodeBlock interaction     | `DocCodeBlock`                | Draft       | B6 rendered metadata                |
@@ -144,8 +144,18 @@ transforms remain deferred; existing MDC components remain supported.
 
 ### B4-B5 Tabs authoring
 
-- B4 freezes automatic code-tab grouping while retaining code fence AST so
-  every fence continues through build-time Shiki.
+- `remarkDocsMarkdownCodeTabs` is the only B4 owner. It groups consecutive
+  same-parent code fences with non-empty quoted `tab` metadata into a
+  `doc-tabs`/`doc-tab` MDC named-slot tree.
+- Trigger and panel values retain the exact authoring label. The first unique
+  label is the default value; duplicate labels share one panel in source order.
+- Generated named sections carry MDC's `component-slot`/`v-slot` transport
+  because the source parser lifecycle has already completed before B4 runs.
+- A non-empty `tab-group` on the first fence maps to the B3 `groupId` contract
+  with `persist=true`; later group declarations do not take ownership.
+- B4 consumes only `tab` and `tab-group`. Original code nodes, language, value,
+  position, and all other code metadata remain available to build-time Shiki
+  and the later B6 code-meta owner.
 - B5 adds package-manager synchronization on top of the same slot contract.
 - Code content must not be serialized into JSON or raw-code component props.
 - If MDC cannot express the required `DocTabs`/`DocTab`-equivalent slot tree
