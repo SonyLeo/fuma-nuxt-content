@@ -4,7 +4,7 @@ sectionLabel: Record
 status: active
 type: record
 owner: architecture
-lastReviewed: 2026-07-14
+lastReviewed: 2026-07-18
 ---
 
 # Architecture Decisions
@@ -20,6 +20,25 @@ superseded experiments belong in Git history or the archive summaries.
 - Borrow Fumadocs protocols and UI semantics, not React implementation details.
 - Use assistant-ui as a shell-density reference, not as a product architecture
   source.
+- Use the Nuxt UI v4 repository and documentation site as a Nuxt-native
+  technical reference for Reka integration, component metadata, Nuxt Content,
+  MDC, image handling, and optional OG/schema/LLM modules. Its merged UI/Pro
+  package is MIT and free, but this does not make it a foundation dependency
+  ([official v4 migration](https://ui.nuxt.com/docs/getting-started/migration/v4),
+  [repository](https://github.com/nuxt/ui/tree/v4)).
+- Keep Fumadocs as the structural and visual reference. Nuxt UI's current
+  shell, theme, and high-level component APIs are not the visual target and do
+  not replace project-owned docs protocols, local `Ui*` wrappers, or CSS layers.
+- Evaluate Nuxt ecosystem modules independently in their existing integration
+  or product owner after the foundation gate; do not adopt the Nuxt UI docs
+  stack wholesale.
+- For Phase 2 authoring and code contracts, use the local Fumadocs remark/rehype
+  plugins as the primary protocol reference: `remark-npm`, `remark-code-tab`,
+  `remark-image`, `remark-heading`, `remark-structure`, and `rehype-code`.
+- Nuxt UI's explicit MDC `code-group` and runtime `localStorage` sync are a
+  compatible implementation reference, not the package-manager or semantic
+  transform owner. Project transforms must preserve the established MDC slot
+  and code-fence contracts.
 - Keep TinyRobot examples out of foundation architecture decisions.
 
 ## D002: Foundation before product composition

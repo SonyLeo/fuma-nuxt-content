@@ -4,7 +4,7 @@ sectionLabel: Plan
 status: active
 type: inventory
 owner: foundation-ui
-lastReviewed: 2026-07-14
+lastReviewed: 2026-07-18
 ---
 
 # Component Inventory
@@ -21,8 +21,8 @@ Status meanings follow [Foundation Status](./foundation-status.md).
 | Surface          | Local owner                | Status      | Primary browser contract                    | Remaining work                                       |
 | ---------------- | -------------------------- | ----------- | ------------------------------------------- | ---------------------------------------------------- |
 | Prose defaults   | `prose.css`, MDC mapping   | First Pass+ | Runtime rendering, code/links/images/tables | Maintain generic authoring contract                  |
-| Code block       | `DocCodeBlock`             | First Pass+ | `code-block.spec.ts`                        | Complete transform-driven metadata policy            |
-| Code tabs / Tabs | `DocCodeTabs`, `DocTabs`   | First Pass+ | `tabs-accordion-files.spec.ts`              | Automatic grouping/package-manager transform         |
+| Code block       | `DocCodeBlock`             | First Pass+ | `code-block.spec.ts`                        | Freeze highlight/meta and interaction contracts      |
+| Code tabs / Tabs | `DocCodeTabs`, `DocTabs`   | First Pass+ | `tabs-accordion-files.spec.ts`              | Maintain B3-B5 authoring and state contracts         |
 | Accordion        | `DocAccordion`             | First Pass+ | `tabs-accordion-files.spec.ts`              | Maintain hidden-until-found and keyboard behavior    |
 | Files            | `DocFiles`                 | First Pass+ | `tabs-accordion-files.spec.ts`              | Maintain truncation and nesting                      |
 | Cards            | `DocCards`, `DocCard`      | First Pass+ | `cards-callout.spec.ts`                     | Maintain responsive grid                             |
@@ -30,7 +30,7 @@ Status meanings follow [Foundation Status](./foundation-status.md).
 | Type table       | `DocTypeTable`             | First Pass+ | `inline-toc-type-table-steps.spec.ts`       | Generator integration remains product work           |
 | Steps            | `DocSteps`, `DocStep`      | First Pass+ | `inline-toc-type-table-steps.spec.ts`       | Authoring covered by `docs-markdown-steps` Nuxt spec |
 | Inline TOC       | `DocInlineToc`             | First Pass+ | `inline-toc-type-table-steps.spec.ts`       | Maintain open/active/depth semantics                 |
-| Heading          | MDC heading wrappers       | First Pass+ | `heading-preview.spec.ts`                   | Complete custom-id transform policy                  |
+| Heading          | MDC heading wrappers       | First Pass+ | `heading-preview.spec.ts`                   | Maintain canonical semantic and TOC contract         |
 | Preview          | `DocPreview`, install card | First Pass+ | `heading-preview.spec.ts`                   | Story/playground runtime is product work             |
 | Image zoom       | `DocImageZoom`             | First Pass+ | `image-zoom.spec.ts`                        | CDN adapter and metadata transform deferred          |
 

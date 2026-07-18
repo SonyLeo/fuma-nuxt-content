@@ -4,7 +4,7 @@ sectionLabel: Reference
 status: active
 type: contract
 owner: foundation-authoring
-lastReviewed: 2026-07-14
+lastReviewed: 2026-07-18
 ---
 
 # Authoring And Code Contracts
@@ -22,17 +22,17 @@ and command policy remains in the
 
 ## Contract Matrix
 
-| Batch | Contract                  | Canonical owner               | Status      | Dependency                          |
-| ----- | ------------------------- | ----------------------------- | ----------- | ----------------------------------- |
-| B1    | Markdown semantics        | `remarkDocsMarkdownSemantics` | Gate Passed | None                                |
-| B2    | Steps authoring           | `remarkDocsMarkdownSteps`     | Gate Passed | B1 canonical records and TOC bridge |
-| B3    | Tabs group state          | `UiTabs`                      | Gate Passed | Stable tab value/group protocol     |
-| B4    | Code-tab transform        | `remarkDocsMarkdownCodeTabs`  | Gate Passed | B3 group state                      |
-| B5    | Package-manager transform | Remark authoring transform    | Draft       | B4 code-fence slot contract         |
-| B6    | Highlight and code meta   | Shiki and code-meta pipeline  | Draft       | Stable code-fence AST               |
-| B7    | CodeBlock interaction     | `DocCodeBlock`                | Draft       | B6 rendered metadata                |
-| B8    | Image transform           | Markdown image transform      | Draft       | Image metadata policy               |
-| B9    | Link protocol             | Markdown link mapping         | First Pass  | Canonical route/external policy     |
+| Batch | Contract                  | Canonical owner                    | Status      | Dependency                          |
+| ----- | ------------------------- | ---------------------------------- | ----------- | ----------------------------------- |
+| B1    | Markdown semantics        | `remarkDocsMarkdownSemantics`      | Gate Passed | None                                |
+| B2    | Steps authoring           | `remarkDocsMarkdownSteps`          | Gate Passed | B1 canonical records and TOC bridge |
+| B3    | Tabs group state          | `UiTabs`                           | Gate Passed | Stable tab value/group protocol     |
+| B4    | Code-tab transform        | `remarkDocsMarkdownCodeTabs`       | Gate Passed | B3 group state                      |
+| B5    | Package-manager transform | `remarkDocsMarkdownPackageManager` | Gate Passed | B4 code-fence slot contract         |
+| B6    | Highlight and code meta   | Shiki and code-meta pipeline       | Draft       | Stable code-fence AST               |
+| B7    | CodeBlock interaction     | `DocCodeBlock`                     | Draft       | B6 rendered metadata                |
+| B8    | Image transform           | Markdown image transform           | Draft       | Image metadata policy               |
+| B9    | Link protocol             | Markdown link mapping              | First Pass  | Canonical route/external policy     |
 
 Callouts intentionally use MDC authoring only in Phase 2. Additional
 admonition syntax is not part of the foundation contract. Files authoring
@@ -156,10 +156,20 @@ transforms remain deferred; existing MDC components remain supported.
 - B4 consumes only `tab` and `tab-group`. Original code nodes, language, value,
   position, and all other code metadata remain available to build-time Shiki
   and the later B6 code-meta owner.
-- B5 adds package-manager synchronization on top of the same slot contract.
+- `remarkDocsMarkdownPackageManager` is the only B5 owner. It runs after B4
+  and before B1, and expands `package-install` or `npm` fences into npm, pnpm,
+  yarn, and bun panels with npm as the default.
+- Generated tabs use `groupId="package-manager"` and `persist=true`. Existing
+  manual or B4-generated tabs remain unchanged, and the transform is
+  idempotent.
+- Each panel retains a MDAST code node with bash language and converted value;
+  source metadata, position, and copied data remain available to Shiki and B6.
 - Code content must not be serialized into JSON or raw-code component props.
 - If MDC cannot express the required `DocTabs`/`DocTab`-equivalent slot tree
   while retaining code nodes, the transform batch stops.
+- Focused evidence lives in
+  `tests/nuxt/docs-markdown-package-manager.nuxt.spec.ts`; one real
+  `/guide/package-manager` query proves eight generated panels reach Shiki.
 
 ### B6-B7 Code system
 

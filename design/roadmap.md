@@ -4,7 +4,7 @@ sectionLabel: Plan
 status: active
 type: roadmap
 owner: project
-lastReviewed: 2026-07-14
+lastReviewed: 2026-07-18
 ---
 
 # Roadmap
@@ -79,13 +79,33 @@ implicitly.
 ### P0: foundation exit work
 
 1. Freeze content metadata, page identity, and tree ownership.
-2. Complete required Markdown authoring transforms:
-   - Steps
-   - package-manager commands
-   - code-tab grouping
+2. Complete the remaining Phase 2 authoring and code contracts:
+   - highlight/code metadata and CodeBlock interaction
    - image metadata policy
+   - internal and external link protocol
 3. Document stable provider/layout/page public contracts.
 4. Keep component and Reka wrapper regressions green.
+
+## Reference Comparison Plan
+
+The local Nuxt UI v4 baseline is `D:\Projects\Learning\gh\ui` at the
+Coordinator-verified `v4` commit. Compare it with the pinned local Fumadocs
+source before opening each remaining Phase 2 batch:
+
+1. **Content and authoring:** use Fumadocs remark plugins as protocol references;
+   compare Nuxt UI's explicit MDC authoring and document any intentional
+   adaptation to Nuxt Content lifecycle.
+2. **Code system:** compare Shiki/meta/line-state inputs and SSR output before
+   changing CodeBlock interaction or styling.
+3. **Runtime/UI:** compare Nuxt UI's Reka-backed slot and ARIA behavior only
+   where it informs project-owned wrappers and CSS layers.
+4. **Integration:** evaluate Content schemas, image, OG, schema, and LLM
+   modules independently after Foundation ownership is stable.
+
+The comparison does not authorize a dependency migration or a visual rewrite.
+Each result must be classified as direct reference, Nuxt adaptation,
+intentional divergence, defer, or stop-condition evidence. B6 is the next
+implementation batch after this comparison is accepted.
 
 ### P1: integration completion
 

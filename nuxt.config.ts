@@ -1,5 +1,6 @@
 import tailwindcss from '@tailwindcss/vite'
 import docsMarkdownCodeTabs from './app/utils/docs-markdown-code-tabs'
+import docsMarkdownPackageManager from './app/utils/docs-markdown-package-manager'
 import docsMarkdownPipeline from './app/utils/docs-markdown-pipeline'
 import docsMarkdownSemantics from './app/utils/docs-markdown-semantics'
 import docsMarkdownSteps from './app/utils/docs-markdown-steps'
@@ -17,6 +18,9 @@ const docsMarkdownPipelinePluginPath = createLocalImportPath(
 )
 const docsMarkdownCodeTabsPluginPath = createLocalImportPath(
   new URL('./app/utils/docs-markdown-code-tabs.ts', import.meta.url),
+)
+const docsMarkdownPackageManagerPluginPath = createLocalImportPath(
+  new URL('./app/utils/docs-markdown-package-manager.ts', import.meta.url),
 )
 const docsMarkdownSemanticsPluginPath = createLocalImportPath(
   new URL('./app/utils/docs-markdown-semantics.ts', import.meta.url),
@@ -37,6 +41,10 @@ const docsMarkdownOptions = {
     docsMarkdownCodeTabs: {
       instance: docsMarkdownCodeTabs,
       src: docsMarkdownCodeTabsPluginPath,
+    },
+    docsMarkdownPackageManager: {
+      instance: docsMarkdownPackageManager,
+      src: docsMarkdownPackageManagerPluginPath,
     },
     docsMarkdownSemantics: {
       instance: docsMarkdownSemantics,
