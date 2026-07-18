@@ -4,7 +4,7 @@ sectionLabel: Guide
 status: active
 type: runbook
 owner: quality
-lastReviewed: 2026-07-13
+lastReviewed: 2026-07-18
 ---
 
 # Verification Runbook
@@ -72,6 +72,10 @@ Runtime tests own contracts that do not require a real browser:
 - content rendering structure
 - Markdown transform output
 - normalized data contracts
+
+Nuxt Content runtime specs share generated content artifacts and SQLite state.
+Do not run them concurrently in one checkout; serialize focused specs. Retry a
+plausibly transient `database is locked` failure once with the same command.
 
 The persistence spec performs an isolated production build and adds about
 45–70 seconds on the current Windows baseline. Exclude it for ordinary batches.
@@ -240,6 +244,9 @@ and uploads one HTML report.
 - Keep one independent surface or behavior per test.
 - Extract repeated interaction into focused helpers.
 - Use stable fixtures and semantic expectations, not arbitrary content counts.
+- When a downstream Markdown owner consumes transformed input, run prerequisite
+  transforms in production order and include a fixture that fails if one is
+  omitted.
 - Test public state: role, `aria-*`, `data-state`, visibility, focus, geometry,
   and navigation outcome.
 - Do not depend on test order or state left by another page.
@@ -289,13 +296,3 @@ transient. Do not hide a stable failure with broad retries.
 
 Reports must name the gate actually executed. A focused pass is not evidence of
 full or CI completion.
-
-## Current Baseline
-
-- Full collection: 88 tests, zero expected skip in the selected matrix.
-- Local full workers: 2.
-- CI full shards: 2 × 44.
-- Playwright service startup, cleanup, and existing-server reuse have been
-  validated.
-- Historical migration and performance context lives in
-  [Verification History](./archive/verification-history.md).

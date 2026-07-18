@@ -393,6 +393,71 @@ describe('docs page tree input and policy', () => {
     })
   })
 
+  test('matches page-backed physical groups by canonical directory identity', () => {
+    const navigation = [
+      {
+        title: 'Guide',
+        path: '/guide',
+        stem: 'guide',
+        page: false,
+        children: [
+          {
+            title: 'Path Policy',
+            path: '/guide/protocol-playground',
+            stem: 'guide/protocol-playground/path-policy',
+            children: [
+              {
+                title: 'Child',
+                path: '/guide/protocol-playground/child',
+                stem: 'guide/protocol-playground/child',
+              },
+            ],
+          },
+        ],
+      },
+    ] as ContentNavigationItem[]
+    const pages: DocsPageRecord[] = [
+      {
+        path: '/guide/protocol-playground',
+        stem: 'guide/protocol-playground/path-policy',
+        docsMetadata: { title: 'Path Policy' },
+      },
+      {
+        path: '/guide/protocol-playground/child',
+        stem: 'guide/protocol-playground/child',
+        docsMetadata: { title: 'Child' },
+      },
+    ]
+    const runtime = createRuntime(navigation, pages, [
+      {
+        stem: 'guide',
+        title: 'Guide',
+        pages: [
+          {
+            type: 'group',
+            name: 'layouts',
+            title: 'Layouts',
+            pages: ['protocol-playground'],
+          },
+        ],
+      },
+    ])
+    const root = runtime.visibleTree[0]
+    const layouts = root?.children[0]
+
+    expect(root?.children).toHaveLength(1)
+    expect(layouts).toMatchObject({
+      type: 'group',
+      title: 'Layouts',
+      sourcePath: undefined,
+    })
+    expect(layouts?.children).toHaveLength(1)
+    expect(layouts?.children[0]).toMatchObject({
+      type: 'group',
+      sourcePath: '/guide/protocol-playground',
+    })
+  })
+
   test('resolves directory targets in one ordered policy', () => {
     const pageIndex = createNode({
       id: 'page-index',

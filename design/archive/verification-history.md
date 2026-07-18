@@ -4,7 +4,7 @@ sectionLabel: Archive
 status: historical
 type: archive
 owner: quality
-lastReviewed: 2026-07-12
+lastReviewed: 2026-07-19
 ---
 
 # Verification History
@@ -55,6 +55,14 @@ and manually managed Nuxt services. This evolved through several stages:
 - surface-specific E2E package scripts
 
 Historical references to these names are not current instructions.
+
+## Phase 2 Closeout
+
+- Phase 2 closed with typecheck, docs/link validators, all 151 Nuxt tests
+  including metadata persistence, and all 96 Playwright project tests passing.
+- Closeout added a page-backed group identity regression fixture after the
+  browser gate exposed a directory matcher that used the parent dirname.
+- Phase 3 starts from this green milestone rather than replaying batch reports.
 
 ## Current Source Of Truth
 

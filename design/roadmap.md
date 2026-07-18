@@ -14,9 +14,9 @@ lastReviewed: 2026-07-18
 Build a stable Vue-first documentation foundation aligned with Fumadocs
 protocols before expanding product composition.
 
-The current stage is foundation hardening. The baseline exists; the remaining
-work is to freeze protocol ownership and complete the authoring pipeline so
-upper layers can depend on it without reopening shell or content contracts.
+The current stage is foundation hardening. Phase 2 batches B1-B9 and their
+consolidated closeout are complete. Phase 3 component, shell, and primitive
+audit is next; product-layer expansion remains blocked.
 
 ## Active Sources Of Truth
 
@@ -78,31 +78,18 @@ implicitly.
 
 ### P0: foundation exit work
 
-1. Freeze content metadata, page identity, and tree ownership.
-2. Close Phase 2 with consolidated Nuxt, validator, docs, and browser gates.
-3. Document stable provider/layout/page public contracts.
-4. Keep component and Reka wrapper regressions green.
+1. Audit Phase 3 content-component contracts and ordinary prose surfaces.
+2. Audit shell components and local interaction-wrapper contracts.
+3. Repair confirmed P0/P1 gaps, then run the Phase 3 milestone gate.
 
-## Reference Comparison Plan
+## Reference Comparison Rule
 
 The local Nuxt UI v4 baseline is `D:\Projects\Learning\gh\ui` at the
-Coordinator-verified `v4` commit. Compare it with the pinned local Fumadocs
-source before opening each remaining Phase 2 batch:
-
-1. **Content and authoring:** use Fumadocs remark plugins as protocol references;
-   compare Nuxt UI's explicit MDC authoring and document any intentional
-   adaptation to Nuxt Content lifecycle.
-2. **Code system:** compare Shiki/meta/line-state inputs and SSR output before
-   future CodeBlock styling changes.
-3. **Runtime/UI:** compare Nuxt UI's Reka-backed slot and ARIA behavior only
-   where it informs project-owned wrappers and CSS layers.
-4. **Integration:** evaluate Content schemas, image, OG, schema, and LLM
-   modules independently after Foundation ownership is stable.
-
-The comparison does not authorize a dependency migration or a visual rewrite.
-Each result must be classified as direct reference, Nuxt adaptation,
-intentional divergence, defer, or stop-condition evidence. B1-B9 implementation
-is complete; Phase 2 closeout is next.
+Coordinator-verified `v4` commit. Use pinned Fumadocs for protocol ownership and
+Nuxt UI for Nuxt/MDC, Shiki, Reka, and ARIA evidence when relevant. Classify
+results as direct reference, Nuxt adaptation, intentional divergence, defer,
+or stop-condition evidence. Comparison does not authorize dependency migration
+or visual rewriting.
 
 ### P1: integration completion
 

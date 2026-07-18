@@ -24,9 +24,9 @@ Status vocabulary:
 
 ## Current Position
 
-The foundation is beyond initial rendering and is currently `L2-`: the core
-contracts exist, but several protocol boundaries still need to become
-`Gate Passed` before broad product composition.
+The foundation is currently `L2-`: Phase 2 authoring and code contracts passed
+their consolidated gate, while Phase 3 must still verify content components,
+shell behavior, and interaction wrappers before broad product composition.
 
 | Foundation area                       | Status      | Evidence                                                      | Remaining gate                                          |
 | ------------------------------------- | ----------- | ------------------------------------------------------------- | ------------------------------------------------------- |

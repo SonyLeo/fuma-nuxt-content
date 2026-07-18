@@ -190,14 +190,6 @@ function getMetaEntryKey(node: DocsNode) {
     return normalizeName(node.title)
   }
 
-  if (node.type === 'group') {
-    const dirname = getPathSegments(node.dirname).at(-1)
-
-    if (dirname) {
-      return normalizeName(dirname)
-    }
-  }
-
   const sourcePath = node.sourcePath ?? node.path
 
   return getPathSegments(sourcePath).at(-1)
