@@ -36,6 +36,21 @@ npx @fumadocs/cli@latest add codeblock
 This is a **MDX component** meant to be used with `Rehype Code` to display highlighted codeblocks.
 You can refer to [Markdown](/guide/components) for the syntax of writing codeblocks.
 
+::doc-code-block{title="direct-prop.ts" language="ts" code="const directCopyOwner = 'direct-prop-payload'"}
+::
+
+::doc-code-block{title="actions-only.ts" language="ts" code="const actionsOnly = true" :allow-copy="false"}
+#actions
+Custom action
+::
+
+```ts lineNumbers {1}
+const renderedCopyOwner = 'rendered-pre-payload' // [!code highlight]
+const renderedLongLine =
+  'long-line-' +
+  'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+```
+
 Supported features:
 
 - Copy button

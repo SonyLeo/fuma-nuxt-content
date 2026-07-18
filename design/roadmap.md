@@ -80,7 +80,6 @@ implicitly.
 
 1. Freeze content metadata, page identity, and tree ownership.
 2. Complete the remaining Phase 2 authoring and code contracts:
-   - CodeBlock interaction
    - image metadata policy
    - internal and external link protocol
 3. Document stable provider/layout/page public contracts.
@@ -96,7 +95,7 @@ source before opening each remaining Phase 2 batch:
    compare Nuxt UI's explicit MDC authoring and document any intentional
    adaptation to Nuxt Content lifecycle.
 2. **Code system:** compare Shiki/meta/line-state inputs and SSR output before
-   changing CodeBlock interaction or styling.
+   future CodeBlock styling changes.
 3. **Runtime/UI:** compare Nuxt UI's Reka-backed slot and ARIA behavior only
    where it informs project-owned wrappers and CSS layers.
 4. **Integration:** evaluate Content schemas, image, OG, schema, and LLM
@@ -104,7 +103,7 @@ source before opening each remaining Phase 2 batch:
 
 The comparison does not authorize a dependency migration or a visual rewrite.
 Each result must be classified as direct reference, Nuxt adaptation,
-intentional divergence, defer, or stop-condition evidence. B7 is the next
+intentional divergence, defer, or stop-condition evidence. B8 is the next
 implementation batch.
 
 ### P1: integration completion

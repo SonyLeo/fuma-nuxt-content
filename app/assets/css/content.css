@@ -453,8 +453,12 @@ a.fd-doc-card:hover {
   position: relative;
   display: block;
   min-height: 1lh;
-  padding-right: var(--fd-code-padding-x);
+  padding-right: var(--fd-code-padding-right, var(--fd-code-padding-x));
   padding-left: var(--fd-code-padding-x);
+}
+
+.fd-doc-code-block.has-floating-actions {
+  --fd-code-padding-right: 2.5rem;
 }
 
 .fd-doc-code-block-pre .line:empty,

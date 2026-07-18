@@ -30,7 +30,7 @@ and command policy remains in the
 | B4    | Code-tab transform        | `remarkDocsMarkdownCodeTabs`       | Gate Passed | B3 group state                      |
 | B5    | Package-manager transform | `remarkDocsMarkdownPackageManager` | Gate Passed | B4 code-fence slot contract         |
 | B6    | Highlight and code meta   | `docsMarkdownCodeSystem`           | Gate Passed | Stable code-fence AST               |
-| B7    | CodeBlock interaction     | `DocCodeBlock`                     | Draft       | B6 rendered metadata                |
+| B7    | CodeBlock interaction     | `DocCodeBlock`                     | Gate Passed | B6 rendered metadata                |
 | B8    | Image transform           | Markdown image transform           | Draft       | Image metadata policy               |
 | B9    | Link protocol             | Markdown link mapping              | First Pass  | Canonical route/external policy     |
 
@@ -180,8 +180,13 @@ transforms remain deferred; existing MDC components remain supported.
   icon, and line-number aliases while preserving unknown metadata.
 - Focused direct and `/guide/code-block` collection evidence lives in
   `tests/nuxt/docs-markdown-code-system.nuxt.spec.ts`; B4 panels retain Shiki.
-- B7 owns copy behavior, accessible state, overflow, long lines, narrow-screen
-  behavior, and interaction evidence. Code-tab transforms do not own rendering.
+- `DocCodeBlock` owns B7 copy source selection: direct instances use the code
+  prop; compiled instances reconstruct text from rendered Shiki lines. Its
+  focusable region owns no-wrap scrolling, while `DocsCopyButton` exposes
+  loading, copied, failed, and reset states.
+- Responsive evidence lives in `tests/e2e/code-block.spec.ts` and proves exact
+  clipboard payload, focus, local overflow, and no document-width leakage.
+  Code-tab transforms do not own rendering.
 
 ### B8-B9 Media and links
 

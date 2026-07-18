@@ -105,27 +105,44 @@ const resolvedIcon = computed(() => {
 })
 function readRenderedCode() {
   const container = bodyRef.value
-  if (!container) {
+  const pre = container?.querySelector('pre')
+
+  if (!pre) {
     return ''
   }
 
-  const clone = container.cloneNode(true) as HTMLElement
+  const clone = pre.cloneNode(true) as HTMLElement
   clone.querySelectorAll('[data-doc-copy-ignore]').forEach((node) => {
     node.remove()
   })
 
-  return clone.textContent?.trimEnd() ?? ''
+  const lines = Array.from(
+    clone.querySelectorAll<HTMLElement>(':scope > code > .line'),
+  )
+
+  return (
+    lines.length > 0
+      ? lines
+          .map((line) => (line.textContent ?? '').replace(/\r?\n$/, ''))
+          .join('\n')
+      : (clone.textContent ?? '')
+  ).trimEnd()
 }
 
 async function copyCode() {
-  await writeDocsClipboardText(props.code || readRenderedCode())
+  const code = slots.default ? readRenderedCode() : (props.code ?? '')
+
+  await writeDocsClipboardText(code)
 }
 </script>
 
 <template>
   <figure
     class="fd-doc-code-block shiki not-prose"
-    :class="{ 'keep-background': keepBackground }"
+    :class="{
+      'keep-background': keepBackground,
+      'has-floating-actions': !hasHeader && allowCopy,
+    }"
     dir="ltr"
     tabindex="-1"
     :data-line-numbers="shouldShowLineNumbers ? '' : undefined"
