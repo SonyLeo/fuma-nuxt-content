@@ -30,6 +30,11 @@ const emit = defineEmits<{
 
 const searchInput = useTemplateRef<{ focus: () => void }>('searchInput')
 const activeIndex = shallowRef(0)
+const searchListboxId = `docs-search-listbox-${useId()}`
+
+function getResultOptionId(index: number) {
+  return `${searchListboxId}-option-${index}`
+}
 
 const statusLabel = computed(() => {
   if (props.status === 'idle') {
@@ -50,6 +55,13 @@ const activeResult = computed(() => {
   }
 
   return props.results[activeIndex.value] ?? null
+})
+const activeResultId = computed(() => {
+  if (!activeResult.value) {
+    return undefined
+  }
+
+  return getResultOptionId(activeIndex.value)
 })
 
 watch(
@@ -121,10 +133,7 @@ function onDialogKeydown(event: KeyboardEvent) {
 
 <template>
   <UiCommandDialog :open="open" @update:open="handleOpenChange">
-    <UiDialogOverlay
-      class="docs-search-overlay"
-      role="presentation"
-    >
+    <UiDialogOverlay class="docs-search-overlay" role="presentation">
       <UiDialogContent
         class="docs-search-dialog"
         :aria-label="label"
@@ -136,15 +145,17 @@ function onDialogKeydown(event: KeyboardEvent) {
             ref="searchInput"
             class="docs-search-input"
             type="search"
+            role="combobox"
             :model-value="query"
             :placeholder="placeholder"
             :aria-label="label"
+            aria-autocomplete="list"
+            :aria-controls="searchListboxId"
+            :aria-expanded="open"
+            :aria-activedescendant="activeResultId"
             @update:model-value="updateQuery"
           />
-          <UiDialogClose
-            class="docs-search-close"
-            aria-label="Close search"
-          >
+          <UiDialogClose class="docs-search-close" aria-label="Close search">
             <X class="docs-search-close-icon" aria-hidden="true" />
           </UiDialogClose>
         </UiDialogHeader>
@@ -152,14 +163,12 @@ function onDialogKeydown(event: KeyboardEvent) {
         <UiScrollArea class="docs-search-results">
           <UiScrollViewport>
             <UiCommandList
+              :id="searchListboxId"
               class="docs-search-results-inner"
               role="listbox"
               aria-live="polite"
             >
-              <p
-                v-if="status !== 'results'"
-                class="docs-search-state"
-              >
+              <p v-if="status !== 'results'" class="docs-search-state">
                 {{ statusLabel }}
               </p>
 
@@ -170,6 +179,7 @@ function onDialogKeydown(event: KeyboardEvent) {
                   class="docs-search-result-item"
                 >
                   <UiCommandItem
+                    :id="getResultOptionId(index)"
                     class="docs-search-result-link"
                     role="option"
                     :active="activeIndex === index"

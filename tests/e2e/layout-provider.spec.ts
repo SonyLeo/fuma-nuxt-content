@@ -72,17 +72,25 @@ test.describe('@layout-provider Playwright POC', () => {
   }) => {
     await gotoDocsFixture(page)
 
-    await page
+    const trigger = page
       .locator('.docs-search-trigger')
       .filter({ visible: true })
       .first()
-      .click()
+    await trigger.click()
 
     const dialog = page.locator('.docs-search-dialog')
-    const input = page.locator('.docs-search-input')
+    const input = page.getByRole('combobox', { name: 'Search' })
+    const listbox = page.getByRole('listbox')
 
     await expect(dialog).toBeVisible()
     await expect(input).toBeFocused()
+    await expect(input).toHaveAttribute('aria-autocomplete', 'list')
+    await expect(input).toHaveAttribute('aria-expanded', 'true')
+    await expect(input).not.toHaveAttribute('aria-activedescendant', /.+/)
+
+    const listboxId = await listbox.getAttribute('id')
+    expect(listboxId).toBeTruthy()
+    await expect(input).toHaveAttribute('aria-controls', listboxId!)
 
     await input.fill('component')
 
@@ -101,15 +109,34 @@ test.describe('@layout-provider Playwright POC', () => {
     expect(metrics.clientHeight).toBeGreaterThan(0)
     expect(metrics.scrollHeight).toBeGreaterThanOrEqual(metrics.clientHeight)
     expect(['auto', 'scroll']).toContain(metrics.overflowY)
-    await expectCountAtLeast(page.locator('.docs-search-result-link'), 1)
+    const options = listbox.getByRole('option')
+    await expectCountAtLeast(options, 2)
+
+    const initialOption = options.first()
+    const initialOptionId = await initialOption.getAttribute('id')
+    expect(initialOptionId).toBeTruthy()
+    await expect(initialOption).toHaveAttribute('aria-selected', 'true')
+    await expect(input).toHaveAttribute(
+      'aria-activedescendant',
+      initialOptionId!,
+    )
 
     await page.keyboard.press('ArrowDown')
-    await expect(
-      page.locator('.docs-search-result-link[data-active="true"]').first(),
-    ).toBeVisible()
+    const nextOption = options.nth(1)
+    const nextOptionId = await nextOption.getAttribute('id')
+    expect(nextOptionId).toBeTruthy()
+    await expect(nextOption).toHaveAttribute('aria-selected', 'true')
+    await expect(input).toHaveAttribute('aria-activedescendant', nextOptionId!)
+
+    await input.fill('Fuma Nuxt Content')
+    await expect(page.locator('.docs-search-state')).toHaveText(
+      'No results found.',
+    )
+    await expect(input).not.toHaveAttribute('aria-activedescendant', /.+/)
 
     await page.keyboard.press('Escape')
     await expect(dialog).toBeHidden()
+    await expect(trigger).toBeFocused()
   })
 
   test('@responsive sidebar provider synchronizes collapse, hover, and mobile state', async ({
