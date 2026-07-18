@@ -11,8 +11,12 @@ test.describe('@content-components inline toc type table steps', () => {
     const inlineTocs = page.locator('.fd-doc-inline-toc')
     const first = inlineTocs.first()
     const second = inlineTocs.nth(1)
+    const firstNavigation = page
+      .getByRole('navigation', { name: 'Table of Contents' })
+      .first()
 
     await expectCountAtLeast(inlineTocs, 2)
+    await expect(firstNavigation).toBeVisible()
     await expect(first.locator('.fd-doc-inline-toc-trigger')).toHaveAttribute(
       'aria-expanded',
       'true',
@@ -50,6 +54,9 @@ test.describe('@content-components inline toc type table steps', () => {
       'display',
       'none',
     )
+    await expect(
+      page.getByRole('navigation', { name: 'Collapsed contents' }),
+    ).toBeVisible()
   })
 
   test('@type-table renders type table rows, details, and hash interaction', async ({
@@ -57,7 +64,7 @@ test.describe('@content-components inline toc type table steps', () => {
   }) => {
     await gotoComponentsPage(page)
 
-    const table = page.locator('.fd-doc-type-table').first()
+    const table = page.getByRole('region', { name: 'Type reference' }).first()
 
     await expect(table).toBeVisible()
     await expect(table).toHaveCSS('display', 'flex')

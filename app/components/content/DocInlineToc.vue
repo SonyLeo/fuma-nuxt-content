@@ -18,7 +18,9 @@ const props = withDefaults(
 
 const resolvedItems = useDocsInlineToc(computed(() => props.items))
 const { activeId } = useDocsTocState(resolvedItems)
-const defaultOpenState = computed(() => readBooleanLike(props.defaultOpen, true))
+const defaultOpenState = computed(() =>
+  readBooleanLike(props.defaultOpen, true),
+)
 
 function itemStyle(item: DocsTocItem) {
   return {
@@ -49,7 +51,12 @@ function itemStyle(item: DocsTocItem) {
         <ChevronDown class="fd-doc-inline-toc-chevron" aria-hidden="true" />
       </button>
 
-      <nav v-show="open" :id="contentId" class="fd-doc-inline-toc-content">
+      <nav
+        v-show="open"
+        :id="contentId"
+        class="fd-doc-inline-toc-content"
+        :aria-label="title"
+      >
         <a
           v-for="item in resolvedItems"
           :key="item.id"

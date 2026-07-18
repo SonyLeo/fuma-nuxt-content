@@ -90,7 +90,7 @@ function setRowOpen(id: string, open: boolean) {
 </script>
 
 <template>
-  <div class="fd-doc-type-table" aria-label="Type reference">
+  <div class="fd-doc-type-table" role="region" aria-label="Type reference">
     <div class="fd-doc-type-table-head">
       <span>Prop</span>
       <span>Type</span>
@@ -100,8 +100,8 @@ function setRowOpen(id: string, open: boolean) {
     <div class="fd-doc-type-table-body" role="list">
       <DocCollapsible
         v-for="row in normalizedRows"
-        :key="row.id"
         :id="row.id"
+        :key="row.id"
         class="fd-doc-type-row"
         role="listitem"
         :open="isRowOpen(row.id)"
@@ -121,7 +121,9 @@ function setRowOpen(id: string, open: boolean) {
               <code :class="{ 'is-deprecated': row.deprecated }">
                 {{ row.name }}<span v-if="row.optional">?</span>
               </code>
-              <span v-if="row.required" class="fd-doc-type-badge">required</span>
+              <span v-if="row.required" class="fd-doc-type-badge"
+                >required</span
+              >
               <span v-if="row.deprecated" class="fd-doc-type-badge is-warning">
                 deprecated
               </span>
