@@ -29,6 +29,7 @@ const isExternal = computed(() => {
     data-card
     :href="href"
     :external="isExternal"
+    authored
   >
     <span v-if="icon" class="fd-doc-card-icon">
       <DocsNavIcon :name="icon" />

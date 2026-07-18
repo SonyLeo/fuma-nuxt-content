@@ -130,6 +130,7 @@ function setRowOpen(id: string, open: boolean) {
               <DocsLink
                 v-if="row.typeDescriptionLink"
                 :href="row.typeDescriptionLink"
+                authored
               >
                 <code>{{ row.type }}</code>
               </DocsLink>

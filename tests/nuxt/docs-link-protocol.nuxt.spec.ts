@@ -7,6 +7,8 @@ import { parseMarkdown } from '@nuxtjs/mdc/runtime'
 import { queryCollection } from '#imports'
 import { defineComponent } from 'vue'
 import { describe, expect, test } from 'vitest'
+import DocCard from '~/components/content/DocCard.vue'
+import DocTypeTable from '~/components/content/DocTypeTable.vue'
 import DocsLink from '~/components/docs/DocsLink.vue'
 import ProseA from '~/components/content/ProseA.vue'
 import type { DocsContentPage, DocsPageRecord } from '~/types/docs'
@@ -304,6 +306,73 @@ describe('docs link runtime protocol', () => {
       })
     } finally {
       wrapper.unmount()
+    }
+  })
+
+  test('guards authored content component links without changing normal link owners', async () => {
+    const unsafeCard = await mountSuspended(DocCard, {
+      props: {
+        title: 'Unsafe card',
+        href: 'javascript:alert(1)',
+      },
+      global: {
+        stubs: { NuxtLink: NuxtLinkStub },
+      },
+    })
+    const unsafeTypeTable = await mountSuspended(DocTypeTable, {
+      props: {
+        rows: [
+          {
+            name: 'unsafe',
+            type: 'string',
+            description: 'Unsafe link fixture',
+            typeDescriptionLink: 'data:text/plain,hello',
+          },
+        ],
+      },
+      global: {
+        stubs: { NuxtLink: NuxtLinkStub },
+      },
+    })
+    const internalCard = await mountSuspended(DocCard, {
+      props: {
+        title: 'Internal card',
+        href: '/guide/child',
+      },
+      global: {
+        stubs: { NuxtLink: NuxtLinkStub },
+      },
+    })
+    const externalCard = await mountSuspended(DocCard, {
+      props: {
+        title: 'External card',
+        href: 'https://example.com',
+        external: true,
+      },
+      global: {
+        stubs: { NuxtLink: NuxtLinkStub },
+      },
+    })
+
+    try {
+      expect(unsafeCard.get('a').attributes()).toMatchObject({ href: '#' })
+      expect(unsafeTypeTable.get('a').attributes()).toMatchObject({ href: '#' })
+      expect(internalCard.get('a').attributes()).toMatchObject({
+        'data-render-owner': 'nuxt-link',
+        href: '/guide/child',
+      })
+      expect(externalCard.get('a').attributes()).toMatchObject({
+        href: 'https://example.com',
+        target: '_blank',
+      })
+      expect(
+        externalCard.get('a').attributes('data-render-owner'),
+      ).toBeUndefined()
+    } finally {
+      unsafeCard.unmount()
+      unsafeTypeTable.unmount()
+      internalCard.unmount()
+      externalCard.unmount()
     }
   })
 
