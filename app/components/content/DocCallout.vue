@@ -47,8 +47,11 @@ const normalizedTone = computed(() => {
   return input
 })
 const toneClass = computed(() => `is-${normalizedTone.value}`)
+const iconName = computed(() =>
+  typeof props.icon === 'string' ? props.icon : undefined,
+)
 const iconComponent = computed(() => {
-  if (props.icon) {
+  if (props.icon && typeof props.icon !== 'string') {
     return props.icon
   }
 
@@ -80,7 +83,15 @@ const iconComponent = computed(() => {
   >
     <span class="fd-callout-bar" aria-hidden="true" />
     <slot name="icon">
-      <component :is="iconComponent" class="fd-callout-icon" aria-hidden="true" />
+      <span v-if="iconName" class="fd-callout-icon" aria-hidden="true">
+        <DocsNavIcon :name="iconName" />
+      </span>
+      <component
+        :is="iconComponent"
+        v-else
+        class="fd-callout-icon"
+        aria-hidden="true"
+      />
     </slot>
     <div class="fd-callout-content">
       <p v-if="title" class="fd-callout-title">{{ title }}</p>

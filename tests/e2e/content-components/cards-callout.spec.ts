@@ -190,5 +190,18 @@ test.describe('@content-components cards and callout', () => {
     await expect(containerCallout.locator('.fd-callout-title')).toContainText(
       'Container API',
     )
+
+    const standardStringIconCallout = callouts
+      .filter({ has: page.locator('.fd-callout-title', { hasText: 'Info' }) })
+      .first()
+
+    await expect(
+      standardStringIconCallout.locator('svg[data-icon="book"]'),
+    ).toBeVisible()
+    await expect(standardStringIconCallout.locator('book')).toHaveCount(0)
+    await expect(
+      containerCallout.locator('svg[data-icon="library"]'),
+    ).toBeVisible()
+    await expect(containerCallout.locator('library')).toHaveCount(0)
   })
 })

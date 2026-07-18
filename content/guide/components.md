@@ -21,7 +21,7 @@ badge: MVP
 
 ## Callout
 
-::doc-callout{title="Info" tone="info"}
+::doc-callout{title="Info" tone="info" icon="book"}
 这是一个最小提示块。
 ::
 
@@ -55,7 +55,7 @@ verify wrapping, content width, and rail stretching across desktop and narrow
 viewports without changing the component height model.
 ::
 
-::doc-callout-container{type="success"}
+::doc-callout-container{type="success" icon="library"}
 ::doc-callout-title
 Container API
 ::
