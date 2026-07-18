@@ -80,7 +80,7 @@ implicitly.
 
 1. Freeze content metadata, page identity, and tree ownership.
 2. Complete the remaining Phase 2 authoring and code contracts:
-   - highlight/code metadata and CodeBlock interaction
+   - CodeBlock interaction
    - image metadata policy
    - internal and external link protocol
 3. Document stable provider/layout/page public contracts.
@@ -104,8 +104,8 @@ source before opening each remaining Phase 2 batch:
 
 The comparison does not authorize a dependency migration or a visual rewrite.
 Each result must be classified as direct reference, Nuxt adaptation,
-intentional divergence, defer, or stop-condition evidence. B6 is the next
-implementation batch after this comparison is accepted.
+intentional divergence, defer, or stop-condition evidence. B7 is the next
+implementation batch.
 
 ### P1: integration completion
 

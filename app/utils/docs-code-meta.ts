@@ -11,6 +11,14 @@ export type DocsCodeBlockMeta = {
 const codeMetaAttributePattern =
   /(^|\s)([a-zA-Z0-9_-]+)(?:=(?:"([^"]*)"|'([^']*)'|([^\s]+)))?/g
 
+const canonicalAttributeNames: Record<string, string> = {
+  filename: 'filename',
+  icon: 'icon',
+  keepbackground: 'keepBackground',
+  linenumbers: 'lineNumbers',
+  title: 'title',
+}
+
 function readAttributeValue(
   doubleQuoted?: string,
   singleQuoted?: string,
@@ -55,23 +63,18 @@ export function parseDocsCodeBlockMeta(meta?: string): DocsCodeBlockMeta {
         singleQuoted?: string,
         bare?: string,
       ) => {
-        const normalized = name.toLowerCase()
+        const normalized = name.toLowerCase().replaceAll('-', '')
+        const canonicalName = canonicalAttributeNames[normalized]
 
-        if (
-          ![
-            'filename',
-            'icon',
-            'keep-background',
-            'keepbackground',
-            'linenumbers',
-            'line-numbers',
-            'title',
-          ].includes(normalized)
-        ) {
+        if (!canonicalName) {
           return match
         }
 
-        attributes[name] = readAttributeValue(doubleQuoted, singleQuoted, bare)
+        attributes[canonicalName] = readAttributeValue(
+          doubleQuoted,
+          singleQuoted,
+          bare,
+        )
 
         return prefix
       },
@@ -79,8 +82,7 @@ export function parseDocsCodeBlockMeta(meta?: string): DocsCodeBlockMeta {
     .replace(/\s+/g, ' ')
     .trim()
 
-  const lineNumbersValue =
-    attributes.lineNumbers ?? attributes['line-numbers']
+  const lineNumbersValue = attributes.lineNumbers
   const lineNumbers = readBooleanAttribute(lineNumbersValue)
   const lineNumbersStart = Math.max(1, readNumberAttribute(lineNumbersValue, 1))
   const title =
@@ -90,9 +92,7 @@ export function parseDocsCodeBlockMeta(meta?: string): DocsCodeBlockMeta {
         ? attributes.filename
         : undefined
   const icon = typeof attributes.icon === 'string' ? attributes.icon : undefined
-  const keepBackground = readBooleanAttribute(
-    attributes.keepBackground ?? attributes['keep-background'],
-  )
+  const keepBackground = readBooleanAttribute(attributes.keepBackground)
 
   return {
     attributes,

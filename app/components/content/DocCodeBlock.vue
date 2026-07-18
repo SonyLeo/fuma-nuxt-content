@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import { Check, Copy } from '@lucide/vue'
-import { computed, nextTick, onMounted, onUpdated, useSlots, useTemplateRef } from 'vue'
+import { computed, useSlots, useTemplateRef } from 'vue'
 import { writeDocsClipboardText } from '~/utils/docs-clipboard'
 import { createHighlightedCodeLines } from '~/utils/docs-code-highlight'
 
 const bodyRef = useTemplateRef<HTMLElement>('body')
 const slots = useSlots()
-const codeWordNotationPattern =
-  /^(?:\/\/|#|<!--|\/\*)?\s*\[!code word:((?:\\.|[^:\]])+)(?::(\d+))?\]\s*(?:-->|\*\/)?$/
-const escapedCharacterPattern = /\\(.)/g
 
 const codeBlockIcons = {
   default: {
@@ -98,7 +95,7 @@ const rootStyle = computed(() => ({
 const resolvedIcon = computed(() => {
   const raw = props.icon ?? props.language
   const key = raw?.toLowerCase()
-  const name = key ? iconAliases[key] ?? key : undefined
+  const name = key ? (iconAliases[key] ?? key) : undefined
 
   if (name && name in codeBlockIcons) {
     return codeBlockIcons[name as keyof typeof codeBlockIcons]
@@ -123,107 +120,6 @@ function readRenderedCode() {
 async function copyCode() {
   await writeDocsClipboardText(props.code || readRenderedCode())
 }
-
-function highlightTextNode(textNode: Text, word: string) {
-  const value = textNode.nodeValue ?? ''
-  const fragment = document.createDocumentFragment()
-  let index = 0
-  let matchIndex = value.indexOf(word, index)
-
-  if (matchIndex === -1) {
-    return
-  }
-
-  while (matchIndex !== -1) {
-    if (matchIndex > index) {
-      fragment.append(value.slice(index, matchIndex))
-    }
-
-    const mark = document.createElement('span')
-    mark.className = 'highlighted-word'
-    mark.textContent = word
-    fragment.append(mark)
-    index = matchIndex + word.length
-    matchIndex = value.indexOf(word, index)
-  }
-
-  if (index < value.length) {
-    fragment.append(value.slice(index))
-  }
-
-  textNode.replaceWith(fragment)
-}
-
-function highlightWordInLine(line: Element, word: string) {
-  const walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT)
-  const nodes: Text[] = []
-  let current = walker.nextNode()
-
-  while (current) {
-    if (
-      current instanceof Text &&
-      !current.parentElement?.closest('.highlighted-word')
-    ) {
-      nodes.push(current)
-    }
-
-    current = walker.nextNode()
-  }
-
-  for (const node of nodes) {
-    highlightTextNode(node, word)
-  }
-}
-
-function applyWordHighlightFallback() {
-  const container = bodyRef.value
-  if (!container) {
-    return
-  }
-
-  const lines = Array.from(container.querySelectorAll<HTMLElement>('.line'))
-  const directives: Array<{ index: number; word: string; range: number }> = []
-
-  lines.forEach((line, index) => {
-    const match = line.textContent?.trim().match(codeWordNotationPattern)
-
-    const word = match?.[1]
-
-    if (!word) {
-      return
-    }
-
-    directives.push({
-      index,
-      word: word.replace(escapedCharacterPattern, '$1'),
-      range: match[2] ? Number(match[2]) : Number.POSITIVE_INFINITY,
-    })
-  })
-
-  for (const directive of directives) {
-    const end = Math.min(lines.length, directive.index + 1 + directive.range)
-
-    for (let index = directive.index + 1; index < end; index++) {
-      const line = lines[index]
-
-      if (line) {
-        highlightWordInLine(line, directive.word)
-      }
-    }
-  }
-
-  for (const directive of [...directives].reverse()) {
-    lines[directive.index]?.remove()
-  }
-}
-
-async function syncCodeBlockDom() {
-  await nextTick()
-  applyWordHighlightFallback()
-}
-
-onMounted(syncCodeBlockDom)
-onUpdated(syncCodeBlockDom)
 </script>
 
 <template>
@@ -233,7 +129,9 @@ onUpdated(syncCodeBlockDom)
     dir="ltr"
     tabindex="-1"
     :data-line-numbers="shouldShowLineNumbers ? '' : undefined"
-    :data-line-numbers-start="shouldShowLineNumbers ? dataLineNumbersStart : undefined"
+    :data-line-numbers-start="
+      shouldShowLineNumbers ? dataLineNumbersStart : undefined
+    "
     :style="rootStyle"
   >
     <div v-if="hasHeader" class="fd-doc-code-block-header">
@@ -302,10 +200,7 @@ onUpdated(syncCodeBlockDom)
       aria-label="Code"
     >
       <slot v-if="$slots.default" />
-      <pre
-        v-else-if="code"
-        class="fd-doc-code-block-pre"
-      ><code><span
+      <pre v-else-if="code" class="fd-doc-code-block-pre"><code><span
         v-for="(line, lineIndex) in directCodeLines"
         :key="line.key"
         class="line"

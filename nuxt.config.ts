@@ -1,4 +1,7 @@
 import tailwindcss from '@tailwindcss/vite'
+import docsMarkdownCodeSystem, {
+  docsMarkdownCodeHighlight,
+} from './app/utils/docs-markdown-code-system'
 import docsMarkdownCodeTabs from './app/utils/docs-markdown-code-tabs'
 import docsMarkdownPackageManager from './app/utils/docs-markdown-package-manager'
 import docsMarkdownPipeline from './app/utils/docs-markdown-pipeline'
@@ -16,6 +19,9 @@ function createLocalImportPath(url: URL) {
 const docsMarkdownPipelinePluginPath = createLocalImportPath(
   new URL('./app/utils/docs-markdown-pipeline.ts', import.meta.url),
 )
+const docsMarkdownCodeSystemConfigPath = createLocalImportPath(
+  new URL('./app/utils/docs-markdown-code-system.ts', import.meta.url),
+)
 const docsMarkdownCodeTabsPluginPath = createLocalImportPath(
   new URL('./app/utils/docs-markdown-code-tabs.ts', import.meta.url),
 )
@@ -32,7 +38,8 @@ const docsMetadataIngestionTransformerPath = createLocalImportPath(
   new URL('./build/docs-metadata-ingestion.ts', import.meta.url),
 )
 const docsMarkdownOptions = {
-  configs: [docsMarkdownSemantics],
+  configs: [docsMarkdownSemantics, docsMarkdownCodeSystem],
+  highlight: docsMarkdownCodeHighlight,
   remarkPlugins: {
     docsMarkdownSteps: {
       instance: docsMarkdownSteps,
@@ -72,6 +79,10 @@ export default defineNuxtConfig({
       if (!configs.includes(docsMarkdownSemanticsPluginPath)) {
         configs.push(docsMarkdownSemanticsPluginPath)
       }
+
+      if (!configs.includes(docsMarkdownCodeSystemConfigPath)) {
+        configs.push(docsMarkdownCodeSystemConfigPath)
+      }
     },
   },
   vite: {
@@ -86,14 +97,7 @@ export default defineNuxtConfig({
       sqliteConnector: 'native',
     },
   },
-  mdc: {
-    highlight: {
-      theme: {
-        default: 'catppuccin-latte',
-        dark: 'catppuccin-mocha',
-      },
-    },
-  },
+  mdc: { highlight: docsMarkdownCodeHighlight },
   devtools: { enabled: true },
   compatibilityDate: '2024-04-03',
 })

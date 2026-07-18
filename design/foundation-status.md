@@ -38,7 +38,7 @@ contracts exist, but several protocol boundaries still need to become
 | Docs page protocol                    | Gate Passed | Normalized page policy tests and focused shell checks         | Keep site adapters outside metadata policy              |
 | Default MDC mapping and link protocol | First Pass+ | Runtime content tests and browser contracts                   | Complete authoring edge cases and external-link policy  |
 | Markdown transform pipeline           | First Pass+ | Heading ids, Steps, structured data, code/package tabs        | Image transform policy                                  |
-| Code system and preview               | First Pass+ | CodeBlock, tabs, preview and copy tests                       | Freeze highlight/meta and interaction contracts         |
+| Code system and preview               | First Pass+ | B6 Shiki/meta Nuxt evidence and existing browser contracts    | Freeze CodeBlock interaction contract                   |
 | Content components                    | First Pass+ | Component inventory and responsive tests                      | Maintain parity; no broad new component batch           |
 | UI interaction primitives             | First Pass+ | Reka-backed local wrappers                                    | Keep public wrappers stable; Tree remains deferred      |
 | Verification infrastructure           | Gate Passed | Runtime tests, Playwright webServer, CI shards                | Maintain zero stale entry points and bounded runtime    |
@@ -131,7 +131,7 @@ contracts exist, but several protocol boundaries still need to become
 ### P0: complete the Markdown authoring pipeline
 
 - Define image metadata, sizing, and placeholder policy.
-- Freeze Shiki/code-meta output and CodeBlock interaction behavior.
+- Freeze CodeBlock interaction behavior.
 - Freeze internal and external link behavior.
 - Keep UI component contracts separate from authoring transforms.
 

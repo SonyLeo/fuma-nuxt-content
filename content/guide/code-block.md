@@ -47,10 +47,17 @@ Supported features:
 
 Wrap the `pre` element in `<CodeBlock />`, which acts as the wrapper of code block.
 
-```tsx title="components/mdx.tsx"
+```tsx title="components/mdx.tsx" icon="typescript" lineNumbers {2}
 import defaultComponents from 'fumadocs-ui/mdx'
-import type { MDXComponents } from 'mdx/types'
+import type { MDXComponents } from 'mdx/types' // [!code highlight]
 import { CodeBlock, Pre } from 'fumadocs-ui/components/codeblock'
+
+const highlightedWord = 'stable-owner'
+// [!code word:stable-owner]
+const stableOwner = 'stable-owner'
+const removedOwner = false // [!code --]
+const addedOwner = true // [!code ++]
+const focusedOwner = true // [!code focus]
 
 export function getMDXComponents(components?: MDXComponents) {
   return {

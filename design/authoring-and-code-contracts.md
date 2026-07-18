@@ -29,7 +29,7 @@ and command policy remains in the
 | B3    | Tabs group state          | `UiTabs`                           | Gate Passed | Stable tab value/group protocol     |
 | B4    | Code-tab transform        | `remarkDocsMarkdownCodeTabs`       | Gate Passed | B3 group state                      |
 | B5    | Package-manager transform | `remarkDocsMarkdownPackageManager` | Gate Passed | B4 code-fence slot contract         |
-| B6    | Highlight and code meta   | Shiki and code-meta pipeline       | Draft       | Stable code-fence AST               |
+| B6    | Highlight and code meta   | `docsMarkdownCodeSystem`           | Gate Passed | Stable code-fence AST               |
 | B7    | CodeBlock interaction     | `DocCodeBlock`                     | Draft       | B6 rendered metadata                |
 | B8    | Image transform           | Markdown image transform           | Draft       | Image metadata policy               |
 | B9    | Link protocol             | Markdown link mapping              | First Pass  | Canonical route/external policy     |
@@ -173,11 +173,15 @@ transforms remain deferred; existing MDC components remain supported.
 
 ### B6-B7 Code system
 
-- B6 owns build-time highlighting, light/dark tokens, code meta, title, icon,
-  language labels, line/word highlight, diff, and focus metadata.
+- `docsMarkdownCodeSystem` is the shared build-time Shiki owner for Content and
+  direct MDC: Latte is default/light, Mocha is dark, and v3 notation produces
+  line/word highlight, diff, and focus SSR output.
+- `parseDocsCodeBlockMeta` owns case-insensitive canonical title, filename,
+  icon, and line-number aliases while preserving unknown metadata.
+- Focused direct and `/guide/code-block` collection evidence lives in
+  `tests/nuxt/docs-markdown-code-system.nuxt.spec.ts`; B4 panels retain Shiki.
 - B7 owns copy behavior, accessible state, overflow, long lines, narrow-screen
-  behavior, and interaction evidence.
-- Code-tab authoring transforms do not take over CodeBlock rendering behavior.
+  behavior, and interaction evidence. Code-tab transforms do not own rendering.
 
 ### B8-B9 Media and links
 
