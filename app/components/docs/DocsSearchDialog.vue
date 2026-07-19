@@ -45,6 +45,14 @@ const statusLabel = computed(() => {
     return props.emptyLabel
   }
 
+  if (props.status === 'loading') {
+    return 'Searching documentation.'
+  }
+
+  if (props.status === 'error') {
+    return 'Search failed. Try again.'
+  }
+
   return `${props.results.length} result${
     props.results.length === 1 ? '' : 's'
   }`

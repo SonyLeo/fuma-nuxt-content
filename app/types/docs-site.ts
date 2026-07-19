@@ -10,6 +10,7 @@ import type {
   DocsNavOptions,
   DocsResolvedRootProviderProps,
 } from '~/types/docs'
+import type { DocsSearchProvider } from '~/types/docs-search'
 
 export type DocsSiteBrandConfig = {
   label: string
@@ -36,11 +37,9 @@ export type DocsSitePageActionsConfig = {
   openInAi?: boolean
 }
 
-export type DocsSiteSearchProvider = 'local'
-
 export type DocsSiteSearchConfig = {
   enabled?: boolean
-  provider?: DocsSiteSearchProvider
+  provider?: DocsSearchProvider
   label?: string
   placeholder?: string
   emptyLabel?: string

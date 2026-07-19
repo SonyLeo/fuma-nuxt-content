@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DocsSiteSearchConfig } from '~/types/docs-site'
 import type { DocsSearchIndexEntry } from '~/types/docs-search'
+import { createLocalDocsSearchClient } from '~/utils/docs-search-client'
 
 const props = defineProps<{
   config?: DocsSiteSearchConfig
@@ -12,10 +13,13 @@ const label = computed(() => props.config?.label ?? 'Search')
 const placeholder = computed(
   () => props.config?.placeholder ?? 'Search documentation...',
 )
-const emptyLabel = computed(() => props.config?.emptyLabel ?? 'No results found.')
+const emptyLabel = computed(
+  () => props.config?.emptyLabel ?? 'No results found.',
+)
+const client = computed(() => createLocalDocsSearchClient(props.index ?? []))
 const { isOpen, query, results, status, open, close, updateQuery } =
   useDocsSearch({
-    index: computed(() => props.index ?? []),
+    client,
   })
 
 function closeSearch() {
@@ -31,11 +35,7 @@ function closeSearch() {
 
 <template>
   <template v-if="enabled">
-    <DocsSearchTrigger
-      :label="label"
-      :placeholder="placeholder"
-      @open="open"
-    />
+    <DocsSearchTrigger :label="label" :placeholder="placeholder" @open="open" />
     <DocsSearchDialog
       :open="isOpen"
       :query="query"

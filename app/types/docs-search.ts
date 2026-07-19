@@ -1,5 +1,11 @@
 export type DocsSearchProvider = 'local'
 
+export type DocsSearchRequest = {
+  query: string
+  limit: number
+  signal: AbortSignal
+}
+
 export type DocsSearchResult = {
   id: string
   title: string
@@ -15,4 +21,19 @@ export type DocsSearchIndexEntry = DocsSearchResult & {
   body?: string
 }
 
-export type DocsSearchStatus = 'idle' | 'query' | 'results' | 'empty'
+export type DocsSearchClient = {
+  search: (
+    request: DocsSearchRequest,
+  ) => DocsSearchResult[] | Promise<DocsSearchResult[]>
+}
+
+export type DocsSearchStatus =
+  | 'idle'
+  | 'loading'
+  | 'results'
+  | 'empty'
+  | 'error'
+
+export type DocsSearchError = {
+  message: string
+}

@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises'
-import { describe, expect, test } from 'vitest'
-import type { DocsSiteConfig } from '~/types/docs-site'
+import { resolve } from 'node:path'
+import { describe, expect, expectTypeOf, test } from 'vitest'
+import type { DocsSearchProvider } from '~/types/docs-search'
+import type { DocsSiteConfig, DocsSiteSearchConfig } from '~/types/docs-site'
 import { resolveDocsThemeConfig } from '~/types/docs-theme'
 import {
   createDocsSiteAdapter,
@@ -137,6 +139,29 @@ describe('docs site adapter', () => {
       enabled: true,
       label: 'Locale',
     })
+  })
+
+  test('uses the canonical local search provider contract', async () => {
+    const adapter = createDocsSiteAdapter(
+      createSiteConfig({
+        search: {
+          provider: 'local',
+        },
+      }),
+    )
+    const source = await readFile(
+      resolve(process.cwd(), 'app/types/docs-site.ts'),
+      'utf8',
+    )
+
+    expect(adapter.page.search.provider).toBe('local')
+    expectTypeOf<DocsSiteSearchConfig['provider']>().toEqualTypeOf<
+      DocsSearchProvider | undefined
+    >()
+    expect(source).toContain(
+      "import type { DocsSearchProvider } from '~/types/docs-search'",
+    )
+    expect(source).not.toContain('type DocsSiteSearchProvider')
   })
 
   test('preserves page integration inputs and exposes resolved theme config', () => {
