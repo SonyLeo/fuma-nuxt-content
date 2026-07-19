@@ -57,15 +57,8 @@ function setOpen(value: boolean) {
 
 <template>
   <div class="docs-mobile-nav" :data-open="open ? 'true' : 'false'">
-    <UiDialog
-      :open="open"
-      :unmount-on-hide="false"
-      @update:open="setOpen"
-    >
-      <UiDialogOverlay
-        class="docs-mobile-nav-overlay"
-        role="presentation"
-      />
+    <UiDialog :open="open" :unmount-on-hide="false" @update:open="setOpen">
+      <UiDialogOverlay class="docs-mobile-nav-overlay" role="presentation" />
       <UiDialogContent
         id="nd-sidebar-mobile"
         class="docs-mobile-nav-panel"
@@ -91,13 +84,13 @@ function setOpen(value: boolean) {
           :sidebar-id="null"
           :allow-collapse="false"
           :show-header="false"
+          scroll-ownership="panel"
           :headline="props.headline"
           :items="props.items"
           :current-path="props.currentPath"
           :nav="props.nav"
           @navigate="close"
-        >
-        </DocsSidebar>
+        />
 
         <nav
           v-if="menuLinks.length > 0"

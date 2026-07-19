@@ -315,6 +315,164 @@ test.describe('@fast @shell sidebar', () => {
     }
   })
 
+  test('sidebar scroll keeps the desktop active page visible inside one contained viewport', async ({
+    page,
+  }) => {
+    test.skip(isNarrowViewport(page), 'Narrow screens use the mobile panel.')
+
+    await page.setViewportSize({ width: 1280, height: 520 })
+    await gotoDocsFixture(page, '/guide/type-table')
+
+    const sidebar = page.locator('#nd-sidebar')
+    const viewport = sidebar.locator('.docs-sidebar-scroll-viewport')
+    const active = viewport.locator('.docs-sidebar-link[aria-current="page"]')
+    const scrollArea = sidebar.locator('.docs-sidebar-scroll')
+    const scrollbar = sidebar.locator('.docs-sidebar-scrollbar')
+    const thumb = sidebar.locator('.docs-sidebar-scroll-thumb')
+
+    await expect(viewport).toHaveCount(1)
+    await expect(scrollbar).toHaveCount(1)
+    await expect(thumb).toHaveCount(1)
+    await expect(active).toContainText('Type Table')
+
+    const initial = await viewport.evaluate((element) => {
+      const activeLink = element.querySelector<HTMLElement>(
+        '.docs-sidebar-link[aria-current="page"]',
+      )
+      const viewportRect = element.getBoundingClientRect()
+      const activeRect = activeLink?.getBoundingClientRect()
+      const styles = getComputedStyle(element)
+
+      return {
+        activeBottom: activeRect?.bottom ?? 0,
+        activeTop: activeRect?.top ?? 0,
+        clientHeight: element.clientHeight,
+        overflowY: styles.overflowY,
+        scrollHeight: element.scrollHeight,
+        scrollTop: element.scrollTop,
+        scrollbarWidth: styles.scrollbarWidth,
+        viewportBottom: viewportRect.bottom,
+        viewportTop: viewportRect.top,
+      }
+    })
+
+    expect(initial.scrollHeight).toBeGreaterThan(initial.clientHeight)
+    expect(initial.scrollTop).toBeGreaterThan(0)
+    expect(initial.activeTop).toBeGreaterThanOrEqual(initial.viewportTop + 10)
+    expect(initial.activeBottom).toBeLessThanOrEqual(
+      initial.viewportBottom - 10,
+    )
+    expect(initial.overflowY).toMatch(/^(auto|scroll)$/)
+    expect(initial.scrollbarWidth).toBe('none')
+
+    const scrollbarInsets = await scrollbar.evaluate((element) => {
+      const styles = getComputedStyle(element)
+      return {
+        bottom: styles.bottom,
+        right: styles.right,
+        top: styles.top,
+      }
+    })
+    expect(Number.parseFloat(scrollbarInsets.top)).toBeCloseTo(12, 1)
+    expect(Number.parseFloat(scrollbarInsets.bottom)).toBeCloseTo(12, 1)
+    expect(Number.parseFloat(scrollbarInsets.right)).toBeCloseTo(3.2, 1)
+
+    const thumbBackground = await thumb.evaluate(
+      (element) => getComputedStyle(element).backgroundColor,
+    )
+    await scrollArea.hover()
+    await expect(scrollbar).toHaveCSS('opacity', '1')
+    await expect(thumb).not.toHaveCSS('background-color', thumbBackground)
+
+    const header = sidebar.locator('.docs-sidebar-header')
+    const footer = sidebar.locator('.docs-sidebar-footer')
+    const preservedScrollTop = await viewport.evaluate((element) =>
+      Math.max(1, element.scrollTop),
+    )
+
+    const chromeBefore = {
+      footer: await footer.boundingBox(),
+      header: await header.boundingBox(),
+    }
+    await viewport.evaluate((element) => {
+      element.scrollTop = 0
+    })
+    expect(await header.boundingBox()).toEqual(chromeBefore.header)
+    expect(await footer.boundingBox()).toEqual(chromeBefore.footer)
+    await viewport.evaluate((element, scrollTop) => {
+      element.scrollTop = scrollTop
+    }, preservedScrollTop)
+
+    await sidebar.locator('.docs-sidebar-collapse').click()
+    await expect(sidebar).toHaveAttribute('data-collapsed', 'true')
+    await sidebar.locator('.docs-sidebar-hover-zone').hover()
+    await expect(sidebar).toHaveAttribute('data-hovered', 'true')
+    await expect
+      .poll(() => viewport.evaluate((element) => element.scrollTop))
+      .toBe(preservedScrollTop)
+
+    const documentScrollBefore = await page.evaluate(() => window.scrollY)
+    await viewport
+      .locator('.docs-sidebar-link[href="/guide/getting-started"]')
+      .click()
+    await expect(page).toHaveURL(/\/guide\/getting-started$/)
+    const nextActive = viewport.locator(
+      '.docs-sidebar-link[aria-current="page"]',
+    )
+    await expect(nextActive).toContainText('Overview')
+    const nextGeometry = await viewport.evaluate((element) => {
+      const activeLink = element.querySelector<HTMLElement>(
+        '.docs-sidebar-link[aria-current="page"]',
+      )
+      const viewportRect = element.getBoundingClientRect()
+      const activeRect = activeLink?.getBoundingClientRect()
+      return {
+        activeBottom: activeRect?.bottom ?? 0,
+        activeTop: activeRect?.top ?? 0,
+        viewportBottom: viewportRect.bottom,
+        viewportTop: viewportRect.top,
+      }
+    })
+    expect(nextGeometry.activeTop).toBeGreaterThanOrEqual(
+      nextGeometry.viewportTop + 10,
+    )
+    expect(nextGeometry.activeBottom).toBeLessThanOrEqual(
+      nextGeometry.viewportBottom - 10,
+    )
+    expect(await page.evaluate(() => window.scrollY)).toBe(documentScrollBefore)
+  })
+
+  test('@responsive sidebar scroll keeps the mobile panel as the narrow viewport owner', async ({
+    page,
+  }) => {
+    await gotoDocsFixture(page, '/guide/type-table')
+
+    if (!isNarrowViewport(page)) {
+      await expect(
+        page.locator('#nd-sidebar .docs-sidebar-scroll-viewport'),
+      ).toHaveCount(1)
+      return
+    }
+
+    const panel = await openMobileNav(page)
+    const mobileSidebar = panel.locator('.docs-sidebar')
+
+    await expect(
+      mobileSidebar.locator('[data-reka-scroll-area-viewport]'),
+    ).toHaveCount(0)
+    await expect(
+      mobileSidebar.locator('.docs-sidebar-scroll-viewport'),
+    ).toHaveCount(0)
+    await expect(panel).toHaveCSS('overflow-y', 'auto')
+    await expect(
+      mobileSidebar.locator('.docs-sidebar-link[aria-current="page"]'),
+    ).toContainText('Type Table')
+
+    await page.keyboard.press('Escape')
+    await expect(panel).toHaveAttribute('data-state', 'closed')
+    await expect(page.locator('#docs-header-sidebar-trigger')).toBeFocused()
+  })
+
   test('@mobile uses mobile nav drawer instead of desktop sidebar on narrow screens', async ({
     page,
   }) => {

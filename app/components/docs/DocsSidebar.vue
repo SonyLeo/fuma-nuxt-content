@@ -11,6 +11,9 @@ import {
   resolveDocsLayoutTabs,
 } from '~/utils/docs-layout-tabs'
 import { isDocsLinkActive } from '~/utils/docs-link'
+import { resolveDocsSidebarScrollTop } from '~/utils/docs-sidebar-scroll'
+
+type DocsSidebarScrollOwnership = 'contained' | 'panel'
 
 const props = withDefaults(
   defineProps<{
@@ -26,6 +29,7 @@ const props = withDefaults(
     sidebarId?: string | null
     allowCollapse?: boolean
     showHeader?: boolean
+    scrollOwnership?: DocsSidebarScrollOwnership
   }>(),
   {
     brand: undefined,
@@ -39,6 +43,7 @@ const props = withDefaults(
     sidebarId: 'nd-sidebar',
     allowCollapse: true,
     showHeader: true,
+    scrollOwnership: 'contained',
   },
 )
 
@@ -48,7 +53,9 @@ const emit = defineEmits<{
 }>()
 
 const slots = useSlots()
+const sidebarElement = useTemplateRef<HTMLElement>('sidebar')
 const sidebarState = useDocsSidebarState()
+const scheduledVisibilityCheck = shallowRef<number>()
 const brandLabel = computed(() => props.brand?.label ?? props.headline)
 const brandMark = computed(
   () => props.brand?.mark ?? brandLabel.value.charAt(0),
@@ -122,17 +129,81 @@ function handleTabNavigate() {
   emit('navigate')
 }
 
+function getScrollViewport() {
+  if (props.scrollOwnership === 'panel') {
+    return sidebarElement.value?.closest<HTMLElement>('.docs-mobile-nav-panel')
+  }
+
+  return sidebarElement.value?.querySelector<HTMLElement>(
+    '.docs-sidebar-scroll-viewport',
+  )
+}
+
+function ensureActiveItemVisible() {
+  const viewport = getScrollViewport()
+  const activeItem = sidebarElement.value?.querySelector<HTMLElement>(
+    '.docs-sidebar-link[aria-current="page"], .docs-sidebar-link[data-active="true"]',
+  )
+
+  if (!viewport || !activeItem) {
+    return
+  }
+
+  const viewportRect = viewport.getBoundingClientRect()
+  const itemRect = activeItem.getBoundingClientRect()
+  const nextScrollTop = resolveDocsSidebarScrollTop({
+    scrollTop: viewport.scrollTop,
+    scrollHeight: viewport.scrollHeight,
+    clientHeight: viewport.clientHeight,
+    viewportTop: viewportRect.top,
+    viewportBottom: viewportRect.bottom,
+    itemTop: itemRect.top,
+    itemBottom: itemRect.bottom,
+  })
+
+  if (nextScrollTop !== viewport.scrollTop) {
+    viewport.scrollTop = nextScrollTop
+  }
+}
+
+function scheduleActiveVisibilityCheck() {
+  if (!import.meta.client) {
+    return
+  }
+
+  if (scheduledVisibilityCheck.value !== undefined) {
+    cancelAnimationFrame(scheduledVisibilityCheck.value)
+  }
+
+  scheduledVisibilityCheck.value = requestAnimationFrame(() => {
+    scheduledVisibilityCheck.value = undefined
+    ensureActiveItemVisible()
+  })
+}
+
+onMounted(scheduleActiveVisibilityCheck)
+
+onBeforeUnmount(() => {
+  if (scheduledVisibilityCheck.value !== undefined) {
+    cancelAnimationFrame(scheduledVisibilityCheck.value)
+  }
+})
+
 watch(
   () => props.currentPath,
-  () => {
+  async () => {
     closeTabs()
+    await nextTick()
+    scheduleActiveVisibilityCheck()
   },
+  { flush: 'post' },
 )
 </script>
 
 <template>
   <aside
     :id="sidebarId ?? undefined"
+    ref="sidebar"
     class="docs-sidebar"
     :data-collapsed="isCollapsed ? 'true' : 'false'"
     :data-hovered="isCollapsed && sidebarState.hovered.value ? 'true' : 'false'"
@@ -245,7 +316,29 @@ watch(
         </div>
       </UiDropdownMenu>
 
-      <nav class="docs-sidebar-nav" :aria-label="navigationLabel">
+      <UiScrollArea
+        v-if="scrollOwnership === 'contained'"
+        class="docs-sidebar-scroll"
+      >
+        <UiScrollViewport class="docs-sidebar-scroll-viewport">
+          <nav class="docs-sidebar-nav" :aria-label="navigationLabel">
+            <DocsSidebarTree
+              :items="items"
+              :current-path="currentPath"
+              @navigate="emit('navigate')"
+            />
+          </nav>
+        </UiScrollViewport>
+        <UiScrollBar
+          class="docs-sidebar-scrollbar"
+          orientation="vertical"
+          force-mount
+        >
+          <UiScrollThumb class="docs-sidebar-scroll-thumb" />
+        </UiScrollBar>
+      </UiScrollArea>
+
+      <nav v-else class="docs-sidebar-nav" :aria-label="navigationLabel">
         <DocsSidebarTree
           :items="items"
           :current-path="currentPath"
