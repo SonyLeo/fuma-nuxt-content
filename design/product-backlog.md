@@ -41,14 +41,14 @@ complete.
 
 ### P0: integration completion
 
-| Capability                 | Current state            | Acceptance direction                                                |
-| -------------------------- | ------------------------ | ------------------------------------------------------------------- |
-| Remote search provider/API | Local-only search        | Provider interface, server route, loading/error states, focused E2E |
-| Feedback backend           | Static local state       | Configurable submit adapter or GitHub issue flow, failure state     |
-| RSS                        | Missing                  | Stable feed route, metadata mapping, validation fixture             |
-| `llms-full.txt`            | Basic `llms.txt` only    | Full-content output with deterministic ordering                     |
-| Per-page Markdown export   | Copy action reads source | Stable route/output contract and source identity mapping            |
-| Image CDN adapter          | Local image baseline     | Optional adapter without changing content component API             |
+| Capability                 | Current state                           | Acceptance direction                                            |
+| -------------------------- | --------------------------------------- | --------------------------------------------------------------- |
+| Remote search provider/API | Provider + API transport; local default | Provider selection, payload cutover, loading/error E2E          |
+| Feedback backend           | Static local state                      | Configurable submit adapter or GitHub issue flow, failure state |
+| RSS                        | Missing                                 | Stable feed route, metadata mapping, validation fixture         |
+| `llms-full.txt`            | Basic `llms.txt` only                   | Full-content output with deterministic ordering                 |
+| Per-page Markdown export   | Copy action reads source                | Stable route/output contract and source identity mapping        |
+| Image CDN adapter          | Local image baseline                    | Optional adapter without changing content component API         |
 
 ### P1: multi-source baseline
 
