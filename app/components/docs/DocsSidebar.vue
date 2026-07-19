@@ -50,7 +50,9 @@ const emit = defineEmits<{
 const slots = useSlots()
 const sidebarState = useDocsSidebarState()
 const brandLabel = computed(() => props.brand?.label ?? props.headline)
-const brandMark = computed(() => props.brand?.mark ?? brandLabel.value.charAt(0))
+const brandMark = computed(
+  () => props.brand?.mark ?? brandLabel.value.charAt(0),
+)
 const brandHref = computed(() => props.brand?.href ?? '/')
 const sidebarTabs = computed(() => resolveDocsLayoutTabs(props.nav))
 const selectedTab = computed(() => {
@@ -71,17 +73,20 @@ const sidebarLinks = computed(() => {
 const showGithubShortcut = computed(() => {
   return Boolean(
     props.githubUrl &&
-      !sidebarLinks.value.some((link) => link.href === props.githubUrl),
+    !sidebarLinks.value.some((link) => link.href === props.githubUrl),
   )
 })
 const showSidebarFooter = computed(() => {
   return Boolean(
     sidebarLinks.value.length > 0 ||
-      showGithubShortcut.value ||
-      slots['theme-switch'] ||
-      slots['language-select'],
+    showGithubShortcut.value ||
+    slots['theme-switch'] ||
+    slots['language-select'],
   )
 })
+const collapseLabel = computed(() =>
+  isCollapsed.value ? 'Pin sidebar' : 'Collapse sidebar',
+)
 
 function isActive(link: DocsNavLink) {
   return isDocsLinkActive(link.href, props.currentPath, link.active ?? 'url')
@@ -152,16 +157,25 @@ watch(
           </span>
           <span class="docs-sidebar-brand-text">{{ brandLabel }}</span>
         </NuxtLink>
-        <button
-          v-if="allowCollapse"
-          class="docs-sidebar-collapse"
-          type="button"
-          :aria-label="isCollapsed ? 'Pin sidebar' : 'Collapse sidebar'"
-          :aria-pressed="isCollapsed ? 'false' : 'true'"
-          @click="toggleCollapsed"
-        >
-          <PanelLeft class="docs-sidebar-collapse-icon" aria-hidden="true" />
-        </button>
+        <UiTooltip v-if="allowCollapse">
+          <UiTooltipTrigger>
+            <button
+              class="docs-sidebar-collapse"
+              type="button"
+              :aria-label="collapseLabel"
+              :aria-pressed="isCollapsed ? 'false' : 'true'"
+              @click="toggleCollapsed"
+            >
+              <PanelLeft
+                class="docs-sidebar-collapse-icon"
+                aria-hidden="true"
+              />
+            </button>
+          </UiTooltipTrigger>
+          <UiTooltipContent data-sidebar-tooltip="collapse" side="right">
+            {{ collapseLabel }}
+          </UiTooltipContent>
+        </UiTooltip>
       </div>
 
       <div v-if="$slots['search-trigger']" class="docs-sidebar-search">
@@ -171,10 +185,10 @@ watch(
       <UiDropdownMenu
         v-if="selectedTab"
         :key="currentPath"
+        v-slot="{ open }"
         :modal="false"
         align="start"
         :side-offset="4"
-        v-slot="{ open }"
       >
         <div class="docs-sidebar-tabs">
           <UiDropdownMenuTrigger
@@ -183,7 +197,10 @@ watch(
           >
             <DocsNavIcon :name="selectedTab.icon" />
             <span>{{ selectedTab.title }}</span>
-            <ChevronsUpDown class="docs-sidebar-tab-chevron" aria-hidden="true" />
+            <ChevronsUpDown
+              class="docs-sidebar-tab-chevron"
+              aria-hidden="true"
+            />
           </UiDropdownMenuTrigger>
 
           <UiDropdownMenuContent
@@ -207,7 +224,9 @@ watch(
               >
                 <DocsNavIcon :name="tab.icon" />
                 <span class="docs-sidebar-tab-option-copy">
-                  <span class="docs-sidebar-tab-option-title">{{ tab.title }}</span>
+                  <span class="docs-sidebar-tab-option-title">{{
+                    tab.title
+                  }}</span>
                   <span
                     v-if="tab.description"
                     class="docs-sidebar-tab-option-description"
@@ -272,22 +291,32 @@ watch(
           <slot name="language-select" />
         </div>
       </div>
-      </div>
+    </div>
 
     <div
       v-if="isCollapsed"
       class="docs-sidebar-floating"
       :class="{ 'is-hidden': sidebarState.hovered.value }"
     >
-      <button
-        class="docs-sidebar-floating-button"
-        type="button"
-        aria-label="Pin sidebar"
-        @click="setCollapsed(false)"
+      <UiTooltip>
+        <UiTooltipTrigger>
+          <button
+            class="docs-sidebar-floating-button"
+            type="button"
+            aria-label="Pin sidebar"
+            @click="setCollapsed(false)"
+          >
+            <PanelLeft class="docs-sidebar-collapse-icon" aria-hidden="true" />
+          </button>
+        </UiTooltipTrigger>
+        <UiTooltipContent data-sidebar-tooltip="pin" side="right">
+          Pin sidebar
+        </UiTooltipContent>
+      </UiTooltip>
+      <span
+        v-if="$slots['search-trigger']"
+        class="docs-sidebar-floating-search"
       >
-        <PanelLeft class="docs-sidebar-collapse-icon" aria-hidden="true" />
-      </button>
-      <span v-if="$slots['search-trigger']" class="docs-sidebar-floating-search">
         <slot name="search-trigger" />
       </span>
       <button

@@ -24,5 +24,7 @@ useHead({
 </script>
 
 <template>
-  <slot />
+  <UiTooltipProvider>
+    <slot />
+  </UiTooltipProvider>
 </template>

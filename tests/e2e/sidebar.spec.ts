@@ -225,6 +225,96 @@ test.describe('@fast @shell sidebar', () => {
     await expect(page.locator('.docs-sidebar-floating')).toHaveCount(0)
   })
 
+  test('exposes collapse and pin tooltips without replacing button semantics', async ({
+    page,
+  }) => {
+    test.skip(
+      isNarrowViewport(page),
+      'Mobile sidebar uses the drawer contract.',
+    )
+
+    await gotoDocsFixture(page, '/guide/component-detail')
+
+    const layout = page.locator('#nd-docs-layout')
+    const collapse = page.locator('.docs-sidebar-collapse')
+    const collapseTooltip = page.locator(
+      '.ui-tooltip-content[data-sidebar-tooltip="collapse"]',
+    )
+
+    await expect(collapse).toHaveAttribute('aria-label', 'Collapse sidebar')
+    await collapse.hover()
+    await expect(collapseTooltip).toBeVisible()
+    await expect(collapseTooltip).toContainText('Collapse sidebar')
+    await expect(page.locator('.ui-tooltip-content')).toHaveCount(1)
+
+    await page.mouse.move(600, 300)
+    await expect(collapseTooltip).toBeHidden()
+
+    await page.locator('.docs-sidebar-brand').focus()
+    await page.keyboard.press('Tab')
+    await expect(collapse).toBeFocused()
+    await expect(collapseTooltip).toBeVisible()
+
+    await page.keyboard.press('Escape')
+    await expect(collapseTooltip).toBeHidden()
+    await expect(collapse).toBeFocused()
+
+    await collapse.click()
+    await expect(layout).toHaveAttribute('data-sidebar-collapsed', 'true')
+
+    const pin = page.locator(
+      '.docs-sidebar-floating-button[aria-label="Pin sidebar"]',
+    )
+    const pinTooltip = page.locator(
+      '.ui-tooltip-content[data-sidebar-tooltip="pin"]',
+    )
+
+    await pin.hover()
+    await expect(pinTooltip).toBeVisible()
+    await expect(pinTooltip).toContainText('Pin sidebar')
+    await expect(page.locator('.ui-tooltip-content')).toHaveCount(1)
+
+    await pin.click()
+    await expect(layout).toHaveAttribute('data-sidebar-collapsed', 'false')
+  })
+
+  test('touch tapping sidebar controls does not leave a sticky tooltip', async ({
+    baseURL,
+    browser,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== 'chromium-desktop',
+      'Touch emulation is covered once from the desktop browser project.',
+    )
+
+    const context = await browser.newContext({
+      baseURL,
+      hasTouch: true,
+      viewport: {
+        width: 1280,
+        height: 800,
+      },
+    })
+    const page = await context.newPage()
+
+    try {
+      await gotoDocsFixture(page, '/guide/component-detail')
+
+      const layout = page.locator('#nd-docs-layout')
+      await page.locator('.docs-sidebar-collapse').tap()
+      await expect(layout).toHaveAttribute('data-sidebar-collapsed', 'true')
+      await expect(page.locator('.ui-tooltip-content')).toHaveCount(0)
+
+      await page
+        .locator('.docs-sidebar-floating-button[aria-label="Pin sidebar"]')
+        .tap()
+      await expect(layout).toHaveAttribute('data-sidebar-collapsed', 'false')
+      await expect(page.locator('.ui-tooltip-content')).toHaveCount(0)
+    } finally {
+      await context.close()
+    }
+  })
+
   test('@mobile uses mobile nav drawer instead of desktop sidebar on narrow screens', async ({
     page,
   }) => {

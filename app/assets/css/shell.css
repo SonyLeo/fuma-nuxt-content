@@ -612,6 +612,46 @@
   height: 1rem;
 }
 
+.ui-tooltip-content {
+  z-index: 70;
+  max-width: min(18rem, calc(100vw - 1rem));
+  padding: 0.375rem 0.5rem;
+  border: 1px solid var(--docs-color-border);
+  border-radius: var(--docs-radius-sm);
+  background: var(--docs-color-popover);
+  box-shadow: var(--docs-shadow-panel);
+  color: var(--docs-color-popover-foreground);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.25;
+  pointer-events: none;
+  transform-origin: var(--reka-tooltip-content-transform-origin);
+  user-select: none;
+}
+
+.ui-tooltip-content[data-state='delayed-open'],
+.ui-tooltip-content[data-state='instant-open'] {
+  animation: docs-tooltip-in 100ms ease-out;
+}
+
+@keyframes docs-tooltip-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-tooltip-content {
+    animation: none;
+  }
+}
+
 .docs-sidebar-brand:focus-visible {
   border-radius: var(--docs-radius-sm);
   outline: 2px solid var(--docs-color-ring);
