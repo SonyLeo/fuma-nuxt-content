@@ -173,7 +173,70 @@ test.describe('@fast @shell sidebar', () => {
     await expect(nextFolderLink).toHaveAttribute('aria-current', 'page')
   })
 
-  test('supports collapse, hover preview, and floating pin on desktop', async ({
+  test('preserves collapsed state focus transfer, tab safety, and scroll geometry on desktop', async ({
+    page,
+  }) => {
+    test.skip(
+      isNarrowViewport(page),
+      'Mobile sidebar uses the drawer contract.',
+    )
+
+    await page.setViewportSize({ width: 1280, height: 520 })
+    await gotoDocsFixture(page, '/guide/type-table')
+
+    const layout = page.locator('#nd-docs-layout')
+    const sidebar = page.locator('#nd-sidebar')
+    const inner = sidebar.locator('.docs-sidebar-inner')
+    const viewport = sidebar.locator('.docs-sidebar-scroll-viewport')
+    const content = page.locator('.docs-shell-content')
+    const contentBoxBefore = await content.boundingBox()
+    const scrollTopBefore = await viewport.evaluate((element) =>
+      Math.max(1, element.scrollTop),
+    )
+
+    await sidebar.locator('.docs-sidebar-collapse').click()
+    await expect(layout).toHaveAttribute('data-sidebar-collapsed', 'true')
+    await expect(sidebar).toHaveAttribute('data-collapsed', 'true')
+    await expect(sidebar).toHaveAttribute('data-preview-open', 'false')
+    await expect(page.locator('.docs-sidebar-floating')).toBeVisible()
+    const pin = page.locator(
+      '.docs-sidebar-floating-button[aria-label="Pin sidebar"]',
+    )
+    await expect(pin).toBeFocused()
+    await expect(inner).toHaveAttribute('inert', '')
+    await expect(inner).toHaveAttribute('aria-hidden', 'true')
+    await expect(inner).toHaveCSS('opacity', '0')
+    await expect(inner).toHaveCSS('pointer-events', 'none')
+
+    await page.keyboard.press('Tab')
+    const innerOwnsFocus = await inner.evaluate((element) =>
+      element.contains(element.ownerDocument.activeElement),
+    )
+    expect(innerOwnsFocus).toBe(false)
+
+    const contentBoxAfter = await content.boundingBox()
+
+    expect(
+      Math.abs((contentBoxAfter?.x ?? 0) - (contentBoxBefore?.x ?? 0)),
+    ).toBeLessThanOrEqual(1)
+    expect(
+      Math.abs((contentBoxAfter?.width ?? 0) - (contentBoxBefore?.width ?? 0)),
+    ).toBeLessThanOrEqual(1)
+    expect(await viewport.evaluate((element) => element.scrollTop)).toBe(
+      scrollTopBefore,
+    )
+
+    await pin.click()
+    await expect(layout).toHaveAttribute('data-sidebar-collapsed', 'false')
+    await expect(sidebar).toHaveAttribute('data-collapsed', 'false')
+    await expect(page.locator('.docs-sidebar-floating')).toHaveCount(0)
+    await expect(sidebar.locator('.docs-sidebar-collapse')).toBeFocused()
+    expect(await viewport.evaluate((element) => element.scrollTop)).toBe(
+      scrollTopBefore,
+    )
+  })
+
+  test('keeps hover preview stable across the edge, inner panel, and pointer types', async ({
     page,
   }) => {
     test.skip(
@@ -183,46 +246,105 @@ test.describe('@fast @shell sidebar', () => {
 
     await gotoDocsFixture(page, '/guide/component-detail')
 
-    const layout = page.locator('#nd-docs-layout')
     const sidebar = page.locator('#nd-sidebar')
     const inner = sidebar.locator('.docs-sidebar-inner')
-    const content = page.locator('.docs-shell-content')
-    const contentBoxBefore = await content.boundingBox()
+    const hoverZone = sidebar.locator('.docs-sidebar-hover-zone')
+    const floating = page.locator('.docs-sidebar-floating')
 
     await sidebar.locator('.docs-sidebar-collapse').click()
-    await expect(layout).toHaveAttribute('data-sidebar-collapsed', 'true')
-    await expect(sidebar).toHaveAttribute('data-collapsed', 'true')
-    await expect(page.locator('.docs-sidebar-floating')).toBeVisible()
-    await expect(inner).toHaveCSS('opacity', '0')
-    const contentBoxAfter = await content.boundingBox()
 
-    expect(
-      Math.abs((contentBoxAfter?.x ?? 0) - (contentBoxBefore?.x ?? 0)),
-    ).toBeLessThanOrEqual(1)
-    expect(
-      Math.abs((contentBoxAfter?.width ?? 0) - (contentBoxBefore?.width ?? 0)),
-    ).toBeLessThanOrEqual(1)
+    await hoverZone.dispatchEvent('pointerenter', {
+      clientX: 1,
+      pointerType: 'touch',
+    })
+    await expect(sidebar).toHaveAttribute('data-preview-open', 'false')
 
-    await sidebar
-      .locator('.docs-sidebar-hover-zone')
-      .dispatchEvent('pointerenter', {
-        clientX: 1,
-        pointerType: 'mouse',
-      })
+    await hoverZone.dispatchEvent('pointerenter', {
+      clientX: 1,
+      pointerType: 'mouse',
+    })
+    await expect(sidebar).toHaveAttribute('data-preview-open', 'true')
     await expect(sidebar).toHaveAttribute('data-hovered', 'true')
+    await expect(inner).not.toHaveAttribute('inert', '')
     await expect(inner).toHaveCSS('opacity', '1')
-    await expect(page.locator('.docs-sidebar-floating')).toHaveClass(
-      /is-hidden/,
-    )
+    await expect(floating).toHaveClass(/is-hidden/)
+    await expect(floating).toHaveAttribute('inert', '')
+    await expect(floating).toHaveAttribute('aria-hidden', 'true')
+
+    const innerBox = await inner.boundingBox()
+    await page.mouse.move(1, 200)
+    await page.mouse.move((innerBox?.x ?? 0) + 120, (innerBox?.y ?? 0) + 120)
+    await expect(sidebar).toHaveAttribute('data-preview-open', 'true')
 
     await page.mouse.move(400, 20)
-    await expect(page.locator('.docs-sidebar-floating')).not.toHaveClass(
-      /is-hidden/,
+    await expect(sidebar).toHaveAttribute('data-preview-open', 'false')
+    await expect(floating).not.toHaveClass(/is-hidden/)
+  })
+
+  test('keeps focus preview open after pointer leave and closes it with focusout or Escape', async ({
+    page,
+  }) => {
+    test.skip(
+      isNarrowViewport(page),
+      'Mobile sidebar uses the drawer contract.',
     )
-    await page.locator('.docs-sidebar-floating-button').click()
-    await expect(layout).toHaveAttribute('data-sidebar-collapsed', 'false')
+
+    await gotoDocsFixture(page, '/guide/component-detail')
+
+    const sidebar = page.locator('#nd-sidebar')
+    const hoverZone = sidebar.locator('.docs-sidebar-hover-zone')
+    const brand = sidebar.locator('.docs-sidebar-brand')
+    const pin = page.locator(
+      '.docs-sidebar-floating-button[aria-label="Pin sidebar"]',
+    )
+
+    await sidebar.locator('.docs-sidebar-collapse').click()
+    await hoverZone.hover()
+    await brand.focus()
+    await page.mouse.move(400, 20)
+    await expect(sidebar).toHaveAttribute('data-preview-open', 'true')
+    await expect(sidebar).toHaveAttribute('data-hovered', 'false')
+
+    await page.locator('.docs-shell-content').evaluate((element) => {
+      element.tabIndex = -1
+      element.focus()
+    })
+    await expect(sidebar).toHaveAttribute('data-preview-open', 'false')
+
+    await hoverZone.hover()
+    await sidebar
+      .locator('.docs-sidebar-link[href="/guide/getting-started"]')
+      .click()
+    await expect(page).toHaveURL(/\/guide\/getting-started$/)
+    await expect(sidebar).toHaveAttribute('data-preview-open', 'false')
+    const focusTrappedInInertInner = await sidebar.evaluate((element) => {
+      const inner = element.querySelector<HTMLElement>('.docs-sidebar-inner')
+      return Boolean(
+        inner?.hasAttribute('inert') &&
+        inner.contains(element.ownerDocument.activeElement),
+      )
+    })
+    expect(focusTrappedInInertInner).toBe(false)
+
+    if ((await sidebar.getAttribute('data-collapsed')) !== 'true') {
+      await sidebar.locator('.docs-sidebar-collapse').click()
+    }
+
+    await hoverZone.hover()
+    const previewPin = sidebar.locator(
+      '.docs-sidebar-collapse[aria-label="Pin sidebar"]',
+    )
+    await previewPin.click()
     await expect(sidebar).toHaveAttribute('data-collapsed', 'false')
-    await expect(page.locator('.docs-sidebar-floating')).toHaveCount(0)
+    await expect(sidebar.locator('.docs-sidebar-collapse')).toBeFocused()
+
+    await sidebar.locator('.docs-sidebar-collapse').click()
+    await hoverZone.hover()
+    await brand.focus()
+    await page.keyboard.press('Escape')
+    await expect(sidebar).toHaveAttribute('data-collapsed', 'true')
+    await expect(sidebar).toHaveAttribute('data-preview-open', 'false')
+    await expect(pin).toBeFocused()
   })
 
   test('exposes collapse and pin tooltips without replacing button semantics', async ({
@@ -278,7 +400,7 @@ test.describe('@fast @shell sidebar', () => {
     await expect(layout).toHaveAttribute('data-sidebar-collapsed', 'false')
   })
 
-  test('touch tapping sidebar controls does not leave a sticky tooltip', async ({
+  test('collapsed state touch controls do not leave a sticky tooltip', async ({
     baseURL,
     browser,
   }, testInfo) => {

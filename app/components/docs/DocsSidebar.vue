@@ -54,6 +54,9 @@ const emit = defineEmits<{
 
 const slots = useSlots()
 const sidebarElement = useTemplateRef<HTMLElement>('sidebar')
+const sidebarInnerElement = useTemplateRef<HTMLElement>('sidebar-inner')
+const collapseButton = useTemplateRef<HTMLButtonElement>('collapse-button')
+const pinButton = useTemplateRef<HTMLButtonElement>('pin-button')
 const sidebarState = useDocsSidebarState()
 const scheduledVisibilityCheck = shallowRef<number>()
 const brandLabel = computed(() => props.brand?.label ?? props.headline)
@@ -94,6 +97,12 @@ const showSidebarFooter = computed(() => {
 const collapseLabel = computed(() =>
   isCollapsed.value ? 'Pin sidebar' : 'Collapse sidebar',
 )
+const isPreviewOpen = computed(
+  () => isCollapsed.value && sidebarState.previewOpen.value,
+)
+const isSidebarInnerInert = computed(
+  () => isCollapsed.value && !isPreviewOpen.value,
+)
 
 function isActive(link: DocsNavLink) {
   return isDocsLinkActive(link.href, props.currentPath, link.active ?? 'url')
@@ -108,8 +117,25 @@ function setCollapsed(value: boolean) {
   emit('update:collapsed', value)
 }
 
-function toggleCollapsed() {
-  setCollapsed(!isCollapsed.value)
+async function collapseSidebar() {
+  setCollapsed(true)
+  await nextTick()
+  pinButton.value?.focus()
+}
+
+async function pinSidebar() {
+  setCollapsed(false)
+  await nextTick()
+  collapseButton.value?.focus()
+}
+
+async function toggleCollapsed() {
+  if (isCollapsed.value) {
+    await pinSidebar()
+    return
+  }
+
+  await collapseSidebar()
 }
 
 function openHoverPreview(event: PointerEvent) {
@@ -118,6 +144,36 @@ function openHoverPreview(event: PointerEvent) {
 
 function closeHoverPreview(event?: PointerEvent) {
   sidebarState.closeHoverPreview(event)
+}
+
+function handleFocusIn() {
+  sidebarState.openFocusPreview()
+}
+
+function handleFocusOut(event: FocusEvent) {
+  const nextTarget = event.relatedTarget as Node | null
+
+  if (nextTarget && sidebarInnerElement.value?.contains(nextTarget)) {
+    return
+  }
+
+  sidebarState.closeFocusPreview()
+}
+
+async function handlePreviewEscape(event: KeyboardEvent) {
+  if (!isPreviewOpen.value) {
+    return
+  }
+
+  await nextTick()
+
+  if (event.defaultPrevented || !isPreviewOpen.value) {
+    return
+  }
+
+  sidebarState.closePreview()
+  await nextTick()
+  pinButton.value?.focus()
 }
 
 function closeTabs() {
@@ -206,7 +262,10 @@ watch(
     ref="sidebar"
     class="docs-sidebar"
     :data-collapsed="isCollapsed ? 'true' : 'false'"
-    :data-hovered="isCollapsed && sidebarState.hovered.value ? 'true' : 'false'"
+    :data-hovered="
+      isCollapsed && sidebarState.pointerPreviewOpen.value ? 'true' : 'false'
+    "
+    :data-preview-open="isPreviewOpen ? 'true' : 'false'"
   >
     <div
       v-if="isCollapsed"
@@ -217,9 +276,15 @@ watch(
     />
 
     <div
+      ref="sidebar-inner"
       class="docs-sidebar-inner"
+      :inert="isSidebarInnerInert"
+      :aria-hidden="isSidebarInnerInert ? 'true' : undefined"
       @pointerenter="openHoverPreview"
       @pointerleave="closeHoverPreview"
+      @focusin="handleFocusIn"
+      @focusout="handleFocusOut"
+      @keydown.esc="handlePreviewEscape"
     >
       <div v-if="showHeader" class="docs-sidebar-header">
         <NuxtLink :to="brandHref" class="docs-sidebar-brand">
@@ -231,6 +296,7 @@ watch(
         <UiTooltip v-if="allowCollapse">
           <UiTooltipTrigger>
             <button
+              ref="collapse-button"
               class="docs-sidebar-collapse"
               type="button"
               :aria-label="collapseLabel"
@@ -389,15 +455,18 @@ watch(
     <div
       v-if="isCollapsed"
       class="docs-sidebar-floating"
-      :class="{ 'is-hidden': sidebarState.hovered.value }"
+      :class="{ 'is-hidden': isPreviewOpen }"
+      :inert="isPreviewOpen"
+      :aria-hidden="isPreviewOpen ? 'true' : undefined"
     >
       <UiTooltip>
         <UiTooltipTrigger>
           <button
+            ref="pin-button"
             class="docs-sidebar-floating-button"
             type="button"
             aria-label="Pin sidebar"
-            @click="setCollapsed(false)"
+            @click="pinSidebar"
           >
             <PanelLeft class="docs-sidebar-collapse-icon" aria-hidden="true" />
           </button>

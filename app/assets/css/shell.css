@@ -511,16 +511,11 @@
     border-radius: var(--docs-radius-md);
     box-shadow: var(--docs-shadow-panel);
     opacity: 0;
+    pointer-events: none;
     transform: translateX(calc(-1 * var(--docs-sidebar-width) - 1rem));
   }
 
-  .docs-sidebar[data-collapsed='true'][data-hovered='true'] .docs-sidebar-inner,
-  .docs-sidebar[data-collapsed='true'] .docs-sidebar-inner:focus-within {
-    opacity: 1;
-    transform: translateX(0);
-  }
-
-  .docs-sidebar[data-collapsed='true'][data-hovered='true']
+  .docs-sidebar[data-collapsed='true'][data-preview-open='true']
     > .docs-sidebar-inner {
     opacity: 1;
     pointer-events: auto;
@@ -647,6 +642,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .docs-sidebar-inner,
+  .docs-sidebar-floating {
+    transition-duration: 0.01ms;
+  }
+
   .ui-tooltip-content {
     animation: none;
   }

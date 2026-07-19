@@ -6,17 +6,20 @@ type DocsSidebarStateOptions = {
 
 type DocsSidebarStateContext = ReturnType<typeof createDocsSidebarState>
 
-const docsSidebarStateKey: InjectionKey<DocsSidebarStateContext> = Symbol(
-  'docs-sidebar-state',
-)
+const docsSidebarStateKey: InjectionKey<DocsSidebarStateContext> =
+  Symbol('docs-sidebar-state')
 
 function createDocsSidebarState(options: DocsSidebarStateOptions = {}) {
   const collapsed = shallowRef(false)
-  const hovered = shallowRef(false)
+  const pointerPreviewOpen = shallowRef(false)
+  const focusPreviewOpen = shallowRef(false)
   const mobileOpen = shallowRef(false)
   const tabsOpen = shallowRef(false)
   const closeOnNavigate = shallowRef(true)
   const hoverCloseTimer = shallowRef<ReturnType<typeof setTimeout> | null>(null)
+  const previewOpen = computed(
+    () => pointerPreviewOpen.value || focusPreviewOpen.value,
+  )
 
   function clearHoverCloseTimer() {
     if (!hoverCloseTimer.value) {
@@ -31,6 +34,12 @@ function createDocsSidebarState(options: DocsSidebarStateOptions = {}) {
     tabsOpen.value = false
   }
 
+  function closePreview() {
+    clearHoverCloseTimer()
+    pointerPreviewOpen.value = false
+    focusPreviewOpen.value = false
+  }
+
   function setTabsOpen(value: boolean) {
     tabsOpen.value = value
   }
@@ -42,15 +51,7 @@ function createDocsSidebarState(options: DocsSidebarStateOptions = {}) {
   function setCollapsed(value: boolean) {
     collapsed.value = value
     closeTabs()
-
-    if (!value) {
-      hovered.value = false
-      return
-    }
-
-    if (import.meta.client && document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur()
-    }
+    closePreview()
   }
 
   function toggleCollapsed() {
@@ -63,7 +64,7 @@ function createDocsSidebarState(options: DocsSidebarStateOptions = {}) {
     }
 
     clearHoverCloseTimer()
-    hovered.value = true
+    pointerPreviewOpen.value = true
   }
 
   function closeHoverPreview(event?: PointerEvent) {
@@ -73,10 +74,37 @@ function createDocsSidebarState(options: DocsSidebarStateOptions = {}) {
 
     clearHoverCloseTimer()
     hoverCloseTimer.value = setTimeout(() => {
-      hovered.value = false
-    }, event && Math.min(event.clientX, document.body.clientWidth - event.clientX) > 100
+      pointerPreviewOpen.value = false
+      hoverCloseTimer.value = null
+    }, resolveHoverCloseDelay(event))
+  }
+
+  function resolveHoverCloseDelay(event?: PointerEvent) {
+    if (!event) {
+      return 500
+    }
+
+    const currentTarget = event.currentTarget as HTMLElement | null
+    const viewportWidth =
+      currentTarget?.ownerDocument?.documentElement.clientWidth ??
+      event.view?.innerWidth ??
+      0
+
+    return Math.min(event.clientX, viewportWidth - event.clientX) > 100
       ? 0
-      : 500)
+      : 500
+  }
+
+  function openFocusPreview() {
+    if (!collapsed.value) {
+      return
+    }
+
+    focusPreviewOpen.value = true
+  }
+
+  function closeFocusPreview() {
+    focusPreviewOpen.value = false
   }
 
   function setMobileOpen(value: boolean) {
@@ -102,6 +130,7 @@ function createDocsSidebarState(options: DocsSidebarStateOptions = {}) {
   if (options.currentPath) {
     watch(options.currentPath, () => {
       closeTabs()
+      closePreview()
 
       if (closeOnNavigate.value) {
         closeMobile()
@@ -112,19 +141,25 @@ function createDocsSidebarState(options: DocsSidebarStateOptions = {}) {
   }
 
   onBeforeUnmount(() => {
-    clearHoverCloseTimer()
+    closePreview()
   })
 
   return {
     closeHoverPreview,
+    closeFocusPreview,
     closeMobile,
+    closePreview,
     closeTabs,
     collapsed,
-    hovered,
+    focusPreviewOpen,
+    hovered: pointerPreviewOpen,
     keepOpenOnNextNavigate,
     mobileOpen,
+    openFocusPreview,
     openHoverPreview,
     openMobile,
+    pointerPreviewOpen,
+    previewOpen,
     setCollapsed,
     setMobileOpen,
     setTabsOpen,
