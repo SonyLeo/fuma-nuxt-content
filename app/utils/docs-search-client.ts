@@ -1,6 +1,7 @@
 import type {
   DocsSearchClient,
   DocsSearchIndexEntry,
+  DocsSearchProvider,
   DocsSearchResult,
 } from '~/types/docs-search'
 import { searchDocsIndex } from '~/utils/docs-search'
@@ -10,6 +11,11 @@ type DocsSearchFetch = typeof globalThis.fetch
 export type ApiDocsSearchClientOptions = {
   endpoint?: string
   fetch?: DocsSearchFetch
+}
+
+export type ConfiguredDocsSearchClientOptions = ApiDocsSearchClientOptions & {
+  provider: DocsSearchProvider
+  index?: DocsSearchIndexEntry[]
 }
 
 const DOCS_SEARCH_REQUEST_ERROR = 'Search request failed.'
@@ -142,4 +148,17 @@ export function createApiDocsSearchClient(
       }
     },
   }
+}
+
+export function createConfiguredDocsSearchClient(
+  options: ConfiguredDocsSearchClientOptions,
+): DocsSearchClient {
+  if (options.provider === 'api') {
+    return createApiDocsSearchClient({
+      endpoint: options.endpoint,
+      fetch: options.fetch,
+    })
+  }
+
+  return createLocalDocsSearchClient(options.index)
 }

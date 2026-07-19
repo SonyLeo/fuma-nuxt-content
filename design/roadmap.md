@@ -78,12 +78,13 @@ implicitly.
 
 ### P0: integration completion
 
-1. remote search provider/API
-2. feedback backend or GitHub issue flow
-3. RSS
-4. `llms-full.txt`
-5. per-page Markdown export
-6. image CDN adapter
+Remote search provider/API is Gate Passed.
+
+1. feedback backend or GitHub issue flow
+2. RSS
+3. `llms-full.txt`
+4. per-page Markdown export
+5. image CDN adapter
 
 ### P1: multi-source baseline
 

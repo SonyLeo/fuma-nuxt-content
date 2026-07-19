@@ -1,25 +1,33 @@
 <script setup lang="ts">
-import type { DocsSiteSearchConfig } from '~/types/docs-site'
+import type { DocsSiteResolvedSearchConfig } from '~/types/docs-site'
 import type { DocsSearchIndexEntry } from '~/types/docs-search'
-import { createLocalDocsSearchClient } from '~/utils/docs-search-client'
+import { createConfiguredDocsSearchClient } from '~/utils/docs-search-client'
 
 const props = defineProps<{
-  config?: DocsSiteSearchConfig
+  config: DocsSiteResolvedSearchConfig
   index?: DocsSearchIndexEntry[]
 }>()
 
-const enabled = computed(() => props.config?.enabled === true)
-const label = computed(() => props.config?.label ?? 'Search')
+const enabled = computed(() => props.config.enabled)
+const label = computed(() => props.config.label ?? 'Search')
 const placeholder = computed(
-  () => props.config?.placeholder ?? 'Search documentation...',
+  () => props.config.placeholder ?? 'Search documentation...',
 )
 const emptyLabel = computed(
-  () => props.config?.emptyLabel ?? 'No results found.',
+  () => props.config.emptyLabel ?? 'No results found.',
 )
-const client = computed(() => createLocalDocsSearchClient(props.index ?? []))
+const client = computed(() =>
+  createConfiguredDocsSearchClient({
+    provider: props.config.provider,
+    endpoint: props.config.endpoint,
+    index: props.index,
+  }),
+)
 const { isOpen, query, results, status, open, close, updateQuery } =
   useDocsSearch({
     client,
+    delayMs: props.config.delayMs,
+    limit: props.config.limit,
   })
 
 function closeSearch() {

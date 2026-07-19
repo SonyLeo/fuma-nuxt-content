@@ -40,6 +40,9 @@ export type DocsSitePageActionsConfig = {
 export type DocsSiteSearchConfig = {
   enabled?: boolean
   provider?: DocsSearchProvider
+  endpoint?: string
+  delayMs?: number
+  limit?: number
   label?: string
   placeholder?: string
   emptyLabel?: string
@@ -106,8 +109,15 @@ export type DocsSiteHomeLayoutProps = Omit<DocsHomeLayoutProps, 'currentPath'>
 export type DocsSiteResolvedPageActionsConfig =
   Required<DocsSitePageActionsConfig>
 
-export type DocsSiteResolvedSearchConfig = DocsSiteSearchConfig & {
+export type DocsSiteResolvedSearchConfig = Omit<
+  DocsSiteSearchConfig,
+  'enabled' | 'provider' | 'endpoint' | 'delayMs' | 'limit'
+> & {
   enabled: boolean
+  provider: DocsSearchProvider
+  endpoint: string
+  delayMs: number
+  limit: number
 }
 
 export type DocsSiteResolvedFeedbackConfig = DocsSiteFeedbackConfig & {

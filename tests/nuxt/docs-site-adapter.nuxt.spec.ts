@@ -129,6 +129,10 @@ describe('docs site adapter', () => {
     expect(disabled.root.search.enabled).toBe(false)
     expect(disabled.page.search).toEqual({
       enabled: false,
+      provider: 'local',
+      endpoint: '/api/search',
+      delayMs: 0,
+      limit: 8,
       label: 'Find',
     })
     expect(disabled.root.language).toEqual({
@@ -141,11 +145,21 @@ describe('docs site adapter', () => {
     })
   })
 
-  test('uses the canonical local search provider contract', async () => {
-    const adapter = createDocsSiteAdapter(
+  test('resolves local and API search provider configuration', async () => {
+    const local = createDocsSiteAdapter(
       createSiteConfig({
         search: {
           provider: 'local',
+        },
+      }),
+    )
+    const api = createDocsSiteAdapter(
+      createSiteConfig({
+        search: {
+          provider: 'api',
+          endpoint: ' /internal/search ',
+          delayMs: 240,
+          limit: 12,
         },
       }),
     )
@@ -154,7 +168,20 @@ describe('docs site adapter', () => {
       'utf8',
     )
 
-    expect(adapter.page.search.provider).toBe('local')
+    expect(local.page.search).toMatchObject({
+      enabled: true,
+      provider: 'local',
+      endpoint: '/api/search',
+      delayMs: 0,
+      limit: 8,
+    })
+    expect(api.page.search).toMatchObject({
+      enabled: true,
+      provider: 'api',
+      endpoint: '/internal/search',
+      delayMs: 240,
+      limit: 12,
+    })
     expectTypeOf<DocsSiteSearchConfig['provider']>().toEqualTypeOf<
       DocsSearchProvider | undefined
     >()

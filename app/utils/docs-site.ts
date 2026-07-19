@@ -67,9 +67,14 @@ export function createDocsSiteHomeLayoutProps(
 }
 
 export function createDocsSiteAdapter(config: DocsSiteConfig): DocsSiteAdapter {
+  const searchProvider = config.search?.provider ?? 'local'
   const search = {
     ...config.search,
     enabled: config.search?.enabled !== false,
+    provider: searchProvider,
+    endpoint: config.search?.endpoint?.trim() || '/api/search',
+    delayMs: config.search?.delayMs ?? (searchProvider === 'api' ? 150 : 0),
+    limit: config.search?.limit ?? 8,
   }
 
   return {

@@ -84,7 +84,10 @@ const rawDocsSiteConfig = defineDocsSiteConfig({
   },
   search: {
     enabled: true,
-    provider: 'local',
+    provider: 'api',
+    endpoint: '/api/search',
+    delayMs: 150,
+    limit: 8,
     label: 'Search',
     placeholder: 'Search documentation...',
     emptyLabel: 'No results found.',

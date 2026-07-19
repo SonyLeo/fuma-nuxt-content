@@ -1,4 +1,4 @@
-export type DocsSearchProvider = 'local'
+export type DocsSearchProvider = 'local' | 'api'
 
 export type DocsSearchRequest = {
   query: string

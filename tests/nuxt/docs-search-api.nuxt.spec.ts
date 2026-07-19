@@ -6,6 +6,7 @@ import type { DocsDirectoryMeta } from '~/types/docs'
 import type { DocsSearchRequest } from '~/types/docs-search'
 import {
   createApiDocsSearchClient,
+  createConfiguredDocsSearchClient,
   decodeDocsSearchResults,
 } from '~/utils/docs-search-client'
 import {
@@ -160,6 +161,58 @@ describe('docs search API canonical service', () => {
 })
 
 describe('API docs search client', () => {
+  test('selects local and API clients without changing the shared contract', async () => {
+    const index = [
+      {
+        id: 'local',
+        title: 'Local result',
+        path: '/guide/local',
+      },
+    ]
+    const fetchRequest = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify([
+          {
+            id: 'api',
+            title: 'API result',
+            path: '/guide/api',
+          },
+        ]),
+        { status: 200 },
+      ),
+    )
+    const localRequest = createRequest({ query: 'local' })
+    const apiRequest = createRequest({ query: 'api' })
+
+    expect(
+      await createConfiguredDocsSearchClient({
+        provider: 'local',
+        index,
+        fetch: fetchRequest,
+      }).search(localRequest),
+    ).toMatchObject([{ id: 'local', path: '/guide/local' }])
+    expect(fetchRequest).not.toHaveBeenCalled()
+
+    expect(
+      await createConfiguredDocsSearchClient({
+        provider: 'api',
+        endpoint: '/internal/search',
+        index,
+        fetch: fetchRequest,
+      }).search(apiRequest),
+    ).toEqual([
+      {
+        id: 'api',
+        title: 'API result',
+        path: '/guide/api',
+      },
+    ])
+    expect(fetchRequest).toHaveBeenCalledWith(
+      '/internal/search?query=api&limit=8',
+      { signal: apiRequest.signal },
+    )
+  })
+
   test('passes query, limit, and signal to relative and absolute endpoints', async () => {
     const responseBody = [
       {

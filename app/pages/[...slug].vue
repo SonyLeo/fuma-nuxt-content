@@ -27,14 +27,17 @@ const { data: docsPages } = await useAsyncData('docs-pages', () => {
   return queryCollection('docs').select('path', 'stem', 'docsMetadata').all()
 })
 
-const { data: docsSearchPages } = await useAsyncData(
-  'docs-search-pages',
-  () => {
-    return queryCollection('docs')
-      .select('path', 'stem', 'docsMetadata', 'structuredData', 'body')
-      .all()
-  },
-)
+const usesLocalSearch =
+  site.page.search.enabled && site.page.search.provider === 'local'
+const docsSearchPages = usesLocalSearch
+  ? (
+      await useAsyncData('docs-search-pages', () => {
+        return queryCollection('docs')
+          .select('path', 'stem', 'docsMetadata', 'structuredData', 'body')
+          .all()
+      })
+    ).data
+  : shallowRef([])
 
 const docsPageRecords = computed<DocsPageRecord[]>(() => {
   return (docsPages.value ?? []) as DocsPageRecord[]
@@ -151,6 +154,10 @@ const pageActions = computed<DocsPageAction[]>(() => {
   })
 })
 const searchIndex = computed(() => {
+  if (!usesLocalSearch) {
+    return []
+  }
+
   return createDocsSearchIndex(docsSearchPages.value ?? [], runtime.value)
 })
 
