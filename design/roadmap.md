@@ -16,7 +16,8 @@ protocols before expanding product composition.
 
 Foundation hardening is complete: Phase 2 authoring/code contracts and Phase 3
 component, shell, and primitive contracts passed the Foundation Exit Gate.
-The next priority is Product Backlog P0 integration; it has not started.
+Remote search is Gate Passed. The current priority is UI primitive and visual
+product-readiness hardening before the remaining Product Backlog P0 work.
 
 ## Active Sources Of Truth
 
@@ -76,9 +77,19 @@ implicitly.
 
 ## Current Priority
 
-### P0: integration completion
+### Current gate: UI product readiness
 
-Remote search provider/API is Gate Passed.
+1. audit local wrappers and rendered docs surfaces against pinned Fumadocs and
+   Nuxt UI v4 references
+2. harden sidebar scrolling, active visibility, collapsed state, and tooltips
+3. migrate handwritten command/search interaction to Reka Combobox
+4. normalize popover, menu, disclosure, and feedback-selection primitives
+5. close visual atoms, responsive parity, keyboard, focus, and theme evidence
+
+### Next: P0 integration completion
+
+Remote search provider/API is Gate Passed; remaining product work resumes only
+after the UI product-readiness gate.
 
 1. feedback backend or GitHub issue flow
 2. RSS

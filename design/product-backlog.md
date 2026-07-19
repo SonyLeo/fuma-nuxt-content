@@ -18,6 +18,7 @@ are not repeated as active phases.
 Product work must consume foundation contracts through config, adapters,
 server routes, output routes, and slots. It must not repair foundation by
 rewriting sidebar, TOC, page tree, Markdown components, or layout ownership.
+Remaining product work is paused until the roadmap UI product-readiness gate.
 
 ## Completed Baseline
 

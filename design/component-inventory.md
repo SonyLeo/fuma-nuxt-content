@@ -15,6 +15,8 @@ This is the current component and regression map for ordinary documentation
 pages. It replaces the former long-running parity inventory and batch logs.
 
 Status meanings follow [Foundation Status](./foundation-status.md).
+`Gate Passed` means protocol-safe; UI-R now audits these surfaces for
+`Product Ready` visual and primitive maturity.
 
 ## Content Components
 
@@ -41,29 +43,31 @@ Status meanings follow [Foundation Status](./foundation-status.md).
 | Root provider        | `DocsRootProvider`            | Gate Passed | Adapter Nuxt tests, `layout-provider.spec.ts`          |
 | Shared layout slots  | layout composables/components | Gate Passed | Replacement-slot Nuxt tests, `layout-provider.spec.ts` |
 | Theme runtime/switch | theme composable and switch   | Gate Passed | `docs-theme-runtime.nuxt.spec.ts`, `theme.spec.ts`     |
-| Desktop sidebar      | `DocsSidebar`                 | Gate Passed | `sidebar.spec.ts`                                      |
+| Desktop sidebar      | `DocsSidebar`                 | Gate Passed | `sidebar.spec.ts`; UI-R scroll/collapse hardening      |
 | Mobile drawer        | `DocsMobileNav`               | Gate Passed | `sidebar.spec.ts` mobile tags                          |
 | TOC rail             | `DocsToc`                     | Gate Passed | `toc.spec.ts`                                          |
 | Responsive TOC       | `DocsTocPopover`              | Gate Passed | `toc-responsive.spec.ts`                               |
-| Search dialog shell  | `DocsSearchDialog`            | Gate Passed | Combobox ARIA and `layout-provider.spec.ts`            |
-| Page actions         | `DocsPageActions`             | Gate Passed | `page-actions.spec.ts`                                 |
-| Feedback shell       | `DocsFeedback`                | Gate Passed | UI contract passed; backend remains integration work   |
+| Search dialog shell  | `DocsSearchDialog`            | Gate Passed | UI-R migrates handwritten command to Reka Combobox     |
+| Page actions         | `DocsPageActions`             | Gate Passed | UI-R aligns the Open menu with DropdownMenu            |
+| Feedback shell       | `DocsFeedback`                | Gate Passed | UI-R selection primitive, then backend integration     |
 | Pager                | `DocsPager`                   | Gate Passed | `page-actions.spec.ts`                                 |
 | Home layout          | `DocsHomeLayout`              | Gate Passed | Adapter Nuxt tests, `layout-provider.spec.ts`          |
 | Not-found shell      | `DocsNotFound`                | Gate Passed | Props-driven Nuxt test, `layout-provider.spec.ts`      |
 
 ## Interaction Primitives
 
-| Wrapper           | Reka ownership       | Current state      |
-| ----------------- | -------------------- | ------------------ |
-| `UiPopover*`      | Popover              | Migrated           |
-| `UiDialog*`       | Dialog               | Migrated           |
-| `UiDropdownMenu*` | DropdownMenu         | Migrated           |
-| `UiCollapsible*`  | Collapsible          | Migrated           |
-| `UiAccordion*`    | Accordion            | Migrated           |
-| `UiTabs*`         | Tabs                 | Migrated           |
-| `UiScrollArea*`   | ScrollArea           | Migrated/monitored |
-| Sidebar tree      | Project `DocsNode[]` | Reka Tree deferred |
+| Wrapper           | Reka ownership       | Current state                     |
+| ----------------- | -------------------- | --------------------------------- |
+| `UiPopover*`      | Popover              | Migrated                          |
+| `UiDialog*`       | Dialog               | Migrated                          |
+| `UiDropdownMenu*` | DropdownMenu         | Migrated                          |
+| `UiCollapsible*`  | Collapsible          | Migrated                          |
+| `UiAccordion*`    | Accordion            | Migrated                          |
+| `UiTabs*`         | Tabs                 | Migrated                          |
+| `UiScrollArea*`   | ScrollArea           | Migrated/monitored                |
+| `UiCommand*`      | Combobox candidate   | Handwritten/UI-R                  |
+| `UiTooltip*`      | Tooltip              | Missing/UI-R                      |
+| Sidebar tree      | Project `DocsNode[]` | Keep renderer; harden interaction |
 
 ## Deferred Components And Variants
 
