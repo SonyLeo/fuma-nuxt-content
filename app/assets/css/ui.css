@@ -111,11 +111,7 @@
   overflow: auto;
   border: 1px solid var(--docs-color-border);
   border-radius: var(--docs-card-radius);
-  background: color-mix(
-    in srgb,
-    var(--docs-color-popover) 92%,
-    transparent
-  );
+  background: color-mix(in srgb, var(--docs-color-popover) 92%, transparent);
   color: var(--docs-color-popover-foreground);
   box-shadow: var(--docs-shadow-panel);
   backdrop-filter: blur(12px);
@@ -151,6 +147,29 @@
 .ui-command-item[data-active='true'] {
   background: var(--docs-color-accent);
   color: var(--docs-color-accent-foreground);
+}
+
+.ui-combobox-root,
+.ui-combobox-content,
+.ui-combobox-viewport,
+.ui-combobox-input {
+  min-width: 0;
+}
+
+.ui-combobox-content,
+.ui-combobox-viewport {
+  min-height: 0;
+}
+
+.ui-combobox-item[data-highlighted],
+.ui-combobox-item[data-state='checked'] {
+  background: var(--docs-color-accent);
+  color: var(--docs-color-accent-foreground);
+}
+
+.ui-combobox-item[data-disabled] {
+  pointer-events: none;
+  opacity: 0.5;
 }
 
 .ui-scroll-area {
